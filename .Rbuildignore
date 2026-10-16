@@ -1,0 +1,14 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^README\.Rmd$
+^\.github$
+^_pkgdown\.yml$
+^docs$
+^dicomtk\.Rcheck$
+^CLAUDE\.md$
+^MEMORY\.md$
+^tools$
+^src/dcmtk-build$
+^src/.*\.o$
+^src/.*\.so$
+^src/.*\.dll$

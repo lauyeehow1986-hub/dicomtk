@@ -1,0 +1,92 @@
+url: https://lauyeehow1986-hub.github.io/dicomtk/
+template:
+  bootstrap: 5
+
+reference:
+  - title: "Core DICOM I/O"
+    desc: "Read and write DICOM headers, pixel matrices, and 3D multi-slice series."
+    contents:
+      - read_dicom
+      - read_dicom_header
+      - read_dicom_pixels
+      - read_dicom_series
+      - write_dicom
+      - is_dicom
+      - have_dcmtk
+      - dicom_info
+
+  - title: "DICOM Tags & Dictionary"
+    desc: "Inspect, modify, and query the 5,354-tag DCMTK 3.7.1 data dictionary."
+    contents:
+      - dicom_tags
+      - dicom_tag_value
+      - dicom_modify
+      - dicom_tag_lookup
+      - date_tags
+      - datetime_tags
+      - removal_tags
+
+  - title: "De-identification & Anonymization"
+    desc: "HIPAA Safe Harbor and DICOM PS3.15 confidentiality profile anonymization."
+    contents:
+      - dicom_anonymize
+
+  - title: "Visualization (ggplot2, Shiny, and 3D Volume)"
+    desc: "Clinical windowing, ggplot2 rendering, interactive Shiny viewer, and 3D MPR/MIP/rgl."
+    contents:
+      - dicom_window
+      - plot_dicom
+      - ggdicom
+      - dicom_viewer
+      - render_volume
+
+  - title: "Conversion & Compression"
+    desc: "Convert between DICOM, PNG, NIfTI, XML, JSON, PDF, and RLE compression."
+    contents:
+      - dicom_to_png
+      - dicom_to_nifti
+      - dcm2xml
+      - dcm2json
+      - dcm2pdf
+      - dicom_compress
+      - dicom_decompress
+
+  - title: "PACS Networking & Worklists"
+    desc: "DIMSE C-ECHO, C-FIND, C-GET, C-STORE, local index DB, worklists, and TLS."
+    contents:
+      - dicom_connect
+      - dicom_echo
+      - dicom_find
+      - dicom_get
+      - dicom_send
+      - dicom_receive
+      - dicom_qrdb_index
+      - dicom_worklist
+      - dicom_tls_config
+
+  - title: "Structured Reports & Specialized IODs (RT, SEG, PMAP, Tractography)"
+    desc: "Interfaces for dcmsr, dcmrt, dcmseg, dcmpmap, dcmtract, dcmect, dcmpstat, and dcmsign."
+    contents:
+      - read_dicom_sr
+      - create_dicom_sr
+      - read_dicom_rt
+      - read_dicom_seg
+      - read_dicom_pmap
+      - read_dicom_tract
+      - read_dicom_pstate
+      - read_dicom_ect
+      - dicom_verify_signature
+
+  - title: "AI & LLM Integration (Ollama, OpenAI, Claude)"
+    desc: "Connect DICOM studies and images to local Ollama and cloud OpenAI/Anthropic models."
+    contents:
+      - dicom_llm
+      - dicom_summarize
+      - dicom_describe_image
+      - dicom_report
+      - dicom_ask
+
+  - title: "Legacy Compatibility"
+    desc: "Backward-compatible wrappers for original dcmtk R package functions."
+    contents:
+      - legacy-dcmtk

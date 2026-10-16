@@ -1,0 +1,76 @@
+---
+title: "Getting Started with dicomtk"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with dicomtk}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Overview
+
+`dicomtk` is a self-contained, tidyverse-compliant R interface to the OFFIS **DICOM Toolkit (DCMTK 3.7.1)** with native C++17 / `Rcpp` bindings, `ggplot2` / `Shiny` / 3D volume visualization, PACS networking, and local/cloud LLM integration (`Ollama`, `OpenAI`, `Anthropic Claude`).
+
+```{r setup}
+library(dicomtk)
+library(dplyr)
+
+# Verify bundled DCMTK 3.7.1 engine & dictionary
+dicom_info()
+```
+
+## Reading DICOM Headers & Tidyverse Workflows
+
+```{r read-header}
+dcm_file <- system.file("extdata", "example.dcm", package = "dicomtk")
+
+# Long tidy tibble of DICOM elements
+hdr <- read_dicom(dcm_file)
+hdr |>
+  filter(group %in% c("0008", "0028")) |>
+  select(tag, vr, keyword, name, value) |>
+  head(10)
+
+# Wide format (1 row per file, columns named by DICOM keyword)
+read_dicom(dcm_file, wide = TRUE) |>
+  select(any_of(c("file", "Modality", "Rows", "Columns", "BitsAllocated")))
+```
+
+## Visualizing DICOM Images (`ggplot2`, Clinical Windows, and 3D MPR/MIP)
+
+```{r plot-dicom, fig.width = 5, fig.height = 5}
+plot_dicom(dcm_file, window = "auto", palette = "gray", title = "Example DICOM Slice")
+```
+
+## Anonymization & Tag Modification
+
+```{r anonymize}
+anon_path <- dicom_anonymize(
+  dcm_file,
+  patient_name = "STUDY^SUBJECT01",
+  patient_id = "SUBJ001",
+  shift_days = -365
+)
+dicom_tag_value(anon_path, c("PatientName", "PatientID", "PatientIdentityRemoved"))
+```
+
+## AI / LLM Integration (Ollama, OpenAI, and Anthropic Claude)
+
+```{r llm-demo}
+# Configure local Ollama or OpenAI/Anthropic provider
+# ollama_llm <- dicom_llm("ollama", model = "llava:13b")
+# openai_llm <- dicom_llm("openai", model = "gpt-4o")
+# claude_llm <- dicom_llm("anthropic", model = "claude-sonnet-4-20250514")
+
+# Deterministic local mode for offline reproducibility
+local_ai <- dicom_llm("offline")
+dicom_summarize(dcm_file, llm = local_ai)
+dicom_report(dcm_file, llm = local_ai)
+```

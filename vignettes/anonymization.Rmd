@@ -1,0 +1,62 @@
+---
+title: "DICOM Anonymization & HIPAA De-identification"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{DICOM Anonymization & HIPAA De-identification}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Overview
+
+`dicomtk` implements HIPAA Safe Harbor and the **DICOM PS3.15 Basic Application Level Confidentiality Profile** via `dicom_anonymize()`. Unlike legacy wrappers that invoke external `dcmodify` subprocesses, `dicomtk` performs de-identification natively in C++17 memory.
+
+```{r anon-workflow}
+library(dicomtk)
+library(dplyr)
+
+# Create a synthetic DICOM file containing PHI tags
+mat <- matrix(seq(0, 255), nrow = 16, ncol = 16)
+raw_dcm <- tempfile(fileext = ".dcm")
+write_dicom(
+  mat,
+  raw_dcm,
+  metadata = list(
+    PatientName = "DOE^JOHN",
+    PatientID = "MRN-987654",
+    PatientBirthDate = "19800415",
+    StudyDate = "20251016",
+    InstitutionName = "GENERAL HOSPITAL",
+    Modality = "CT"
+  )
+)
+
+# Inspect original PHI tags
+dicom_tag_value(
+  raw_dcm,
+  c("PatientName", "PatientID", "PatientBirthDate", "StudyDate", "InstitutionName")
+)
+
+# Anonymize with longitudinal date shifting (-100 days), UID regeneration, and private tag removal
+anon_dcm <- dicom_anonymize(
+  raw_dcm,
+  patient_name = "TRIAL^SUBJECT_001",
+  patient_id = "SUBJ_001",
+  shift_days = -100L,
+  erase_private = TRUE,
+  regenerate_uids = TRUE
+)
+
+# Verify de-identification
+dicom_tag_value(
+  anon_dcm,
+  c("PatientName", "PatientID", "StudyDate", "InstitutionName", "PatientIdentityRemoved")
+)
+```

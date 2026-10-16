@@ -1,0 +1,55 @@
+---
+title: "PACS Networking & DICOM Query/Retrieve"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{PACS Networking & DICOM Query/Retrieve}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Overview
+
+`dicomtk` provides a tidyverse-friendly interface to DICOM networking (`dcmnet`, `dcmqrdb`, `dcmwlm`, `dcmtls`):
+- `dicom_connect()`: Configure a remote DIMSE PACS peer, DICOMweb REST endpoint, or local PACS storage directory.
+- `dicom_tls_config()`: Configure BCP 195 TLS transport security (`dcmtls`).
+- `dicom_echo()`: Verify connectivity via DICOM Upper Layer `A-ASSOCIATE-RQ` + `C-ECHO-RQ`.
+- `dicom_find()`: Query studies, series, or instances as a tidy `tibble`.
+- `dicom_get()`: Retrieve matched DICOM files into a local directory.
+- `dicom_send()` / `dicom_receive()`: Store and receive DICOM objects (`C-STORE`).
+- `dicom_qrdb_index()` & `dicom_worklist()`: Local index database (`dcmqrdb`) and Modality Worklist (`dcmwlm`).
+
+```{r workflow}
+library(dicomtk)
+library(dplyr)
+
+dcm_file <- system.file("extdata", "example.dcm", package = "dicomtk")
+
+# 1. Start a local PACS storage receiver (SCP directory)
+pacs_dir <- tempfile("local_pacs_")
+conn <- dicom_receive(pacs_dir, port = 11112, aetitle = "DICOMTK-SCP")
+conn
+
+# 2. Verify PACS connectivity
+dicom_echo(conn)
+
+# 3. Send DICOM file(s) to the PACS peer (C-STORE)
+dicom_send(dcm_file, conn)
+
+# 4. Query PACS studies with tidyverse piping and retrieve matching files
+retrieved_files <- conn |>
+  dicom_find(level = "STUDY") |>
+  dicom_get()
+
+retrieved_files
+
+# 5. Build a local dcmqrdb index table
+dicom_qrdb_index(pacs_dir) |>
+  select(PatientID, Modality, Rows, Columns)
+```

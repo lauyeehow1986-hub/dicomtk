@@ -1,0 +1,78 @@
+---
+title: "AI & LLM Integration: Local Ollama, OpenAI, and Anthropic Claude"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{AI & LLM Integration: Local Ollama, OpenAI, and Anthropic Claude}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Overview
+
+`dicomtk` connects DICOM metadata and pixel data to both **local LLMs** (via [Ollama](https://ollama.com)) and **OpenAI-compatible cloud or subscription endpoints** (OpenAI, Anthropic Claude, OpenRouter, LM Studio, vLLM, Azure OpenAI).
+
+## Configuring Providers with `dicom_llm()`
+
+```{r providers}
+library(dicomtk)
+
+# 1. Local Ollama (100% private, runs on your machine)
+ollama_llm <- dicom_llm(
+  provider = "ollama",
+  model = "llava:13b",
+  base_url = "http://localhost:11434"
+)
+ollama_llm
+
+# 2. OpenAI or any OpenAI-compatible API endpoint
+openai_llm <- dicom_llm(
+  provider = "openai",
+  model = "gpt-4o",
+  base_url = "https://api.openai.com/v1"
+)
+
+# 3. Anthropic Claude
+claude_llm <- dicom_llm(
+  provider = "anthropic",
+  model = "claude-sonnet-4-20250514"
+)
+
+# 4. Deterministic offline provider (for reproducible pipelines without network access)
+offline_llm <- dicom_llm("offline")
+```
+
+## Summarizing Studies, Describing Images & Generating Structured Reports
+
+```{r ai-tasks}
+dcm_file <- system.file("extdata", "example.dcm", package = "dicomtk")
+
+# Natural-language study metadata summary
+dicom_summarize(dcm_file, llm = offline_llm)
+
+# Vision + quantitative pixel analysis
+dicom_describe_image(dcm_file, llm = offline_llm)
+
+# Generate a structured radiology report and export as a DICOM Structured Report (.dcm)
+sr_out <- tempfile(fileext = ".dcm")
+report_tbl <- dicom_report(dcm_file, llm = offline_llm, save_sr_path = sr_out)
+report_tbl
+
+# Read back the generated DICOM Structured Report
+read_dicom_sr(sr_out)
+```
+
+## Natural-Language DICOM Q&A and Tag Lookup
+
+```{r nl-query}
+dicom_ask(dcm_file, "What are the image dimensions and photometric interpretation?", llm = offline_llm)
+
+# Look up standard DICOM tags with natural language
+dicom_tag_lookup("What tag stores window center?", llm = offline_llm)
+```

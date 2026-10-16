@@ -1,0 +1,41 @@
+#!/bin/sh
+# configure script for dicomtk (Unix / macOS / Linux)
+
+CXX_STD="CXX17"
+PKG_CPPFLAGS="-I. -I../inst/include"
+PKG_LIBS="-lz"
+
+# Check if bundled DCMTK source should be built with CMake
+if [ -d "src/dcmtk" ] && [ -n "${DICOMTK_BUILD_DCMTK}" ]; then
+  if command -v cmake >/dev/null 2>&1; then
+    echo "* Building bundled DCMTK from src/dcmtk via CMake..."
+    mkdir -p src/dcmtk-build
+    (cd src/dcmtk-build && cmake ../dcmtk \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DBUILD_SHARED_LIBS=OFF \
+      -DBUILD_APPS=OFF \
+      -DDCMTK_WITH_DOXYGEN=OFF \
+      -DDCMTK_ENABLE_BUILTIN_DICTIONARY=ON \
+      -DDCMTK_WITH_THREADS=ON \
+      -DCMAKE_POSITION_INDEPENDENT_CODE=ON && \
+      cmake --build . --parallel 2)
+    if [ -f "src/dcmtk-build/lib/libdcmdata.a" ]; then
+      PKG_CPPFLAGS="${PKG_CPPFLAGS} -DDICOMTK_HAVE_DCMTK -Isrc/dcmtk-build/config/include -Isrc/dcmtk/ofstd/include -Isrc/dcmtk/oflog/include -Isrc/dcmtk/dcmdata/include -Isrc/dcmtk/dcmimgle/include -Isrc/dcmtk/dcmimage/include -Isrc/dcmtk/dcmjpeg/include -Isrc/dcmtk/dcmjpls/include -Isrc/dcmtk/dcmnet/include -Isrc/dcmtk/dcmsr/include -Isrc/dcmtk/dcmiod/include -Isrc/dcmtk/dcmfg/include -Isrc/dcmtk/dcmrt/include -Isrc/dcmtk/dcmseg/include -Isrc/dcmtk/dcmpmap/include -Isrc/dcmtk/dcmtract/include -Isrc/dcmtk/dcmect/include"
+      PKG_LIBS="-Lsrc/dcmtk-build/lib -ldcmrt -ldcmseg -ldcmpmap -ldcmtract -ldcmect -ldcmsr -ldcmiod -ldcmfg -ldcmnet -ldcmjpls -ldcmtkcharls -ldcmjpeg -lijg8 -lijg12 -lijg16 -ldcmimage -ldcmimgle -ldcmdata -loflog -loficonv -lofstd -lz -lpthread"
+    fi
+  fi
+elif command -v pkg-config >/dev/null 2>&1 && pkg-config --exists dcmdata 2>/dev/null; then
+  if [ -n "${DICOMTK_USE_SYSTEM_DCMTK}" ]; then
+    echo "* Found system DCMTK via pkg-config"
+    DCM_CFLAGS=$(pkg-config --cflags dcmdata)
+    DCM_LIBS=$(pkg-config --libs dcmdata)
+    PKG_CPPFLAGS="${PKG_CPPFLAGS} -DDICOMTK_HAVE_DCMTK ${DCM_CFLAGS}"
+    PKG_LIBS="${DCM_LIBS} ${PKG_LIBS}"
+  fi
+fi
+
+sed -e "s|@PKG_CPPFLAGS@|${PKG_CPPFLAGS}|g" \
+    -e "s|@PKG_LIBS@|${PKG_LIBS}|g" \
+    src/Makevars.in > src/Makevars
+
+exit 0

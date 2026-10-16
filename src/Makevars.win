@@ -1,0 +1,3 @@
+CXX_STD = CXX17
+PKG_CPPFLAGS = -I. -I../inst/include
+PKG_LIBS = -lz -lws2_32 -liphlpapi -lwsock32

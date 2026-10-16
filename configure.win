@@ -1,0 +1,3 @@
+#!/bin/sh
+# configure.win for dicomtk (Windows / Rtools)
+exit 0

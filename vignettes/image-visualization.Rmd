@@ -1,0 +1,73 @@
+---
+title: "DICOM Image Visualization: ggplot2, Clinical Windows, Shiny, and 3D Volumes"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{DICOM Image Visualization: ggplot2, Clinical Windows, Shiny, and 3D Volumes}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Overview
+
+`dicomtk` provides a complete medical image visualization pipeline built on native C++17 pixel extraction (`read_dicom_pixels()`), VOI LUT window/level presets (`dicom_window()`), composable `ggplot2` rendering (`plot_dicom()` / `ggdicom()`), an interactive `Shiny` viewer (`dicom_viewer()`), and 3D volumetric rendering (`render_volume()`).
+
+```{r setup}
+library(dicomtk)
+library(ggplot2)
+
+dcm_file <- system.file("extdata", "example.dcm", package = "dicomtk")
+```
+
+## Extracting Pixel Data & Applying Clinical Window Presets
+
+`read_dicom_pixels()` decodes 8-bit, 16-bit, or 32-bit monochrome and RGB pixel streams (including RLE-compressed frames) and applies Modality LUT rescaling (`RescaleSlope` and `RescaleIntercept`):
+
+```{r pixels}
+px <- read_dicom_pixels(dcm_file)
+dim(px)
+
+# Apply clinical window presets ("auto", "brain", "stroke", "subdural",
+# "lung", "mediastinum", "abdomen", "liver", "bone", "angio")
+win_brain <- dicom_window(px, preset = "brain")
+range(win_brain)
+```
+
+## Composable `ggplot2` Rendering (`plot_dicom()` & `ggdicom()`)
+
+```{r ggplot-render, fig.width = 5, fig.height = 5}
+plot_dicom(dcm_file, window = "auto", palette = "gray", title = "Radiological Grayscale")
+
+# Add custom ggplot2 annotations on top of ggdicom()
+ggdicom(dcm_file, palette = "inferno", annotate = FALSE) +
+  labs(title = "Inferno Colormap with Custom ggplot2 Layer")
+```
+
+## 3D Volumetric Multi-Planar Reconstruction (MPR) & Maximum Intensity Projection (MIP)
+
+```{r volume-render, fig.width = 7, fig.height = 3}
+series <- read_dicom_series(c(dcm_file, dcm_file, dcm_file))
+series
+
+# 3-Plane Orthogonal MPR
+render_volume(series, method = "mpr")
+
+# 3-Plane Maximum Intensity Projection (MIP)
+render_volume(series, method = "mip", palette = "viridis")
+```
+
+## Interactive Shiny Viewer
+
+In an interactive R session, call `dicom_viewer()` to launch a full multi-slice DICOM workstation in your browser or IDE viewer pane:
+
+```r
+if (interactive()) {
+  dicom_viewer(dcm_file)
+}
+```
