@@ -1,8 +1,13 @@
 # inst/shiny/viewer/app.R
-# Interactive Shiny DICOM Viewer for dicomtk
+# Interactive Shiny DICOM Workstation & AI Assistant for dicomtk
+
+ollama_models <- tryCatch(dicomtk::ollama_list_models()$name, error = function(e) character(0))
+if (length(ollama_models) == 0L) {
+  ollama_models <- c("llava:latest", "llama3.2:3b", "qwen3-vl:8b")
+}
 
 ui <- shiny::fluidPage(
-  shiny::titlePanel("dicomtk — Interactive DICOM Viewer"),
+  shiny::titlePanel("dicomtk — Interactive DICOM Workstation & AI Assistant"),
   shiny::sidebarLayout(
     shiny::sidebarPanel(
       width = 4,
@@ -39,11 +44,46 @@ ui <- shiny::fluidPage(
       shiny::selectInput(
         "palette",
         "Color Map",
-        choices = c("Radiological Gray" = "gray", "Viridis" = "viridis",
-                    "Inferno" = "inferno", "Magma" = "magma", "Plasma" = "plasma"),
+        choices = c(
+          "Radiological Gray" = "gray",
+          "Viridis" = "viridis",
+          "Inferno" = "inferno",
+          "Magma" = "magma",
+          "Plasma" = "plasma"
+        ),
         selected = "gray"
       ),
       shiny::checkboxInput("annotate", "Show HUD Overlay", value = TRUE),
+      shiny::hr(),
+      shiny::h4("AI / LLM Configuration"),
+      shiny::selectInput(
+        "llm_provider",
+        "LLM Provider",
+        choices = c(
+          "Local Ollama" = "ollama",
+          "OpenAI / Compatible API" = "openai",
+          "Anthropic Claude" = "anthropic",
+          "Offline Deterministic" = "offline"
+        ),
+        selected = "ollama"
+      ),
+      shiny::conditionalPanel(
+        condition = "input.llm_provider == 'ollama'",
+        shiny::selectizeInput(
+          "ollama_model",
+          "Ollama Model",
+          choices = ollama_models,
+          selected = ollama_models[1L],
+          options = list(create = TRUE)
+        )
+      ),
+      shiny::conditionalPanel(
+        condition = "input.llm_provider != 'ollama' && input.llm_provider != 'offline'",
+        shiny::textInput("cloud_model", "Model Name", value = "gpt-4o"),
+        shiny::textInput("cloud_base_url", "API Base URL (optional)", value = ""),
+        shiny::passwordInput("cloud_api_key", "API Key (leave blank for env var)", value = "")
+      ),
+      shiny::checkboxInput("llm_anonymize", "Auto-Anonymize PHI Before AI Calls", value = TRUE),
       shiny::hr(),
       shiny::textInput("tag_search", "Filter DICOM Header Tags", placeholder = "e.g. Patient, Modality, 0028")
     ),
@@ -55,8 +95,35 @@ ui <- shiny::fluidPage(
           shiny::plotOutput("dicom_plot", height = "560px")
         ),
         shiny::tabPanel(
+          "3D MPR / MIP View",
+          shiny::radioButtons(
+            "vol_method",
+            "3D Projection Mode",
+            choices = c("Orthogonal 3-Plane MPR" = "mpr", "Maximum Intensity Projection (MIP)" = "mip"),
+            selected = "mpr",
+            inline = TRUE
+          ),
+          shiny::plotOutput("volume_plot", height = "420px")
+        ),
+        shiny::tabPanel(
           "DICOM Header Inspector",
           shiny::tableOutput("header_table")
+        ),
+        shiny::tabPanel(
+          "AI Radiology Assistant",
+          shiny::br(),
+          shiny::fluidRow(
+            shiny::column(4, shiny::actionButton("btn_summarize", "Summarize Study Metadata", class = "btn-primary", width = "100%")),
+            shiny::column(4, shiny::actionButton("btn_describe", "Analyze Image (Vision)", class = "btn-info", width = "100%")),
+            shiny::column(4, shiny::actionButton("btn_report", "Generate Structured Report", class = "btn-success", width = "100%"))
+          ),
+          shiny::br(),
+          shiny::fluidRow(
+            shiny::column(9, shiny::textInput("ai_question", "Ask a Question About This Study/Image:", width = "100%", placeholder = "e.g. What is the slice thickness and tube current?")),
+            shiny::column(3, shiny::br(), shiny::actionButton("btn_ask", "Ask AI", width = "100%"))
+          ),
+          shiny::hr(),
+          shiny::verbatimTextOutput("ai_output")
         )
       )
     )
@@ -69,8 +136,10 @@ server <- function(input, output, session) {
     if (!is.null(up) && nrow(up) > 0) {
       return(up$datapath)
     }
-    init_path <- getOption("dicomtk.viewer.path",
-                           system.file("extdata", "example.dcm", package = "dicomtk"))
+    init_path <- getOption(
+      "dicomtk.viewer.path",
+      system.file("extdata", "example.dcm", package = "dicomtk")
+    )
     if (dir.exists(init_path)) {
       list.files(init_path, full.names = TRUE, recursive = TRUE)
     } else {
@@ -89,6 +158,25 @@ server <- function(input, output, session) {
     idx <- if (!is.null(input$slice_idx)) as.integer(input$slice_idx) else 1L
     idx <- max(1L, min(idx, length(fls)))
     fls[idx]
+  })
+
+  active_llm <- shiny::reactive({
+    prov <- input$llm_provider
+    if (identical(prov, "ollama")) {
+      dicomtk::dicom_llm("ollama", model = input$ollama_model, anonymize = input$llm_anonymize)
+    } else if (identical(prov, "offline")) {
+      dicomtk::dicom_llm("offline", anonymize = input$llm_anonymize)
+    } else {
+      burl <- if (nzchar(trimws(input$cloud_base_url))) trimws(input$cloud_base_url) else NULL
+      akey <- if (nzchar(trimws(input$cloud_api_key))) trimws(input$cloud_api_key) else NULL
+      dicomtk::dicom_llm(
+        provider = prov,
+        model = input$cloud_model,
+        base_url = burl,
+        api_key = akey,
+        anonymize = input$llm_anonymize
+      )
+    }
   })
 
   output$dicom_plot <- shiny::renderPlot({
@@ -112,6 +200,18 @@ server <- function(input, output, session) {
     }
   }, bg = "black")
 
+  output$volume_plot <- shiny::renderPlot({
+    fls <- active_files()
+    shiny::req(length(fls) > 0)
+    series <- dicomtk::read_dicom_series(fls)
+    win_arg <- if (identical(input$preset, "custom")) {
+      c(input$win_center, input$win_width)
+    } else {
+      input$preset
+    }
+    dicomtk::render_volume(series, method = input$vol_method, window = win_arg, palette = input$palette)
+  }, bg = "black")
+
   output$header_table <- shiny::renderTable({
     f <- current_file()
     shiny::req(file.exists(f))
@@ -125,6 +225,46 @@ server <- function(input, output, session) {
       hdr <- hdr[keep, , drop = FALSE]
     }
     hdr[, c("tag", "vr", "keyword", "name", "value"), drop = FALSE]
+  })
+
+  ai_text <- shiny::reactiveVal("Select an AI action above to analyze the active DICOM slice.")
+
+  shiny::observeEvent(input$btn_summarize, {
+    f <- current_file()
+    shiny::req(file.exists(f))
+    ai_text("Running LLM study metadata summary...")
+    res <- dicomtk::dicom_summarize(f, llm = active_llm())
+    ai_text(res)
+  })
+
+  shiny::observeEvent(input$btn_describe, {
+    f <- current_file()
+    shiny::req(file.exists(f))
+    ai_text("Running multimodal vision analysis...")
+    win_arg <- if (identical(input$preset, "custom")) c(input$win_center, input$win_width) else input$preset
+    res <- dicomtk::dicom_describe_image(f, llm = active_llm(), window = win_arg)
+    ai_text(res)
+  })
+
+  shiny::observeEvent(input$btn_report, {
+    f <- current_file()
+    shiny::req(file.exists(f))
+    ai_text("Generating structured radiology report...")
+    win_arg <- if (identical(input$preset, "custom")) c(input$win_center, input$win_width) else input$preset
+    rpt <- dicomtk::dicom_report(f, llm = active_llm(), window = win_arg)
+    ai_text(attr(rpt, "report_text"))
+  })
+
+  shiny::observeEvent(input$btn_ask, {
+    f <- current_file()
+    shiny::req(file.exists(f), nzchar(trimws(input$ai_question)))
+    ai_text("Querying LLM...")
+    res <- dicomtk::dicom_ask(f, question = input$ai_question, llm = active_llm())
+    ai_text(res)
+  })
+
+  output$ai_output <- shiny::renderText({
+    ai_text()
   })
 }
 

@@ -104,16 +104,24 @@ render_volume <- function(x,
     nr <- nrow(m)
     nc <- ncol(m)
     g <- expand.grid(r = seq_len(nr), c = seq_len(nc))
-    g$x <- (g$c - 1) / max(1, nc - 1)
-    g$y <- (nr - g$r) / max(1, nr - 1)
+    g$x <- (g$c - 0.5) / max(1, nc)
+    g$y <- (nr - g$r + 0.5) / max(1, nr)
+    g$w <- 1.0 / max(1, nc)
+    g$h <- 1.0 / max(1, nr)
     g$intensity <- as.double(m)
     g$plane <- factor(vname, levels = names(views))
     g
   })
   plot_df <- dplyr::bind_rows(dfs)
 
-  p <- ggplot2::ggplot(plot_df, ggplot2::aes(x = .data$x, y = .data$y, fill = .data$intensity)) +
-    ggplot2::geom_raster(interpolate = FALSE) +
+  p <- ggplot2::ggplot(plot_df, ggplot2::aes(
+    x = .data$x,
+    y = .data$y,
+    width = .data$w,
+    height = .data$h,
+    fill = .data$intensity
+  )) +
+    ggplot2::geom_tile() +
     ggplot2::facet_wrap(~ plane, nrow = 1L) +
     ggplot2::coord_fixed(ratio = 1.0, expand = FALSE) +
     ggplot2::labs(title = title_str) +
