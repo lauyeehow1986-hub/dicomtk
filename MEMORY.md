@@ -29,6 +29,9 @@
 - [x] Implemented `configure`, `configure.win`, `cleanup`, `src/Makevars.in`, and `src/Makevars.win`.
 - [x] Implemented C++17 / Rcpp bindings (`src/rcpp_dcmtk.h`, `src/rcpp_init.cpp`, `src/rcpp_read.cpp`, `src/rcpp_write.cpp`, `src/rcpp_image.cpp`, `src/rcpp_convert.cpp`, `src/rcpp_network.cpp`, `src/rcpp_sr_rt.cpp`) with zero compiler warnings.
 - [x] Implemented all R modules covering every DCMTK subsystem (`read.R`, `write.R`, `tags.R`, `anonymize.R`, `convert.R`, `compress.R`, `plot.R`, `viewer.R`, `volume.R`, `network.R`, `sr.R`, `rt_seg.R`, `llm-providers.R`, `llm-prompts.R`, `llm.R`, `legacy.R`, `utils.R`, `zzz.R`).
-- [x] Created interactive Shiny DICOM viewer (`inst/shiny/viewer/app.R`).
-- [x] Created all 5 vignettes (`getting-started.Rmd`, `image-visualization.Rmd`, `pacs-networking.Rmd`, `llm-integration.Rmd`, `anonymization.Rmd`).
-- [x] Passed all unit tests (`testthat`) and built/installed `dicomtk_0.1.0.tar.gz` cleanly.
+- [x] Created interactive 4-tab Shiny DICOM & AI Radiology workstation (`inst/shiny/viewer/app.R`).
+- [x] Created all 5 vignettes (`getting-started.Rmd`, `image-visualization.Rmd`, `pacs-networking.Rmd`, `llm-integration.Rmd`, `anonymization.Rmd`) and package hex logo (`man/figures/logo.png`).
+- [x] Passed all 93 unit tests (`testthat`) and passed `R CMD check` (`0 errors | 0 warnings | 0 notes`) on `dicomtk_0.1.0.tar.gz`.
+- [x] Verified live local Ollama integration (`http://localhost:11434`) with `llama3.2:3b`, `llava:7b`, and `amsaravi/medgemma-4b-it:q8`.
+- [x] Initialized Git repository on `main` and linked remote `origin` (`https://github.com/lauyeehow1986-hub/dcmtk_r.git`).
+
