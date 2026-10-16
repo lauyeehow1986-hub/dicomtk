@@ -9,8 +9,7 @@ dicom_describe_image(
   llm = dicom_llm("ollama"),
   frame = 1L,
   window = "auto",
-  prompt =
-    "Describe the anatomical structures, image quality, windowing, and any notable visual patterns in this medical image for research/educational review."
+  prompt = NULL
 )
 }
 \arguments{

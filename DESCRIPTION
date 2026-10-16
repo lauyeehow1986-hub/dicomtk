@@ -20,7 +20,8 @@ Description: A comprehensive R interface to the 'DICOM' Toolkit ('DCMTK'),
     analysis. The 'DCMTK' C++ library is bundled and compiled from source,
     requiring no external installation.
 License: GPL (>= 2)
-URL: https://github.com/lauyeehow1986-hub/dicomtk
+URL: https://github.com/lauyeehow1986-hub/dicomtk,
+    https://lauyeehow1986-hub.github.io/dicomtk/
 BugReports: https://github.com/lauyeehow1986-hub/dicomtk/issues
 Depends:
     R (>= 4.1.0)
@@ -59,4 +60,6 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 VignetteBuilder: knitr
 Config/testthat/edition: 3
+LazyData: true
 NeedsCompilation: yes
+

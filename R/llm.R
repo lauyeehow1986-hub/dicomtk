@@ -84,7 +84,13 @@ dicom_describe_image <- function(path,
                                  llm = dicom_llm("ollama"),
                                  frame = 1L,
                                  window = "auto",
-                                 prompt = "Describe the anatomical structures, image quality, windowing, and any notable visual patterns in this medical image for research/educational review.") {
+                                 prompt = NULL) {
+  if (is.null(prompt)) {
+    prompt <- paste(
+      "Describe the anatomical structures, image quality, windowing,",
+      "and any notable visual patterns in this medical image for research/educational review."
+    )
+  }
   if (length(path) != 1L || !file.exists(path)) {
     rlang::abort("`path` must be a single existing DICOM file path.")
   }

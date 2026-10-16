@@ -13,4 +13,8 @@
 ^src/.*\.so$
 ^src/.*\.dll$
 ^\.gitattributes$
+^cran-comments\.md$
+^pkgdown$
+
+
 

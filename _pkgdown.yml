@@ -81,10 +81,12 @@ reference:
     desc: "Connect DICOM studies and images to local Ollama and cloud OpenAI/Anthropic models."
     contents:
       - dicom_llm
+      - ollama_list_models
       - dicom_summarize
       - dicom_describe_image
       - dicom_report
       - dicom_ask
+
 
   - title: "Legacy Compatibility"
     desc: "Backward-compatible wrappers for original dcmtk R package functions."
