@@ -225,6 +225,10 @@ Rcpp::List cpp_dicom_echo(const std::string& host,
       Rcpp::_["elapsed_ms"] = NA_REAL
     );
   }
+#ifdef SO_NOSIGPIPE
+  int nosig = 1;
+  setsockopt(sock, SOL_SOCKET, SO_NOSIGPIPE, &nosig, sizeof(nosig));
+#endif
   struct timeval tv;
   tv.tv_sec = timeout_ms / 1000;
   tv.tv_usec = (timeout_ms % 1000) * 1000;
@@ -289,10 +293,25 @@ Rcpp::List cpp_dicom_echo(const std::string& host,
 
   int echo_read = recv(sock, reinterpret_cast<char*>(pdu_hdr), 6, 0);
   bool ok = (echo_read == 6 && pdu_hdr[0] == 0x04);
+  if (ok) {
+    uint32_t echo_len = (static_cast<uint32_t>(pdu_hdr[2]) << 24) |
+                        (static_cast<uint32_t>(pdu_hdr[3]) << 16) |
+                        (static_cast<uint32_t>(pdu_hdr[4]) << 8) |
+                        static_cast<uint32_t>(pdu_hdr[5]);
+    std::vector<uint8_t> echo_body(echo_len);
+    uint32_t egot = 0;
+    while (egot < echo_len) {
+      int r = recv(sock, reinterpret_cast<char*>(&echo_body[egot]), static_cast<int>(echo_len - egot), 0);
+      if (r <= 0) break;
+      egot += static_cast<uint32_t>(r);
+    }
+  }
 
-  // Send A-RELEASE-RQ
+  // Send A-RELEASE-RQ and drain A-RELEASE-RP
   std::vector<uint8_t> rel_rq = dicomtk::build_release_rq_pdu();
   send(sock, reinterpret_cast<const char*>(rel_rq.data()), static_cast<int>(rel_rq.size()), 0);
+  uint8_t rel_rp_buf[10];
+  recv(sock, reinterpret_cast<char*>(rel_rp_buf), 10, 0);
 
 #ifdef _WIN32
   closesocket(sock);
@@ -363,6 +382,14 @@ Rcpp::List cpp_dicom_echo_loopback_test(const std::string& called_ae = "ORTHANC"
       close(srv);
       return;
     }
+#ifdef SO_NOSIGPIPE
+    int nosig = 1;
+    setsockopt(conn, SOL_SOCKET, SO_NOSIGPIPE, &nosig, sizeof(nosig));
+#endif
+#endif
+    int send_flags = 0;
+#ifdef MSG_NOSIGNAL
+    send_flags = MSG_NOSIGNAL;
 #endif
     uint8_t hdr[6];
     // 1. Receive A-ASSOCIATE-RQ (0x01) and reply A-ASSOCIATE-AC (0x02)
@@ -379,8 +406,8 @@ Rcpp::List cpp_dicom_echo_loopback_test(const std::string& called_ae = "ORTHANC"
         got += static_cast<uint32_t>(r);
       }
       hdr[0] = 0x02; // A-ASSOCIATE-AC
-      send(conn, reinterpret_cast<const char*>(hdr), 6, 0);
-      send(conn, reinterpret_cast<const char*>(body.data()), static_cast<int>(body.size()), 0);
+      send(conn, reinterpret_cast<const char*>(hdr), 6, send_flags);
+      send(conn, reinterpret_cast<const char*>(body.data()), static_cast<int>(body.size()), send_flags);
 
       // 2. Receive P-DATA-TF C-ECHO-RQ (0x04) and reply C-ECHO-RSP (0x04)
       if (recv(conn, reinterpret_cast<char*>(hdr), 6, 0) == 6 && hdr[0] == 0x04) {
@@ -395,15 +422,15 @@ Rcpp::List cpp_dicom_echo_loopback_test(const std::string& called_ae = "ORTHANC"
           if (r <= 0) break;
           pgot += static_cast<uint32_t>(r);
         }
-        send(conn, reinterpret_cast<const char*>(hdr), 6, 0);
-        send(conn, reinterpret_cast<const char*>(pbody.data()), static_cast<int>(pbody.size()), 0);
+        send(conn, reinterpret_cast<const char*>(hdr), 6, send_flags);
+        send(conn, reinterpret_cast<const char*>(pbody.data()), static_cast<int>(pbody.size()), send_flags);
       }
 
       // 3. Receive A-RELEASE-RQ (0x05) and reply A-RELEASE-RP (0x06)
       uint8_t rel_buf[10];
       recv(conn, reinterpret_cast<char*>(rel_buf), 10, 0);
       uint8_t rel_rp[10] = {0x06, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00};
-      send(conn, reinterpret_cast<const char*>(rel_rp), 10, 0);
+      send(conn, reinterpret_cast<const char*>(rel_rp), 10, send_flags);
     }
 #ifdef _WIN32
     closesocket(conn);
