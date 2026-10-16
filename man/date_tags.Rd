@@ -8,7 +8,7 @@
 A \code{data.frame} with columns \code{tag} and \code{name}.
 }
 \usage{
-date_tags
+data(date_tags)
 }
 \description{
 Standard DICOM tags with Value Representation \code{DA} (Date).

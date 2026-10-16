@@ -8,7 +8,7 @@
 A \code{data.frame} with columns \code{tag} and \code{name}.
 }
 \usage{
-removal_tags
+data(removal_tags)
 }
 \description{
 Standard DICOM tags containing Protected Health Information (PHI) targeted

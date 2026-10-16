@@ -8,7 +8,7 @@
 A \code{data.frame} with columns \code{tag} and \code{name}.
 }
 \usage{
-datetime_tags
+data(datetime_tags)
 }
 \description{
 Standard DICOM tags with Value Representation \code{DT} (DateTime).
