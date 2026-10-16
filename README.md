@@ -3,14 +3,14 @@
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/lauyeehow1986-hub/dicomtk/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/lauyeehow1986-hub/dicomtk/actions/workflows/R-CMD-check.yaml)
 [![Sync Upstream DCMTK](https://github.com/lauyeehow1986-hub/dicomtk/actions/workflows/sync-upstream-dcmtk.yaml/badge.svg)](https://github.com/lauyeehow1986-hub/dicomtk/actions/workflows/sync-upstream-dcmtk.yaml)
-[![dicomtk status badge](https://lauyeehow1986-hub.r-universe.dev/dicomtk/badges/version)](https://lauyeehow1986-hub.r-universe.dev/dicomtk)
+[![R-universe](https://lauyeehow1986-hub.r-universe.dev/badges/:name)](https://lauyeehow1986-hub.r-universe.dev)
 <!-- badges: end -->
 
 `dicomtk` is a complete, modern rebuild of the R `dcmtk` wrapper, synchronized with **OFFIS DCMTK 3.7.1 (PS 3.6-2026d)** and powered by a **bundled C++17 / Rcpp engine** requiring **zero external installation**.
 
 ## Installation
 
-Install pre-compiled binaries or source directly from [R-Universe](https://lauyeehow1986-hub.r-universe.dev/dicomtk):
+Install pre-compiled binaries or source directly from [R-Universe](https://lauyeehow1986-hub.r-universe.dev):
 
 ```r
 install.packages(
