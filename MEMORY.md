@@ -31,7 +31,8 @@
 - [x] Implemented all R modules covering every DCMTK subsystem (`read.R`, `write.R`, `tags.R`, `anonymize.R`, `convert.R`, `compress.R`, `plot.R`, `viewer.R`, `volume.R`, `network.R`, `sr.R`, `rt_seg.R`, `llm-providers.R`, `llm-prompts.R`, `llm.R`, `legacy.R`, `utils.R`, `zzz.R`).
 - [x] Created interactive 4-tab Shiny DICOM & AI Radiology workstation (`inst/shiny/viewer/app.R`).
 - [x] Created all 5 vignettes (`getting-started.Rmd`, `image-visualization.Rmd`, `pacs-networking.Rmd`, `llm-integration.Rmd`, `anonymization.Rmd`) and package hex logo (`man/figures/logo.png`).
-- [x] Passed all 95 unit tests (`testthat`, including live DIMSE C-ECHO SCP/SCU TCP loopback round-trip verification) and passed `R CMD check` (`0 errors | 0 warnings | 0 notes`) on `dicomtk_0.1.0.tar.gz` across Windows, macOS, and Linux.
+- [x] 95 unit tests (`testthat`), including a live DIMSE C-ECHO SCP/SCU TCP loopback test (runs only when `NOT_CRAN=true`).
+  - Note: commit `75e2749` (the version submitted to CRAN) failed on `macos-latest` with `ignoring SIGPIPE signal` in `cpp_dicom_echo_loopback_test()` because the client closed the socket before draining `C-ECHO-RSP`/`A-RELEASE-RP`. Fixed in `94df4b2` (drain PDUs + `SO_NOSIGPIPE`/`MSG_NOSIGNAL`) and the test is now skipped on CRAN.
 - [x] Verified live local Ollama integration (`http://localhost:11434`) with `llama3.2:3b`, `llava:7b`, and `amsaravi/medgemma-4b-it:q8`.
 - [x] Initialized Git repository on `main` and pushed to `origin` (`https://github.com/lauyeehow1986-hub/dicomtk.git`).
 - [x] Built and deployed `pkgdown` documentation site to GitHub Pages (`https://lauyeehow1986-hub.github.io/dicomtk/`).
