@@ -241,4 +241,10 @@ test_that("Structured Reporting, Networking, Legacy aliases, and LLM integration
     dicom_tls_config(profile = "BCP195")
   expect_true(tls_conn$tls$enabled)
   expect_equal(tls_conn$tls$profile, "BCP195")
+
+  # Live DIMSE C-ECHO SCP/SCU loopback round-trip test
+  echo_loop <- dicomtk:::cpp_dicom_echo_loopback_test("ORTHANC", "DICOMTK")
+  expect_true(isTRUE(echo_loop$success))
+  expect_equal(echo_loop$status, "SUCCESS")
 })
+

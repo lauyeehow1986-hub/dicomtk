@@ -31,7 +31,12 @@
 - [x] Implemented all R modules covering every DCMTK subsystem (`read.R`, `write.R`, `tags.R`, `anonymize.R`, `convert.R`, `compress.R`, `plot.R`, `viewer.R`, `volume.R`, `network.R`, `sr.R`, `rt_seg.R`, `llm-providers.R`, `llm-prompts.R`, `llm.R`, `legacy.R`, `utils.R`, `zzz.R`).
 - [x] Created interactive 4-tab Shiny DICOM & AI Radiology workstation (`inst/shiny/viewer/app.R`).
 - [x] Created all 5 vignettes (`getting-started.Rmd`, `image-visualization.Rmd`, `pacs-networking.Rmd`, `llm-integration.Rmd`, `anonymization.Rmd`) and package hex logo (`man/figures/logo.png`).
-- [x] Passed all 93 unit tests (`testthat`) and passed `R CMD check` (`0 errors | 0 warnings | 0 notes`) on `dicomtk_0.1.0.tar.gz`.
+- [x] Passed all 95 unit tests (`testthat`, including live DIMSE C-ECHO SCP/SCU TCP loopback round-trip verification) and passed `R CMD check` (`0 errors | 0 warnings | 0 notes`) on `dicomtk_0.1.0.tar.gz` across Windows, macOS, and Linux.
 - [x] Verified live local Ollama integration (`http://localhost:11434`) with `llama3.2:3b`, `llava:7b`, and `amsaravi/medgemma-4b-it:q8`.
 - [x] Initialized Git repository on `main` and pushed to `origin` (`https://github.com/lauyeehow1986-hub/dicomtk.git`).
+- [x] Built and deployed `pkgdown` documentation site to GitHub Pages (`https://lauyeehow1986-hub.github.io/dicomtk/`).
+- [x] Published GitHub Release `v0.1.0` (`https://github.com/lauyeehow1986-hub/dicomtk/releases/tag/v0.1.0`) with source (`dicomtk_0.1.0.tar.gz`) and Windows binary (`dicomtk_0.1.0.zip`) assets.
+- [x] Configured automated weekly & on-demand upstream DCMTK synchronization (`.github/workflows/sync-upstream-dcmtk.yaml` + `dicom_sync_upstream()`).
+- [x] Published R-Universe package registry (`https://github.com/lauyeehow1986-hub/lauyeehow1986-hub.r-universe.dev`) for `install.packages("dicomtk", repos = "https://lauyeehow1986-hub.r-universe.dev")`.
+
 

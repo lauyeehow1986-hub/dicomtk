@@ -41,6 +41,10 @@ cpp_dicom_echo <- function(host, port, called_ae = "ANY-SCP", calling_ae = "DICO
     .Call(`_dicomtk_cpp_dicom_echo`, host, port, called_ae, calling_ae, timeout_ms)
 }
 
+cpp_dicom_echo_loopback_test <- function(called_ae = "ORTHANC", calling_ae = "DICOMTK") {
+    .Call(`_dicomtk_cpp_dicom_echo_loopback_test`, called_ae, calling_ae)
+}
+
 cpp_is_dicom <- function(path) {
     .Call(`_dicomtk_cpp_is_dicom`, path)
 }

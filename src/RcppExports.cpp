@@ -124,6 +124,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// cpp_dicom_echo_loopback_test
+Rcpp::List cpp_dicom_echo_loopback_test(const std::string& called_ae, const std::string& calling_ae);
+RcppExport SEXP _dicomtk_cpp_dicom_echo_loopback_test(SEXP called_aeSEXP, SEXP calling_aeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type called_ae(called_aeSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type calling_ae(calling_aeSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_dicom_echo_loopback_test(called_ae, calling_ae));
+    return rcpp_result_gen;
+END_RCPP
+}
 // cpp_is_dicom
 bool cpp_is_dicom(const std::string& path);
 RcppExport SEXP _dicomtk_cpp_is_dicom(SEXP pathSEXP) {
@@ -230,6 +242,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_dicomtk_cpp_dcmtk_version", (DL_FUNC) &_dicomtk_cpp_dcmtk_version, 0},
     {"_dicomtk_cpp_dict_lookup", (DL_FUNC) &_dicomtk_cpp_dict_lookup, 1},
     {"_dicomtk_cpp_dicom_echo", (DL_FUNC) &_dicomtk_cpp_dicom_echo, 5},
+    {"_dicomtk_cpp_dicom_echo_loopback_test", (DL_FUNC) &_dicomtk_cpp_dicom_echo_loopback_test, 2},
     {"_dicomtk_cpp_is_dicom", (DL_FUNC) &_dicomtk_cpp_is_dicom, 1},
     {"_dicomtk_cpp_read_dicom_header", (DL_FUNC) &_dicomtk_cpp_read_dicom_header, 3},
     {"_dicomtk_cpp_get_tag_values", (DL_FUNC) &_dicomtk_cpp_get_tag_values, 2},

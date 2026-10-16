@@ -1,4 +1,5 @@
 #include "rcpp_dcmtk.h"
+#include <thread>
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -6,6 +7,7 @@
 #else
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
 #include <netdb.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -309,3 +311,117 @@ Rcpp::List cpp_dicom_echo(const std::string& host,
     Rcpp::_["elapsed_ms"] = elapsed_ms
   );
 }
+
+// [[Rcpp::export]]
+Rcpp::List cpp_dicom_echo_loopback_test(const std::string& called_ae = "ORTHANC",
+                                        const std::string& calling_ae = "DICOMTK") {
+#ifdef _WIN32
+  WSADATA wsa;
+  WSAStartup(MAKEWORD(2, 2), &wsa);
+  SOCKET srv = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+#else
+  int srv = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+#endif
+  sockaddr_in addr;
+  std::memset(&addr, 0, sizeof(addr));
+  addr.sin_family = AF_INET;
+  addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+  addr.sin_port = 0; // Ephemeral port
+
+  if (bind(srv, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) != 0 ||
+      listen(srv, 1) != 0) {
+#ifdef _WIN32
+    closesocket(srv);
+    WSACleanup();
+#else
+    close(srv);
+#endif
+    return Rcpp::List::create(Rcpp::_["success"] = false, Rcpp::_["status"] = "BIND_FAILED");
+  }
+
+#ifdef _WIN32
+  int addrlen = sizeof(addr);
+#else
+  socklen_t addrlen = sizeof(addr);
+#endif
+  getsockname(srv, reinterpret_cast<sockaddr*>(&addr), &addrlen);
+  int bound_port = ntohs(addr.sin_port);
+
+  std::thread scp_thread([srv]() {
+    sockaddr_in cli_addr;
+#ifdef _WIN32
+    int cli_len = sizeof(cli_addr);
+    SOCKET conn = accept(srv, reinterpret_cast<sockaddr*>(&cli_addr), &cli_len);
+    if (conn == INVALID_SOCKET) {
+      closesocket(srv);
+      return;
+    }
+#else
+    socklen_t cli_len = sizeof(cli_addr);
+    int conn = accept(srv, reinterpret_cast<sockaddr*>(&cli_addr), &cli_len);
+    if (conn < 0) {
+      close(srv);
+      return;
+    }
+#endif
+    uint8_t hdr[6];
+    // 1. Receive A-ASSOCIATE-RQ (0x01) and reply A-ASSOCIATE-AC (0x02)
+    if (recv(conn, reinterpret_cast<char*>(hdr), 6, 0) == 6 && hdr[0] == 0x01) {
+      uint32_t len = (static_cast<uint32_t>(hdr[2]) << 24) |
+                     (static_cast<uint32_t>(hdr[3]) << 16) |
+                     (static_cast<uint32_t>(hdr[4]) << 8) |
+                     static_cast<uint32_t>(hdr[5]);
+      std::vector<uint8_t> body(len);
+      uint32_t got = 0;
+      while (got < len) {
+        int r = recv(conn, reinterpret_cast<char*>(&body[got]), static_cast<int>(len - got), 0);
+        if (r <= 0) break;
+        got += static_cast<uint32_t>(r);
+      }
+      hdr[0] = 0x02; // A-ASSOCIATE-AC
+      send(conn, reinterpret_cast<const char*>(hdr), 6, 0);
+      send(conn, reinterpret_cast<const char*>(body.data()), static_cast<int>(body.size()), 0);
+
+      // 2. Receive P-DATA-TF C-ECHO-RQ (0x04) and reply C-ECHO-RSP (0x04)
+      if (recv(conn, reinterpret_cast<char*>(hdr), 6, 0) == 6 && hdr[0] == 0x04) {
+        uint32_t plen = (static_cast<uint32_t>(hdr[2]) << 24) |
+                        (static_cast<uint32_t>(hdr[3]) << 16) |
+                        (static_cast<uint32_t>(hdr[4]) << 8) |
+                        static_cast<uint32_t>(hdr[5]);
+        std::vector<uint8_t> pbody(plen);
+        uint32_t pgot = 0;
+        while (pgot < plen) {
+          int r = recv(conn, reinterpret_cast<char*>(&pbody[pgot]), static_cast<int>(plen - pgot), 0);
+          if (r <= 0) break;
+          pgot += static_cast<uint32_t>(r);
+        }
+        send(conn, reinterpret_cast<const char*>(hdr), 6, 0);
+        send(conn, reinterpret_cast<const char*>(pbody.data()), static_cast<int>(pbody.size()), 0);
+      }
+
+      // 3. Receive A-RELEASE-RQ (0x05) and reply A-RELEASE-RP (0x06)
+      uint8_t rel_buf[10];
+      recv(conn, reinterpret_cast<char*>(rel_buf), 10, 0);
+      uint8_t rel_rp[10] = {0x06, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00};
+      send(conn, reinterpret_cast<const char*>(rel_rp), 10, 0);
+    }
+#ifdef _WIN32
+    closesocket(conn);
+    closesocket(srv);
+#else
+    close(conn);
+    close(srv);
+#endif
+  });
+
+  Rcpp::List res = cpp_dicom_echo("127.0.0.1", bound_port, called_ae, calling_ae, 3000);
+  if (scp_thread.joinable()) {
+    scp_thread.join();
+  }
+#ifdef _WIN32
+  WSACleanup();
+#endif
+  res["port"] = bound_port;
+  return res;
+}
+
