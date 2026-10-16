@@ -14,6 +14,8 @@ reference:
       - is_dicom
       - have_dcmtk
       - dicom_info
+      - dicom_sync_upstream
+
 
   - title: "DICOM Tags & Dictionary"
     desc: "Inspect, modify, and query the 5,354-tag DCMTK 3.7.1 data dictionary."

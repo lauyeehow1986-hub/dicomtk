@@ -130,10 +130,48 @@ cpp_lines <- c(
 writeLines(cpp_lines, file.path(pkg_dir, "src", "dcmtk_dict_builtin.h"), useBytes = TRUE)
 cat("Generated src/dcmtk_dict_builtin.h with", nrow(std_tags), "standard tags.\n")
 
-# Record DCMTK version metadata
+# Record DCMTK version metadata and upstream commit SHA
 ver_file <- file.path(upstream_dir, "VERSION")
 dcmtk_ver <- if (file.exists(ver_file)) trimws(readLines(ver_file, warn = FALSE)[1]) else "3.7.1"
-cat("DCMTK upstream version:", dcmtk_ver, "\n")
+upstream_sha <- tryCatch({
+  out <- system2("git", c("-C", shQuote(upstream_dir), "rev-parse", "HEAD"), stdout = TRUE, stderr = FALSE)
+  if (length(out) >= 1 && nzchar(trimws(out[1]))) trimws(out[1]) else "unknown"
+}, error = function(e) "unknown")
+
+meta_lines <- c(
+  paste0("version=", dcmtk_ver),
+  paste0("commit=", upstream_sha),
+  paste0("tags=", nrow(dicom_tags)),
+  paste0("standard_tags=", nrow(std_tags))
+)
+writeLines(meta_lines, file.path(pkg_dir, "inst", "extdata", "dcmtk_upstream_version.txt"), useBytes = TRUE)
+cat("DCMTK upstream version:", dcmtk_ver, "(commit:", substr(upstream_sha, 1, 8), ")\n")
+
+# Sync all 23 DCMTK module header directories into inst/include/dcmtk/
+cat("Syncing DCMTK C++ module headers into inst/include/dcmtk/...\n")
+inc_dst <- file.path(pkg_dir, "inst", "include", "dcmtk")
+dir.create(inc_dst, recursive = TRUE, showWarnings = FALSE)
+all_modules <- c(
+  "ofstd", "oflog", "oficonv", "dcmdata", "dcmimgle", "dcmimage",
+  "dcmjpeg", "dcmjpls", "dcmnet", "dcmsr", "dcmiod", "dcmfg",
+  "dcmrt", "dcmseg", "dcmpmap", "dcmtract", "dcmect", "dcmpstat",
+  "dcmqrdb", "dcmwlm", "dcmsign", "dcmtls", "cmr", "dcmloco"
+)
+for (m in all_modules) {
+  src_inc <- file.path(upstream_dir, m, "include", "dcmtk")
+  if (dir.exists(src_inc)) {
+    sub_dirs <- list.files(src_inc, full.names = TRUE)
+    for (sd in sub_dirs) {
+      file.copy(sd, inc_dst, recursive = TRUE, overwrite = TRUE)
+    }
+  }
+}
+cfg_inc <- file.path(upstream_dir, "config", "include", "dcmtk", "config")
+if (dir.exists(cfg_inc)) {
+  dir.create(file.path(inc_dst, "config"), recursive = TRUE, showWarnings = FALSE)
+  file.copy(list.files(cfg_inc, full.names = TRUE), file.path(inc_dst, "config"), recursive = TRUE, overwrite = TRUE)
+}
+cat("Synced DCMTK module headers into inst/include/dcmtk/.\n")
 
 # If --bundle-sources flag is passed, copy trimmed C++ module headers and sources into src/dcmtk
 if ("--bundle-sources" %in% args) {
@@ -152,13 +190,7 @@ if ("--bundle-sources" %in% args) {
     }
   }
   
-  modules <- c(
-    "ofstd", "oflog", "oficonv", "dcmdata", "dcmimgle", "dcmimage",
-    "dcmjpeg", "dcmjpls", "dcmnet", "dcmsr", "dcmiod", "dcmfg",
-    "dcmrt", "dcmseg", "dcmpmap", "dcmtract", "dcmect", "dcmpstat",
-    "dcmqrdb", "dcmwlm", "dcmsign", "dcmtls"
-  )
-  for (m in modules) {
+  for (m in all_modules) {
     src_m <- file.path(upstream_dir, m)
     if (!dir.exists(src_m)) next
     dst_m <- file.path(dst_root, m)
@@ -176,3 +208,4 @@ if ("--bundle-sources" %in% args) {
   }
   cat("Finished bundling trimmed DCMTK modules into src/dcmtk.\n")
 }
+

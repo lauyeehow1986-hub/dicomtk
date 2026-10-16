@@ -14,6 +14,7 @@ A comprehensive R interface to the 'DICOM' Toolkit ('DCMTK'), providing native R
 Useful links:
 \itemize{
   \item \url{https://github.com/lauyeehow1986-hub/dicomtk}
+  \item \url{https://lauyeehow1986-hub.github.io/dicomtk/}
   \item Report bugs at \url{https://github.com/lauyeehow1986-hub/dicomtk/issues}
 }
 

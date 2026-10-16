@@ -1,0 +1,57 @@
+name: Sync Upstream DCMTK
+
+on:
+  schedule:
+    # Runs automatically every Monday at 03:00 UTC to check DCMTK/dcmtk for updates
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+    inputs:
+      upstream_ref:
+        description: 'Upstream DCMTK git branch or tag to synchronize'
+        required: false
+        default: 'master'
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  sync-dcmtk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout dicomtk
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout upstream OFFIS DCMTK
+        uses: actions/checkout@v4
+        with:
+          repository: DCMTK/dcmtk
+          ref: ${{ inputs.upstream_ref || 'master' }}
+          path: ../dcmtk_upstream
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - name: Run tools/bundle_dcmtk.R to sync dictionary & C++ headers
+        run: |
+          Rscript tools/bundle_dcmtk.R ../dcmtk_upstream
+
+      - name: Check for upstream changes and commit
+        run: |
+          git status -s
+          if [ -n "$(git status --porcelain)" ]; then
+            UPSTREAM_SHA=$(git -C ../dcmtk_upstream rev-parse --short HEAD)
+            UPSTREAM_VER=$(head -n 1 ../dcmtk_upstream/VERSION | tr -d '[:space:]')
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add data/dicom_tags.rda inst/extdata/dicom.dic inst/extdata/dcmtk_upstream_version.txt src/dcmtk_dict_builtin.h inst/include/dcmtk
+            git commit -m "chore(dcmtk): auto-sync upstream DCMTK ${UPSTREAM_VER} (${UPSTREAM_SHA})"
+            git push origin HEAD:main
+            echo "Pushed upstream DCMTK sync commit (${UPSTREAM_VER} @ ${UPSTREAM_SHA})."
+          else
+            echo "Already in sync with upstream DCMTK/dcmtk."
+          fi
