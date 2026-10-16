@@ -1,4 +1,4 @@
-# dicomtk: Comprehensive 'DICOM' Toolkit for Medical Imaging in R
+# dicomtk: Comprehensive 'DICOM' Toolkit for Medical Imaging in R <img src="man/figures/logo.png" align="right" height="150" alt="dicomtk hex logo" />
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/lauyeehow1986-hub/dicomtk/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/lauyeehow1986-hub/dicomtk/actions/workflows/R-CMD-check.yaml)

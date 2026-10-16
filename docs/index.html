@@ -64,12 +64,29 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="section level1">
 <div class="page-header">
-<img src="logo.png" class="logo" alt=""><h1 id="dicomtk-comprehensive-dicom-toolkit-for-medical-imaging-in-r">dicomtk: Comprehensive ‘DICOM’ Toolkit for Medical Imaging in R<a class="anchor" aria-label="anchor" href="#dicomtk-comprehensive-dicom-toolkit-for-medical-imaging-in-r"></a>
+<img src="logo.png" class="logo" alt=""><h1 id="dicomtk-comprehensive-dicom-toolkit-for-medical-imaging-in-r-">dicomtk: Comprehensive ‘DICOM’ Toolkit for Medical Imaging in R <a class="anchor" aria-label="anchor" href="#dicomtk-comprehensive-dicom-toolkit-for-medical-imaging-in-r-"></a>
 </h1>
 </div>
 <!-- badges: start -->
 
 <p><code>dicomtk</code> is a complete, modern rebuild of the R <code>dcmtk</code> wrapper, synchronized with <strong>OFFIS DCMTK 3.7.1 (PS 3.6-2026d)</strong> and powered by a <strong>bundled C++17 / Rcpp engine</strong> requiring <strong>zero external installation</strong>.</p>
+<div class="section level2">
+<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
+</h2>
+<p>Install pre-compiled binaries or source directly from <a href="https://lauyeehow1986-hub.r-universe.dev/dicomtk" class="external-link">R-Universe</a>:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span></span>
+<span>  <span class="st">"dicomtk"</span>,</span>
+<span>  repos <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    <span class="st">"https://lauyeehow1986-hub.r-universe.dev"</span>,</span>
+<span>    <span class="st">"https://cloud.r-project.org"</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Or install the development version from GitHub:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"lauyeehow1986-hub/dicomtk"</span><span class="op">)</span></span></code></pre></div>
+</div>
 <div class="section level2">
 <h2 id="key-features">Key Features<a class="anchor" aria-label="anchor" href="#key-features"></a>
 </h2>
@@ -107,7 +124,7 @@
 <div class="section level2">
 <h2 id="quick-start">Quick Start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/lauyeehow1986-hub/dicomtk" class="external-link">dicomtk</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
 <span></span>
@@ -168,6 +185,8 @@
 <h2 data-toc-skip>Dev status</h2>
 <ul class="list-unstyled">
 <li><a href="https://github.com/lauyeehow1986-hub/dicomtk/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/lauyeehow1986-hub/dicomtk/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
+<li><a href="https://github.com/lauyeehow1986-hub/dicomtk/actions/workflows/sync-upstream-dcmtk.yaml" class="external-link"><img src="https://github.com/lauyeehow1986-hub/dicomtk/actions/workflows/sync-upstream-dcmtk.yaml/badge.svg" alt="Sync Upstream DCMTK"></a></li>
+<li><a href="https://lauyeehow1986-hub.r-universe.dev/dicomtk" class="external-link"><img src="https://lauyeehow1986-hub.r-universe.dev/dicomtk/badges/version" alt="dicomtk status badge"></a></li>
 </ul>
 </div>
 
