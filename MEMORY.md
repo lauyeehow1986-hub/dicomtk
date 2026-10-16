@@ -33,5 +33,5 @@
 - [x] Created all 5 vignettes (`getting-started.Rmd`, `image-visualization.Rmd`, `pacs-networking.Rmd`, `llm-integration.Rmd`, `anonymization.Rmd`) and package hex logo (`man/figures/logo.png`).
 - [x] Passed all 93 unit tests (`testthat`) and passed `R CMD check` (`0 errors | 0 warnings | 0 notes`) on `dicomtk_0.1.0.tar.gz`.
 - [x] Verified live local Ollama integration (`http://localhost:11434`) with `llama3.2:3b`, `llava:7b`, and `amsaravi/medgemma-4b-it:q8`.
-- [x] Initialized Git repository on `main` and linked remote `origin` (`https://github.com/lauyeehow1986-hub/dcmtk_r.git`).
+- [x] Initialized Git repository on `main` and pushed to `origin` (`https://github.com/lauyeehow1986-hub/dicomtk.git`).
 
