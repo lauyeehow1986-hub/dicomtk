@@ -71,20 +71,29 @@ dicom_to_png <- function(path,
 #' nii_file <- dicom_to_nifti(dcm_file)
 #' file.exists(nii_file)
 dicom_to_nifti <- function(path, out_path = NULL) {
-  series <- if (inherits(path, "dicom_series")) {
-    path
+  if (inherits(path, "dicom_series")) {
+    vol <- path$volume
+  } else if (is_dicom_volume(path)) {
+    vol <- path$voxels
+    attr(vol, "pixel_spacing") <- path$spacing[1:2]
+    attr(vol, "slice_thickness") <- path$spacing[3L]
   } else {
-    read_dicom_series(path)
+    dv <- read_dicom_volume(path, warn = FALSE)
+    vol <- dv$voxels
+    attr(vol, "pixel_spacing") <- dv$spacing[1:2]
+    attr(vol, "slice_thickness") <- dv$spacing[3L]
   }
 
   if (is.null(out_path)) {
     out_path <- tempfile(fileext = ".nii")
   }
 
-  vol <- series$volume
   dims <- dim(vol)
   if (length(dims) == 2L) {
     dims <- c(dims, 1L)
+    dim(vol) <- dims
+  } else if (length(dims) == 4L) {
+    dims <- c(dims[1L], dims[2L], dims[3L] * dims[4L])
     dim(vol) <- dims
   }
 

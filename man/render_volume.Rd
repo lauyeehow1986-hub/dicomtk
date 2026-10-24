@@ -13,8 +13,9 @@ render_volume(
 )
 }
 \arguments{
-\item{x}{A \code{"dicom_series"} object (from \code{\link[=read_dicom_series]{read_dicom_series()}}), a 3D numeric
-array \verb{[rows, cols, slices]}, or a directory/vector of DICOM file paths.}
+\item{x}{A \code{\link[=new_dicom_volume]{dicom_volume}} object (from
+\code{\link[=read_dicom_volume]{read_dicom_volume()}}), a \code{"dicom_series"} object, a 2D/3D numeric array,
+or a directory/vector of DICOM file paths.}
 
 \item{method}{Visualization mode: \code{"mpr"} (default), \code{"mip"}, or \code{"rgl"}.}
 
@@ -32,7 +33,9 @@ A \link[ggplot2:ggplot]{ggplot2::ggplot} object (for \code{"mpr"} and \code{"mip
 \code{rgl} scene ID (for \code{"rgl"}).
 }
 \description{
-Visualizes a 3D DICOM series (\code{"dicom_series"} or 3D numeric array) using:
+Visualizes a 3D DICOM volume (\code{\link[=new_dicom_volume]{dicom_volume}},
+\code{"dicom_series"}, 3D numeric array, or file/directory path) with true
+physical millimeter aspect ratios using:
 \itemize{
 \item \code{"mpr"}: 3-plane Orthogonal Multi-Planar Reconstruction (Axial, Coronal,
 Sagittal slices) via \code{ggplot2}.
@@ -43,8 +46,10 @@ to \code{"mip"} if \code{rgl} is not installed).
 }
 }
 \examples{
-dcm_file <- system.file("extdata", "example.dcm", package = "dicomtk")
-series <- read_dicom_series(c(dcm_file, dcm_file, dcm_file))
-render_volume(series, method = "mpr")
-render_volume(series, method = "mip")
+out_dir <- tempfile("render_vol_")
+dicom_synthesize(out_dir = out_dir, modality = "CT", dims = c(16L, 16L, 4L))
+vol <- read_dicom_volume(out_dir)
+render_volume(vol, method = "mpr")
+render_volume(vol, method = "mip")
+unlink(out_dir, recursive = TRUE)
 }

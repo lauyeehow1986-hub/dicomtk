@@ -17,13 +17,19 @@ is \code{TRUE}.}
 \value{
 An object of class \code{"dicom_series"} (a named list with elements
 \code{volume} (\verb{[rows, cols, slices]} numeric array), \code{metadata} (wide tibble of
-slice headers), and \code{dims} (integer vector)).
+sorted slice headers), \code{files} (sorted file paths), \code{dims} (named integer
+vector), and \code{affine} (4x4 DICOM LPS voxel-to-world matrix)).
 }
 \description{
-Scans a directory (or vector of DICOM file paths), reads slice headers and
-pixel data, orders slices spatially by \code{InstanceNumber} or
-\code{ImagePositionPatient}, and assembles a 3D numeric array \verb{[rows, cols, slices]}
-alongside a wide metadata tibble.
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}
+}
+\details{
+\code{read_dicom_series()} was soft-deprecated in \code{dicomtk} 0.2.0 in favor of
+\code{\link[=read_dicom_volume]{read_dicom_volume()}}, which returns a geometry-aware \code{\link[=new_dicom_volume]{dicom_volume}}
+object with full multi-frame and 4D support. \code{read_dicom_series()} now
+delegates slice ordering and patient-space affine reconstruction to
+\code{\link[=read_dicom_volume]{read_dicom_volume()}} so reversed or oblique slices are ordered accurately
+by \code{ImagePositionPatient} projected onto the slice normal.
 }
 \examples{
 dcm_file <- system.file("extdata", "example.dcm", package = "dicomtk")

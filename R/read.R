@@ -126,10 +126,14 @@ read_dicom_pixels <- function(path, frame = 0L, rescale = TRUE) {
 
 #' Read a Multi-Slice DICOM Series into a 3D Volume
 #'
-#' Scans a directory (or vector of DICOM file paths), reads slice headers and
-#' pixel data, orders slices spatially by `InstanceNumber` or
-#' `ImagePositionPatient`, and assembles a 3D numeric array `[rows, cols, slices]`
-#' alongside a wide metadata tibble.
+#' `r lifecycle::badge("deprecated")`
+#'
+#' `read_dicom_series()` was soft-deprecated in `dicomtk` 0.2.0 in favor of
+#' [read_dicom_volume()], which returns a geometry-aware [`dicom_volume`][new_dicom_volume]
+#' object with full multi-frame and 4D support. `read_dicom_series()` now
+#' delegates slice ordering and patient-space affine reconstruction to
+#' [read_dicom_volume()] so reversed or oblique slices are ordered accurately
+#' by `ImagePositionPatient` projected onto the slice normal.
 #'
 #' @param path Directory path or character vector of DICOM file paths.
 #' @param recursive Logical. Search subdirectories recursively. Default is `TRUE`.
@@ -138,51 +142,81 @@ read_dicom_pixels <- function(path, frame = 0L, rescale = TRUE) {
 #'
 #' @return An object of class `"dicom_series"` (a named list with elements
 #'   `volume` (`[rows, cols, slices]` numeric array), `metadata` (wide tibble of
-#'   slice headers), and `dims` (integer vector)).
+#'   sorted slice headers), `files` (sorted file paths), `dims` (named integer
+#'   vector), and `affine` (4x4 DICOM LPS voxel-to-world matrix)).
 #' @export
 #' @examples
 #' dcm_file <- system.file("extdata", "example.dcm", package = "dicomtk")
 #' series <- read_dicom_series(c(dcm_file, dcm_file))
 #' dim(series$volume)
 read_dicom_series <- function(path, recursive = TRUE, rescale = TRUE) {
-  files <- resolve_dicom_paths(path, recursive = recursive)
-  meta <- read_dicom(files, wide = TRUE)
+  lifecycle::deprecate_soft(
+    when = "0.2.0",
+    what = "read_dicom_series()",
+    with = "read_dicom_volume()"
+  )
 
-  if ("InstanceNumber" %in% names(meta)) {
-    inst_num <- suppressWarnings(as.numeric(meta$InstanceNumber))
-    ord <- order(inst_num, seq_along(files), na.last = TRUE)
-    meta <- meta[ord, , drop = FALSE]
-    files <- meta$file
+  dv <- read_dicom_volume(
+    path = path,
+    rescale = rescale,
+    recursive = recursive,
+    warn = FALSE
+  )
+
+  vol <- dv$voxels
+  vd <- dim(vol)
+  if (length(vd) == 4L) {
+    vol <- array(vol, dim = c(vd[1L], vd[2L], vd[3L] * vd[4L]))
+  }
+  d3 <- dim(vol)
+  meta <- dv$frame_meta
+
+  mod_attr <- if (!is.na(dv$modality) && nzchar(dv$modality)) dv$modality else "OT"
+  photo_attr <- if ("PhotometricInterpretation" %in% names(meta) && nrow(meta) > 0L &&
+                    !is.na(meta$PhotometricInterpretation[1L]) && nzchar(meta$PhotometricInterpretation[1L])) {
+    as.character(meta$PhotometricInterpretation[1L])
+  } else {
+    "MONOCHROME2"
+  }
+  wc_num <- if ("WindowCenter" %in% names(meta) && nrow(meta) > 0L) {
+    v <- vol_parse_ds(meta$WindowCenter[1L], expected_len = 1L)
+    if (is.null(v)) NA_real_ else v
+  } else {
+    NA_real_
+  }
+  ww_num <- if ("WindowWidth" %in% names(meta) && nrow(meta) > 0L) {
+    v <- vol_parse_ds(meta$WindowWidth[1L], expected_len = 1L)
+    if (is.null(v)) NA_real_ else v
+  } else {
+    NA_real_
+  }
+  slope_num <- if ("rescale_slope" %in% names(meta) && nrow(meta) > 0L) {
+    as.double(meta$rescale_slope[1L])
+  } else {
+    1.0
+  }
+  inter_num <- if ("rescale_intercept" %in% names(meta) && nrow(meta) > 0L) {
+    as.double(meta$rescale_intercept[1L])
+  } else {
+    0.0
   }
 
-  slices <- lapply(files, function(f) {
-    read_dicom_pixels(f, frame = 1L, rescale = rescale)
-  })
-
-  first_dim <- dim(slices[[1L]])
-  rows <- first_dim[1L]
-  cols <- first_dim[2L]
-  nslices <- length(slices)
-
-  vol <- array(0.0, dim = c(rows, cols, nslices))
-  for (i in seq_len(nslices)) {
-    d <- dim(slices[[i]])
-    if (d[1L] == rows && d[2L] == cols) {
-      vol[, , i] <- slices[[i]][, , drop = TRUE]
-    }
-  }
-
-  for (attr_nm in c("modality", "photometric", "window_center", "window_width",
-                    "pixel_spacing", "slice_thickness", "rescale_slope", "rescale_intercept")) {
-    attr(vol, attr_nm) <- attr(slices[[1L]], attr_nm)
-  }
+  attr(vol, "modality") <- mod_attr
+  attr(vol, "photometric") <- photo_attr
+  attr(vol, "window_center") <- wc_num
+  attr(vol, "window_width") <- ww_num
+  attr(vol, "pixel_spacing") <- dv$spacing[1:2]
+  attr(vol, "slice_thickness") <- dv$spacing[3L]
+  attr(vol, "rescale_slope") <- slope_num
+  attr(vol, "rescale_intercept") <- inter_num
 
   structure(
     list(
       volume = vol,
       metadata = meta,
-      files = files,
-      dims = c(rows = rows, cols = cols, slices = nslices)
+      files = if ("file" %in% names(meta)) as.character(meta$file) else character(0),
+      dims = c(rows = d3[1L], cols = d3[2L], slices = d3[3L]),
+      affine = dv$affine
     ),
     class = "dicom_series"
   )

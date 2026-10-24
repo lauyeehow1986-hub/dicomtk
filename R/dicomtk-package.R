@@ -10,6 +10,7 @@
 #' @importFrom tidyr pivot_wider pivot_longer
 #' @importFrom rlang abort warn inform caller_env .data
 #' @importFrom cli cli_alert_success cli_alert_info cli_alert_warning cli_alert_danger cli_progress_bar cli_progress_update cli_progress_done
+#' @importFrom lifecycle deprecate_soft
 #' @importFrom httr2 request req_url_path_append req_headers req_body_json req_perform resp_body_json
 #' @importFrom jsonlite toJSON fromJSON
 #' @importFrom grDevices gray as.raster

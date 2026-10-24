@@ -203,13 +203,13 @@ server <- function(input, output, session) {
   output$volume_plot <- shiny::renderPlot({
     fls <- active_files()
     shiny::req(length(fls) > 0)
-    series <- dicomtk::read_dicom_series(fls)
+    vol <- dicomtk::read_dicom_volume(fls, warn = FALSE)
     win_arg <- if (identical(input$preset, "custom")) {
       c(input$win_center, input$win_width)
     } else {
       input$preset
     }
-    dicomtk::render_volume(series, method = input$vol_method, window = win_arg, palette = input$palette)
+    dicomtk::render_volume(vol, method = input$vol_method, window = win_arg, palette = input$palette)
   }, bg = "black")
 
   output$header_table <- shiny::renderTable({

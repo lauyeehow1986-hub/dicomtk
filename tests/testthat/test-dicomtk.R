@@ -38,7 +38,10 @@ test_that("Reading DICOM headers, pixels, and series works in tidyverse format",
   expect_gt(nrow(px), 0L)
   expect_gt(ncol(px), 0L)
 
-  series <- read_dicom_series(c(dcm_file, dcm_file))
+  series <- withr::with_options(
+    list(lifecycle_verbosity = "quiet"),
+    read_dicom_series(c(dcm_file, dcm_file))
+  )
   expect_s3_class(series, "dicom_series")
   expect_equal(dim(series$volume)[3L], 2L)
 })
@@ -116,7 +119,10 @@ test_that("Visualization (ggplot2, window presets, 3D MPR/MIP) and conversions w
   p2 <- ggdicom(dcm_file, window = "brain", palette = "viridis")
   expect_s3_class(p2, "ggplot")
 
-  series <- read_dicom_series(c(dcm_file, dcm_file, dcm_file))
+  series <- withr::with_options(
+    list(lifecycle_verbosity = "quiet"),
+    read_dicom_series(c(dcm_file, dcm_file, dcm_file))
+  )
   p_mpr <- render_volume(series, method = "mpr")
   expect_s3_class(p_mpr, "ggplot")
   p_mip <- render_volume(series, method = "mip")
