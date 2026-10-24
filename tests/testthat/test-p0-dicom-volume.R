@@ -232,6 +232,29 @@ test_that("voxel_to_world() and world_to_voxel() support 0/1-based vectors and N
   expect_equal(world_mat0, world_mat, tolerance = 1e-12)
   expect_equal(world_to_voxel(vol, world_mat0, index_base = 0L), pts0, tolerance = 1e-10)
 
+  # 1 x 3 and 0 x 3 matrix inputs
+  mat_1x3 <- matrix(c(2.5, 4.0, 3.0), nrow = 1L, ncol = 3L)
+  w_1x3 <- voxel_to_world(vol, mat_1x3, index_base = 1L)
+  expect_true(is.matrix(w_1x3) && identical(dim(w_1x3), c(1L, 3L)))
+  expect_equal(world_to_voxel(vol, w_1x3, index_base = 1L), mat_1x3, tolerance = 1e-10)
+
+  mat_0x3 <- matrix(numeric(0), nrow = 0L, ncol = 3L)
+  w_0x3 <- voxel_to_world(vol, mat_0x3, index_base = 1L)
+  expect_true(is.matrix(w_0x3) && identical(dim(w_0x3), c(0L, 3L)))
+  v_0x3 <- world_to_voxel(vol, w_0x3, index_base = 1L)
+  expect_true(is.matrix(v_0x3) && identical(dim(v_0x3), c(0L, 3L)))
+
+  # Sub-micron microscopy spacing (5e-5 mm, det = 1.25e-13, rcond = 1) succeeds cleanly
+  aff_micro <- diag(c(5e-5, 5e-5, 5e-5, 1.0))
+  aff_micro[1:3, 4L] <- c(0.01, -0.02, 0.005)
+  vol_micro <- new_dicom_volume(array(1.0, dim = c(8L, 8L, 4L)), affine = aff_micro)
+  pt_micro <- c(3.5, 4.25, 2.0)
+  expect_equal(
+    unname(world_to_voxel(vol_micro, voxel_to_world(vol_micro, pt_micro))),
+    pt_micro,
+    tolerance = 1e-10
+  )
+
   # Singular affine aborts informatively in world_to_voxel()
   sing_aff <- vol$affine
   sing_aff[1:3, 3L] <- 0.0
@@ -239,7 +262,7 @@ test_that("voxel_to_world() and world_to_voxel() support 0/1-based vectors and N
   expect_error(world_to_voxel(vol_sing, c(0, 0, 0)), "singular|invert", ignore.case = TRUE)
 })
 
-test_that("Subsetting [.dicom_volume updates origin, strides, frame_meta, 4D frames, irregular spacing, and drop", {
+test_that("Subsetting [.dicom_volume defaults to drop = FALSE, updates geometry, and supports 4D & helper scopes", {
   fixture <- make_test_oblique_volume(dims = c(12L, 14L, 6L), gantry_tilt_deg = 8)
   vol <- fixture$vol
 
@@ -261,6 +284,18 @@ test_that("Subsetting [.dicom_volume updates origin, strides, frame_meta, 4D fra
     voxel_to_world(vol, c(5, 7, 4), index_base = 1L),
     tolerance = 1e-11
   )
+
+  # Helper function lexical scope evaluation
+  subset_in_helper <- function(v) {
+    r_idx <- 3:7
+    c_idx <- 4:9
+    s_idx <- 2:4
+    v[r_idx, c_idx, s_idx]
+  }
+  sub_scoped <- subset_in_helper(vol)
+  expect_true(is_dicom_volume(sub_scoped))
+  expect_equal(dim(sub_scoped), c(5L, 6L, 3L))
+  expect_identical(as.array(sub_scoped), as.array(vol)[3:7, 4:9, 2:4])
 
   # 2. Strided and reversed subset: vol[seq(2, 10, by = 2), , 5:2]
   sub_sr <- vol[seq(2, 10, by = 2), , 5:2]
@@ -303,37 +338,76 @@ test_that("Subsetting [.dicom_volume updates origin, strides, frame_meta, 4D fra
   expect_equal(as.array(sub_miss), as.array(sub_log))
   expect_equal(sub_miss$affine, sub_log$affine, tolerance = 1e-12)
 
-  # 5. 4D subsetting
-  arr4 <- array(seq_len(6 * 8 * 4 * 3), dim = c(6L, 8L, 4L, 3L))
-  vol4 <- new_dicom_volume(arr4, affine = vol$affine, modality = "MR")
-  sub4_frame <- vol4[, , , 2]
-  expect_true(is_dicom_volume(sub4_frame))
-  expect_equal(dim(sub4_frame), c(6L, 8L, 4L))
-  expect_identical(as.array(sub4_frame), arr4[, , , 2])
+  # 5. Default drop = FALSE preserves dicom_volume on single-slice selection & 2D modality crops
+  kept_slice <- vol[, , 2]
+  expect_true(is_dicom_volume(kept_slice))
+  expect_equal(dim(kept_slice), c(12L, 14L, 1L))
+  expect_equal(kept_slice$affine[, 3L], vol$affine[, 3L], tolerance = 1e-12)
+  expect_equal(kept_slice$spacing[3L], vol$spacing[3L], tolerance = 1e-12)
+  expect_equal(
+    kept_slice$affine[1:3, 4L],
+    unname(voxel_to_world(vol, c(1, 1, 2), index_base = 1L)),
+    tolerance = 1e-12
+  )
+  expect_equal(kept_slice$frame_meta$slice_id, 2L)
 
-  sub4_keep <- vol4[, , , 2, drop = FALSE]
-  expect_true(is_dicom_volume(sub4_keep))
-  expect_equal(dim(sub4_keep), c(6L, 8L, 4L, 1L))
+  dx_vol <- new_dicom_volume(matrix(seq_len(40), nrow = 5L, ncol = 8L), affine = vol$affine, modality = "DX")
+  dx_crop <- dx_vol[1:3, 2:4, ]
+  expect_true(is_dicom_volume(dx_crop))
+  expect_equal(dim(dx_crop), c(3L, 3L, 1L))
+  expect_equal(dx_crop$affine[, 3L], dx_vol$affine[, 3L], tolerance = 1e-12)
+  expect_equal(dx_crop$spacing[3L], dx_vol$spacing[3L], tolerance = 1e-12)
+  expect_equal(
+    dx_crop$affine[1:3, 4L],
+    unname(voxel_to_world(dx_vol, c(1, 2, 1), index_base = 1L)),
+    tolerance = 1e-12
+  )
+  expect_equal(dim(vol[, , ]), dim(vol))
 
-  sub4_multi <- vol4[2:5, , 2:4, 2:3]
-  expect_true(is_dicom_volume(sub4_multi))
-  expect_equal(dim(sub4_multi), c(4L, 8L, 3L, 2L))
-
-  # 6. drop = TRUE reduces dimensions < 3 -> returns base matrix/vector
-  dropped_slice <- vol[, , 2]
+  # Explicit drop = TRUE reduces dimensions < 3 -> returns base matrix/vector
+  dropped_slice <- vol[, , 2, drop = TRUE]
   expect_false(is_dicom_volume(dropped_slice))
   expect_true(is.matrix(dropped_slice))
   expect_equal(dim(dropped_slice), c(12L, 14L))
 
-  kept_slice <- vol[, , 2, drop = FALSE]
-  expect_true(is_dicom_volume(kept_slice))
-  expect_equal(dim(kept_slice), c(12L, 14L, 1L))
-  expect_equal(kept_slice$frame_meta$slice_id, 2L)
+  # 6. 4D subsetting (default drop = FALSE vs explicit drop = TRUE, plus 4D frame_meta modes)
+  arr4 <- array(seq_len(6 * 8 * 4 * 3), dim = c(6L, 8L, 4L, 3L))
+  meta_sf <- tibble::tibble(
+    slice_idx = rep(1:4, times = 3L),
+    frame_idx = rep(1:3, each = 4L)
+  )
+  vol4 <- new_dicom_volume(arr4, affine = vol$affine, frame_meta = meta_sf, modality = "MR")
+
+  sub4_keep <- vol4[, , , 2]
+  expect_true(is_dicom_volume(sub4_keep))
+  expect_equal(dim(sub4_keep), c(6L, 8L, 4L, 1L))
+  expect_equal(nrow(sub4_keep$frame_meta), 4L)
+  expect_equal(sub4_keep$frame_meta$frame_idx, rep(2L, 4L))
+  expect_equal(sub4_keep$frame_meta$slice_idx, 1:4)
+
+  sub4_frame <- vol4[, , , 2, drop = TRUE]
+  expect_true(is_dicom_volume(sub4_frame))
+  expect_equal(dim(sub4_frame), c(6L, 8L, 4L))
+  expect_identical(as.array(sub4_frame), arr4[, , , 2])
+
+  sub4_multi <- vol4[2:5, , 2:4, c(3L, 1L)]
+  expect_true(is_dicom_volume(sub4_multi))
+  expect_equal(dim(sub4_multi), c(4L, 8L, 3L, 2L))
+  expect_equal(sub4_multi$frame_meta$slice_idx, rep(2:4, times = 2L))
+  expect_equal(sub4_multi$frame_meta$frame_idx, rep(c(3L, 1L), each = 3L))
+
+  # 4D frame_meta with nrow == frames (temporal metadata per frame)
+  meta_f_only <- tibble::tibble(trigger_time = c(0, 33.3, 66.6))
+  vol4_fmeta <- new_dicom_volume(arr4, affine = vol$affine, frame_meta = meta_f_only, modality = "XA")
+  sub4_fmeta <- vol4_fmeta[, , , c(3L, 1L)]
+  expect_equal(sub4_fmeta$frame_meta$trigger_time, c(66.6, 0))
 })
 
-test_that("plot.dicom_volume() returns ggplot objects for 3D MPR/MIP and single-slice views", {
+test_that("plot.dicom_volume() returns ggplot objects and uses per-slice WindowCenter/WindowWidth", {
   fixture <- make_test_oblique_volume(dims = c(12L, 14L, 4L))
   vol <- fixture$vol
+  vol$frame_meta$WindowCenter <- c("40", "100", "450", "-600")
+  vol$frame_meta$WindowWidth <- c("80", "200", "1600", "1500")
 
   p_mpr <- plot(vol, method = "mpr")
   expect_s3_class(p_mpr, "ggplot")
@@ -341,14 +415,17 @@ test_that("plot.dicom_volume() returns ggplot objects for 3D MPR/MIP and single-
   p_mip <- plot(vol, method = "mip")
   expect_s3_class(p_mip, "ggplot")
 
-  p_slice <- plot(vol, slice = 2L)
+  p_slice <- plot(vol, slice = 3L)
   expect_s3_class(p_slice, "ggplot")
+  expect_match(p_slice$labels$subtitle, "WL: 450 WW: 1600")
 
-  vol_1slice <- vol[, , 2L, drop = FALSE]
+  vol_1slice <- vol[, , 4L]
   p_single <- plot(vol_1slice)
   expect_s3_class(p_single, "ggplot")
+  expect_match(p_single$labels$subtitle, "WL: -600 WW: 1500")
 
   expect_error(plot(vol, slice = 99L), "slice")
+  expect_no_warning(expect_error(plot(vol, slice = 3e9), "slice"))
 })
 
 test_that("Internal provenance helpers and subscript/transform validation guard edge cases", {
@@ -378,5 +455,10 @@ test_that("Internal provenance helpers and subscript/transform validation guard 
   expect_error(voxel_to_world(vol, c(1, 2, 3), index_base = 2L), "index_base")
   expect_error(world_to_voxel(vol, matrix(1:4, nrow = 2L, ncol = 2L)), "3 columns")
   expect_error(vol[, , 99L], "out of bounds")
+  expect_no_warning(expect_error(vol[, , 3e9], "out of bounds"))
   expect_error(vol[, , c(-1L, 2L)], "positive and negative")
+
+  vol4 <- new_dicom_volume(array(1.0, dim = c(4L, 4L, 2L, 3L)), affine = vol$affine)
+  expect_no_warning(expect_error(plot(vol4, frame = Inf), "frame"))
+  expect_no_warning(expect_error(plot(vol4, frame = 3e9), "frame"))
 })

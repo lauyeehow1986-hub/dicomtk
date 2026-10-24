@@ -4,20 +4,24 @@
 \alias{[.dicom_volume}
 \title{Subset a \code{dicom_volume} While Preserving World Geometry}
 \usage{
-\method{[}{dicom_volume}(x, ..., drop = TRUE)
+\method{[}{dicom_volume}(x, ..., drop = FALSE)
 }
 \arguments{
 \item{x}{A \code{dicom_volume} object.}
 
 \item{...}{Row, column, slice (and optional 4th-dimension frame) subscripts.}
 
-\item{drop}{Logical. If \code{TRUE} (default) and subsetting reduces the spatial
-dimensions below 3, returns the dropped base R matrix or vector. When
-subsetting a single temporal frame from a 4D volume (\code{vol[, , , 2]}),
-\code{drop = TRUE} drops the 4th dimension and returns a 3D \code{dicom_volume}.}
+\item{drop}{Logical. Defaults to \code{FALSE}, preserving the \code{"dicom_volume"}
+container and 4x4 affine even when subsetting selects a single slice
+(\code{vol[, , 2]}) or crops a single-slice 2D modality (\code{dx_vol[2:8, 3:10, ]}).
+If \code{TRUE} and subsetting reduces any spatial dimension to length 1, returns
+the dropped base R matrix or vector; when subsetting a single temporal
+frame from a 4D volume (\code{vol[, , , 2, drop = TRUE]}) with all 3 spatial
+dimensions \verb{> 1}, drops the 4th dimension and returns a 3D \code{dicom_volume}.}
 }
 \value{
-A \code{dicom_volume} object (when 3 or 4 dimensions remain), or a base R
+A \code{dicom_volume} object (always when \code{drop = FALSE}, or when 3–4
+spatial/temporal dimensions remain under \code{drop = TRUE}), or a base R
 array/matrix/vector when \code{drop = TRUE} reduces spatial dimensions \verb{< 3}.
 }
 \description{
@@ -33,4 +37,6 @@ aff <- diag(c(0.5, 0.5, 2.0, 1.0))
 vol <- new_dicom_volume(vox, affine = aff, modality = "CT")
 sub <- vol[2:8, 3:10, 2:5]
 dim(sub)
+single <- vol[, , 2]
+dim(single)
 }

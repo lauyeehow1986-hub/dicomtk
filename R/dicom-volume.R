@@ -360,8 +360,7 @@ resolve_axis_subscript <- function(quo, axis_len, axis_num, axis_names = NULL) {
   if (any(!is.finite(idx))) {
     cli::cli_abort("Subscript along dimension {axis_num} contains non-finite or {.val NA} values.")
   }
-  idx <- as.integer(idx)
-  if (any(idx < 0L) && any(idx > 0L)) {
+  if (any(idx < 0) && any(idx > 0)) {
     cli::cli_abort("Cannot mix positive and negative subscripts along dimension {axis_num}.")
   }
   if (any(abs(idx) > axis_len)) {
@@ -369,6 +368,7 @@ resolve_axis_subscript <- function(quo, axis_len, axis_num, axis_names = NULL) {
       "Subscript out of bounds along dimension {axis_num} (valid range: 1..{axis_len})."
     )
   }
+  idx <- as.integer(idx)
   seq_len(axis_len)[idx]
 }
 
@@ -382,12 +382,16 @@ resolve_axis_subscript <- function(quo, axis_len, axis_num, axis_names = NULL) {
 #'
 #' @param x A `dicom_volume` object.
 #' @param ... Row, column, slice (and optional 4th-dimension frame) subscripts.
-#' @param drop Logical. If `TRUE` (default) and subsetting reduces the spatial
-#'   dimensions below 3, returns the dropped base R matrix or vector. When
-#'   subsetting a single temporal frame from a 4D volume (`vol[, , , 2]`),
-#'   `drop = TRUE` drops the 4th dimension and returns a 3D `dicom_volume`.
+#' @param drop Logical. Defaults to `FALSE`, preserving the `"dicom_volume"`
+#'   container and 4x4 affine even when subsetting selects a single slice
+#'   (`vol[, , 2]`) or crops a single-slice 2D modality (`dx_vol[2:8, 3:10, ]`).
+#'   If `TRUE` and subsetting reduces any spatial dimension to length 1, returns
+#'   the dropped base R matrix or vector; when subsetting a single temporal
+#'   frame from a 4D volume (`vol[, , , 2, drop = TRUE]`) with all 3 spatial
+#'   dimensions `> 1`, drops the 4th dimension and returns a 3D `dicom_volume`.
 #'
-#' @return A `dicom_volume` object (when 3 or 4 dimensions remain), or a base R
+#' @return A `dicom_volume` object (always when `drop = FALSE`, or when 3–4
+#'   spatial/temporal dimensions remain under `drop = TRUE`), or a base R
 #'   array/matrix/vector when `drop = TRUE` reduces spatial dimensions `< 3`.
 #' @export
 #' @examples
@@ -396,8 +400,10 @@ resolve_axis_subscript <- function(quo, axis_len, axis_num, axis_names = NULL) {
 #' vol <- new_dicom_volume(vox, affine = aff, modality = "CT")
 #' sub <- vol[2:8, 3:10, 2:5]
 #' dim(sub)
-`[.dicom_volume` <- function(x, ..., drop = TRUE) {
-  quos <- rlang::enquos(...)
+#' single <- vol[, , 2]
+#' dim(single)
+`[.dicom_volume` <- function(x, ..., drop = FALSE) {
+  quos <- rlang::enquos(..., .ignore_empty = "none")
   dims <- dim(x$voxels)
   nd <- length(dims)
 
@@ -620,44 +626,57 @@ plot.dicom_volume <- function(x,
   }
 
   d <- dim(x$voxels)
+  f_idx <- 1L
   if (length(d) == 4L) {
-    if (!is.numeric(frame) || length(frame) != 1L || is.na(frame) ||
+    if (!is.numeric(frame) || length(frame) != 1L || !is.finite(frame) ||
         frame < 1 || frame > d[4L]) {
       cli::cli_abort("{.arg frame} must be an integer between 1 and {d[4L]}.")
     }
-    arr3 <- array(x$voxels[, , , as.integer(frame)], dim = d[1:3])
+    f_idx <- as.integer(frame)
+    arr3 <- array(x$voxels[, , , f_idx], dim = d[1:3])
   } else {
     arr3 <- x$voxels
+  }
+
+  use_single_slice <- !is.null(slice) || d[3L] == 1L
+  s_idx <- 1L
+  if (!is.null(slice)) {
+    if (!is.numeric(slice) || length(slice) != 1L || !is.finite(slice) ||
+        slice < 1 || slice > d[3L]) {
+      cli::cli_abort("{.arg slice} must be a single integer between 1 and {d[3L]}.")
+    }
+    s_idx <- as.integer(slice)
   }
 
   mod_val <- if (!is.na(x$modality) && nzchar(x$modality)) x$modality else NULL
   attr(arr3, "modality") <- mod_val
   attr(arr3, "pixel_spacing") <- x$spacing[1:2]
 
-  if (nrow(x$frame_meta) > 0L) {
+  n_meta <- nrow(x$frame_meta)
+  if (n_meta > 0L) {
+    meta_row <- if (use_single_slice && n_meta == d[3L]) {
+      s_idx
+    } else if (use_single_slice && length(d) == 4L && n_meta == d[3L] * d[4L]) {
+      s_idx + (f_idx - 1L) * d[3L]
+    } else {
+      1L
+    }
     if ("PhotometricInterpretation" %in% names(x$frame_meta)) {
-      attr(arr3, "photometric") <- as.character(x$frame_meta$PhotometricInterpretation[1L])
+      attr(arr3, "photometric") <- as.character(x$frame_meta$PhotometricInterpretation[meta_row])
     }
     if ("WindowCenter" %in% names(x$frame_meta)) {
-      wc_raw <- strsplit(as.character(x$frame_meta$WindowCenter[1L]), "\\\\", fixed = FALSE)[[1L]][1L]
+      wc_raw <- strsplit(as.character(x$frame_meta$WindowCenter[meta_row]), "\\\\", fixed = FALSE)[[1L]][1L]
       wc_num <- suppressWarnings(as.numeric(wc_raw))
       if (is.finite(wc_num)) attr(arr3, "window_center") <- wc_num
     }
     if ("WindowWidth" %in% names(x$frame_meta)) {
-      ww_raw <- strsplit(as.character(x$frame_meta$WindowWidth[1L]), "\\\\", fixed = FALSE)[[1L]][1L]
+      ww_raw <- strsplit(as.character(x$frame_meta$WindowWidth[meta_row]), "\\\\", fixed = FALSE)[[1L]][1L]
       ww_num <- suppressWarnings(as.numeric(ww_raw))
       if (is.finite(ww_num) && ww_num > 0) attr(arr3, "window_width") <- ww_num
     }
   }
 
-  if (!is.null(slice) || d[3L] == 1L) {
-    s_idx <- if (is.null(slice)) 1L else as.integer(slice)
-    if (!is.numeric(slice) && !is.null(slice)) {
-      cli::cli_abort("{.arg slice} must be a single integer slice index.")
-    }
-    if (length(s_idx) != 1L || is.na(s_idx) || s_idx < 1L || s_idx > d[3L]) {
-      cli::cli_abort("{.arg slice} must be between 1 and {d[3L]}.")
-    }
+  if (use_single_slice) {
     mat <- matrix(arr3[, , s_idx], nrow = d[1L], ncol = d[2L])
     for (nm in c("modality", "pixel_spacing", "photometric", "window_center", "window_width")) {
       attr(mat, nm) <- attr(arr3, nm)
@@ -837,7 +856,7 @@ world_to_voxel <- function(vol, xyz, index_base = 1L) {
   t_vec <- vol$affine[1:3, 4L]
 
   det_val <- det(m33)
-  if (!is.finite(det_val) || abs(det_val) < 1e-12 || rcond(m33) < 1e-14) {
+  if (!is.finite(det_val) || det_val == 0 || rcond(m33) < 1e-14) {
     cli::cli_abort(
       "Cannot invert singular {.field affine} matrix in {.fn world_to_voxel} (determinant = {signif(det_val, 4)})."
     )
