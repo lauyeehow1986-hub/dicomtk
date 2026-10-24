@@ -29,17 +29,25 @@ static bool is_string_vr_write(const std::string& vr) {
           vr == "UT");
 }
 
+static std::string normalize_explicit_vr(const std::string& vr_in) {
+  if (vr_in == "xs") return "US";
+  if (vr_in == "ox") return "OW";
+  if (vr_in == "up") return "UL";
+  return (vr_in.size() == 2) ? vr_in : "UN";
+}
+
 static std::vector<uint8_t> encode_element_bytes(const DcmElementRecord& el) {
+  const std::string vr = normalize_explicit_vr(el.vr);
+
   if (!el.raw_bytes.empty()) {
     std::vector<uint8_t> b = el.raw_bytes;
     if (b.size() % 2 == 1) {
-      b.push_back(el.vr == "UI" || el.vr == "OB" ? 0 : ' ');
+      b.push_back(vr == "UI" || !is_string_vr_write(vr) ? 0 : ' ');
     }
     return b;
   }
 
   std::vector<uint8_t> out;
-  const std::string& vr = el.vr;
   const std::string& s = el.value_str;
 
   if (is_string_vr_write(vr)) {
@@ -90,7 +98,7 @@ static std::vector<uint8_t> encode_element_bytes(const DcmElementRecord& el) {
     }
     return out;
   }
-  if (vr == "FL") {
+  if (vr == "FL" || vr == "OF") {
     std::stringstream ss(s);
     std::string tok;
     while (std::getline(ss, tok, '\\')) {
@@ -102,7 +110,7 @@ static std::vector<uint8_t> encode_element_bytes(const DcmElementRecord& el) {
     }
     return out;
   }
-  if (vr == "FD") {
+  if (vr == "FD" || vr == "OD") {
     std::stringstream ss(s);
     std::string tok;
     while (std::getline(ss, tok, '\\')) {
@@ -123,6 +131,12 @@ static std::vector<uint8_t> encode_element_bytes(const DcmElementRecord& el) {
       if (parse_tag_string(tok, g, e)) {
         append_u16_le(out, g);
         append_u16_le(out, e);
+      } else {
+        const DcmDictEntry* entry = lookup_dict_keyword(tok);
+        if (entry != nullptr) {
+          append_u16_le(out, entry->group);
+          append_u16_le(out, entry->element);
+        }
       }
     }
     return out;
@@ -138,7 +152,7 @@ static void write_explicit_element(std::vector<uint8_t>& buf,
                                    uint16_t element,
                                    const std::string& vr_in,
                                    const std::vector<uint8_t>& val_bytes) {
-  std::string vr = (vr_in.size() == 2) ? vr_in : "UN";
+  std::string vr = normalize_explicit_vr(vr_in);
   append_u16_le(buf, group);
   append_u16_le(buf, element);
   buf.push_back(static_cast<uint8_t>(vr[0]));
@@ -305,13 +319,6 @@ bool write_dicom_file(const DcmParsedFile& dcm, const std::string& out_path) {
   return ofs.good();
 }
 
-static std::string normalize_explicit_vr(const std::string& vr_in) {
-  if (vr_in == "xs") return "US";
-  if (vr_in == "ox") return "OW";
-  if (vr_in == "up") return "UL";
-  return vr_in;
-}
-
 static bool resolve_tag_or_keyword(const std::string& query,
                                    uint16_t& group,
                                    uint16_t& element,
@@ -386,6 +393,10 @@ static void upsert_sq_tag(DcmParsedFile& dcm,
 
 static std::vector<std::vector<DcmElementRecord>> r_list_to_sq_items(const Rcpp::List& seq_list,
                                                                      int depth = 1) {
+  if (depth > 32) {
+    Rcpp::stop("Sequence nesting in R list exceeds maximum depth (32).");
+  }
+
   std::vector<std::vector<DcmElementRecord>> items;
   items.reserve(seq_list.size());
 
@@ -429,7 +440,10 @@ static std::vector<std::vector<DcmElementRecord>> r_list_to_sq_items(const Rcpp:
       rec.vm = dict ? dict->vm : "1";
       rec.depth = depth;
 
-      if (TYPEOF(val_sexp) == VECSXP) {
+      if (Rf_isNull(val_sexp)) {
+        rec.vr = normalize_explicit_vr(dict ? dict->vr : "LO");
+        rec.value_str = "";
+      } else if (TYPEOF(val_sexp) == VECSXP) {
         rec.vr = "SQ";
         rec.value_str = "[Sequence]";
         rec.items = r_list_to_sq_items(Rcpp::List(val_sexp), depth + 1);
@@ -664,6 +678,9 @@ bool cpp_write_dicom_multiframe(const Rcpp::NumericVector& pixels,
                                 Rcpp::Nullable<Rcpp::List> shared_fg = R_NilValue,
                                 Rcpp::Nullable<Rcpp::List> per_frame_fg = R_NilValue,
                                 Rcpp::Nullable<Rcpp::List> extra_sequences = R_NilValue) {
+  if (meta_tags.size() != meta_values.size()) {
+    Rcpp::stop("`meta_tags` and `meta_values` must have the same length.");
+  }
   if (dims.size() < 2) {
     Rcpp::stop("`dims` must have at least 2 elements: c(rows, cols[, frames]).");
   }

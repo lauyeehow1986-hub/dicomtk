@@ -151,7 +151,7 @@ bool cpp_dcm_extract_pdf(const std::string& path, const std::string& out_path) {
 bool cpp_dcm_transcode_rle(const std::string& in_path,
                            const std::string& out_path,
                            bool compress = true) {
-  dicomtk::DcmParsedFile dcm = dicomtk::parse_dicom_file(in_path, false, 0);
+  dicomtk::DcmParsedFile dcm = dicomtk::parse_dicom_file(in_path, false, 16);
 
   int rows = 0, cols = 0, nframes = 1, samples = 1, bits_alloc = 16;
   for (const auto& el : dcm.elements) {

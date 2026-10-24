@@ -219,4 +219,153 @@ test_that("extra_sequences, empty sequences, and undefined-length SQ items round
   cv_um <- hdr_um[hdr_um$keyword == "CodeValue", , drop = FALSE]
   expect_equal(cv_um$value, c("CODE0", "CODE1"))
   expect_equal(cv_um$sequence_path, c("(0040,A043)[0]", "(0040,A043)[1]"))
+
+  # (a) include_sequences = FALSE returns 0 depth > 0 rows while still parsing tags after undefined-length SQ
+  hdr_top_only <- read_dicom(undef_dcm, include_sequences = FALSE)
+  expect_equal(sum(hdr_top_only$depth > 0L), 0L)
+  expect_true("AFTER" %in% hdr_top_only$value)
+
+  # Undefined-length item terminated directly by FFFE,E0DD (missing FFFE,E00D) rewinds cleanly
+  no_e00d_sq <- c(
+    u16(0x0040L), u16(0xA043L), charToRaw("SQ"), u16(0L), u32(-1L),
+    u16(0xFFFEL), u16(0xE000L), u32(-1L), item0_body,
+    seq_delim
+  )
+  no_e00d_dcm <- tempfile(fileext = ".dcm")
+  on.exit(unlink(no_e00d_dcm), add = TRUE)
+  writeBin(c(rep(as.raw(0x00), 128L), charToRaw("DICM"), meta_gl, ts_elem, mod_elem, no_e00d_sq, after_sq), no_e00d_dcm)
+  hdr_noe00d <- read_dicom(no_e00d_dcm, include_sequences = TRUE)
+  expect_equal(hdr_noe00d$value[hdr_noe00d$keyword == "CodeValue"], "CODE0")
+  expect_equal(hdr_noe00d$depth[hdr_noe00d$value == "AFTER"], 0L)
+})
+
+test_that("RLE transcoding, sequence pruning, AT VR, tag precedence, and nesting caps work", {
+  # (b) RLE compress -> decompress preserves nested functional group sequences
+  mf_dcm <- tempfile(fileext = ".dcm")
+  on.exit(unlink(mf_dcm), add = TRUE)
+
+  px <- array(seq_len(4 * 4 * 3), dim = c(4L, 4L, 3L))
+  shared <- list(
+    list(
+      PlaneOrientationSequence = list(list(ImageOrientationPatient = "1\\0\\0\\0\\1\\0")),
+      PixelMeasuresSequence = list(
+        list(
+          PixelSpacing = "0.5\\0.5",
+          SliceThickness = "2.5",
+          "(0009,1010)" = "SECRET_PRIVATE",
+          ManufacturerModelName = "TO_DELETE",
+          StationName = NULL
+        )
+      )
+    )
+  )
+  per_frame <- list(
+    list(PlanePositionSequence = list(list(ImagePositionPatient = "0\\0\\0"))),
+    list(PlanePositionSequence = list(list(ImagePositionPatient = "0\\0\\2.5"))),
+    list(PlanePositionSequence = list(list(ImagePositionPatient = "0\\0\\5.0")))
+  )
+
+  # Mismatched meta_tags / meta_values length must error
+  expect_error(
+    dicomtk:::cpp_write_dicom_multiframe(
+      pixels = as.numeric(px),
+      dims = c(4L, 4L, 3L),
+      out_path = mf_dcm,
+      meta_tags = c("Modality", "PatientName"),
+      meta_values = c("CT")
+    ),
+    "meta_tags"
+  )
+
+  ok <- dicomtk:::cpp_write_dicom_multiframe(
+    pixels = as.numeric(px),
+    dims = c(4L, 4L, 3L),
+    out_path = mf_dcm,
+    meta_tags = c("Modality", "SeriesInstanceUID", "FrameIncrementPointer"),
+    meta_values = c("CT", "1.2.840.999.100", "(0018,1063)"),
+    shared_fg = shared,
+    per_frame_fg = per_frame,
+    extra_sequences = list(
+      ReferencedSeriesSequence = list(
+        list(SeriesInstanceUID = "1.2.840.999.REF.SHADOW")
+      )
+    )
+  )
+  expect_true(ok)
+
+  # (d) AT VR round-trip (both tag string and keyword form) & dicom_tag_value top-level precedence
+  expect_equal(unname(dicom_tag_value(mf_dcm, "FrameIncrementPointer")), "(0018,1063)")
+  expect_equal(unname(dicom_tag_value(mf_dcm, "SeriesInstanceUID")), "1.2.840.999.100")
+
+  at_kw_dcm <- tempfile(fileext = ".dcm")
+  on.exit(unlink(at_kw_dcm), add = TRUE)
+  dicom_modify(mf_dcm, tags = list(FrameIncrementPointer = "FrameTime"), out_path = at_kw_dcm)
+  expect_equal(unname(dicom_tag_value(at_kw_dcm, "FrameIncrementPointer")), "(0018,1063)")
+
+  # (b) Compress to RLE and decompress back, verifying sequences survive both steps
+  rle_dcm <- dicom_compress(mf_dcm, method = "rle")
+  on.exit(unlink(rle_dcm), add = TRUE)
+  hdr_rle <- read_dicom(rle_dcm, include_sequences = TRUE)
+  expect_equal(
+    hdr_rle$value[hdr_rle$keyword == "ImagePositionPatient"],
+    c("0\\0\\0", "0\\0\\2.5", "0\\0\\5.0")
+  )
+  expect_equal(
+    hdr_rle$value[hdr_rle$keyword == "ImageOrientationPatient"],
+    "1\\0\\0\\0\\1\\0"
+  )
+
+  dec_dcm <- dicom_decompress(rle_dcm)
+  on.exit(unlink(dec_dcm), add = TRUE)
+  hdr_dec <- read_dicom(dec_dcm, include_sequences = TRUE)
+  expect_equal(
+    hdr_dec$value[hdr_dec$keyword == "ImagePositionPatient"],
+    c("0\\0\\0", "0\\0\\2.5", "0\\0\\5.0")
+  )
+  expect_equal(as.numeric(read_dicom_pixels(dec_dcm, frame = 0L, rescale = FALSE)), as.numeric(px))
+
+  # (c) dicom_modify delete_tags & erase_private prune elements inside nested sequences
+  pruned_dcm <- tempfile(fileext = ".dcm")
+  on.exit(unlink(pruned_dcm), add = TRUE)
+  dicom_modify(
+    mf_dcm,
+    delete_tags = "ManufacturerModelName",
+    erase_private = TRUE,
+    out_path = pruned_dcm
+  )
+  hdr_pruned <- read_dicom(pruned_dcm, include_sequences = TRUE)
+  expect_false("ManufacturerModelName" %in% hdr_pruned$keyword)
+  expect_false("(0009,1010)" %in% hdr_pruned$tag)
+  expect_equal(hdr_pruned$value[hdr_pruned$keyword == "PixelSpacing"], "0.5\\0.5")
+
+  # Hard recursion cap (> 64 nested undefined-length SQs) rejects malformed input safely
+  deep_dcm <- tempfile(fileext = ".dcm")
+  on.exit(unlink(deep_dcm), add = TRUE)
+  u16 <- function(x) as.raw(c(bitwAnd(x, 0xFFL), bitwAnd(bitwShiftR(x, 8L), 0xFFL)))
+  u32 <- function(x) {
+    if (identical(x, -1L)) return(as.raw(c(0xFF, 0xFF, 0xFF, 0xFF)))
+    as.raw(c(
+      bitwAnd(x, 0xFFL),
+      bitwAnd(bitwShiftR(x, 8L), 0xFFL),
+      bitwAnd(bitwShiftR(x, 16L), 0xFFL),
+      bitwAnd(bitwShiftR(x, 24L), 0xFFL)
+    ))
+  }
+  ts_bytes <- charToRaw("1.2.840.10008.1.2.1")
+  if (length(ts_bytes) %% 2L == 1L) ts_bytes <- c(ts_bytes, as.raw(0x00))
+  ts_elem <- c(u16(0x0002L), u16(0x0010L), charToRaw("UI"), u16(length(ts_bytes)), ts_bytes)
+  meta_gl <- c(u16(0x0002L), u16(0x0000L), charToRaw("UL"), u16(4L), u32(length(ts_elem)))
+
+  sq_open <- c(
+    u16(0x0040L), u16(0xA730L), charToRaw("SQ"), u16(0L), u32(-1L),
+    u16(0xFFFEL), u16(0xE000L), u32(-1L)
+  )
+  sq_close <- c(
+    u16(0xFFFEL), u16(0xE00DL), u32(0L),
+    u16(0xFFFEL), u16(0xE0DDL), u32(0L)
+  )
+  nested_payload <- c(rep(sq_open, 70L), rep(sq_close, 70L))
+  writeBin(c(rep(as.raw(0x00), 128L), charToRaw("DICM"), meta_gl, ts_elem, nested_payload), deep_dcm)
+
+  expect_error(read_dicom(deep_dcm, include_sequences = FALSE), "maximum allowed depth")
 })
