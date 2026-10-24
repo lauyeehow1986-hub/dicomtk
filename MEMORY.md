@@ -41,3 +41,10 @@
 - [x] Published R-Universe package registry (`https://github.com/lauyeehow1986-hub/lauyeehow1986-hub.r-universe.dev`) for `install.packages("dicomtk", repos = "https://lauyeehow1986-hub.r-universe.dev")`.
 
 
+
+### Next Phase Roadmap (validated 2026-10-24)
+- Design: `dev/plans/2026-10-24-roadmap-v0.2-v1.0-design.md` (plans live in `dev/` because `docs/` is pkgdown output).
+- Packages: `dicomtk` (CRAN core) + `dicomtk.ai` + `dicomtk.server` + `dicomtk.fl`; test lab in separate repo `dicomtk-lab` (docker-compose profiles: core, ai, ehr, ohdsi, ttp, fl).
+- Phases: P0 geometry/`dicom_volume` -> P1 de-id engine -> P2 SEG/RT/data prep -> P3 AI -> P4 interop -> P5 server -> P6 SMART/EHR -> P7 WSI/radiomics -> P8 federated.
+- Key custody: local | broker (server default) | ttp. `read_dicom_series()` kept as soft-deprecated wrapper over `read_dicom_volume()`.
+
