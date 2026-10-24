@@ -561,5 +561,79 @@ test_that("Input validation, extra_tags private tags, ENHCT reverse_order, and R
   expect_equal(parse_ds_vec(ipp_enh[1L]), c(0, 0, 4), tolerance = 1e-7)
   expect_equal(parse_ds_vec(ipp_enh[3L]), c(0, 0, 0), tolerance = 1e-7)
   expect_equal(p_enh_rev$truth_affine_lps[1:3, 4L], c(0, 0, 0), tolerance = 1e-12)
+
+  # Disk frame 1 of reversed ENHCT must hold canonical slice 3 pixels
+  raw_enh_rev <- read_dicom_pixels(p_enh_rev$files[1L], frame = 0L, rescale = FALSE)
+  expect_equal(as.numeric(raw_enh_rev[, , 1L] - 1024), as.numeric(p_enh_rev$truth_voxels[, , 3L]), tolerance = 1e-12)
+  expect_equal(as.numeric(raw_enh_rev[, , 3L] - 1024), as.numeric(p_enh_rev$truth_voxels[, , 1L]), tolerance = 1e-12)
+})
+
+test_that("Review fixes: tempdir rollback, DS slope quantization, scout SOPClassUID, cine IPP, single-arc 2.25 UID", {
+  # 1. No orphaned dicom_synth_* directories in tempdir() on validation or write failure
+  before_dirs <- list.files(tempdir(), pattern = "^dicom_synth_", full.names = TRUE)
+  expect_error(dicom_synthesize(orientation = "oblique", oblique_angles_deg = c(10, 20)))
+  expect_error(dicom_synthesize(extra_tags = list("unnamed_val")))
+  expect_error(dicom_synthesize(extra_tags = list(NotARealKeywordXYZ = "1")))
+  expect_error(dicom_synthesize(modality = "PT", pet_params = list(rescale_slope = 0)))
+  expect_error(dicom_synthesize(modality = "PT", pet_params = list(rescale_slope = -2)))
+  after_dirs <- list.files(tempdir(), pattern = "^dicom_synth_", full.names = TRUE)
+  expect_identical(setdiff(after_dirs, before_dirs), character(0))
+
+  # 2. Non-terminating rescale_slope (1/3) quantizes cleanly to DS with zero read-back drift
+  pt_slope_dir <- tempfile("synth_pt_third_")
+  on.exit(unlink(pt_slope_dir, recursive = TRUE), add = TRUE)
+  p_third <- dicom_synthesize(
+    out_dir = pt_slope_dir,
+    modality = "PT",
+    dims = c(8L, 8L, 2L),
+    pet_params = list(rescale_slope = 1 / 3, rescale_intercept = 1 / 7, activity_bqml = 5000),
+    phi = FALSE
+  )
+  px_third <- read_dicom_pixels(p_third$files[1L], rescale = TRUE)
+  expect_equal(as.numeric(px_third), as.numeric(p_third$truth_voxels[, , 1L]), tolerance = 1e-12)
+
+  # 3. mixed_series = TRUE scout SOPClassUID matches dicom_modality across modalities
+  expected_scout_sop <- list(
+    PT      = "1.2.840.10008.5.1.4.1.1.128",
+    MG      = "1.2.840.10008.5.1.4.1.1.1.2.1",
+    DBT     = "1.2.840.10008.5.1.4.1.1.1.2",
+    XA_CINE = "1.2.840.10008.5.1.4.1.1.12.1",
+    US_CINE = "1.2.840.10008.5.1.4.1.1.6.1"
+  )
+  for (m in names(expected_scout_sop)) {
+    m_dir <- tempfile(paste0("synth_scout_", m, "_"))
+    on.exit(unlink(m_dir, recursive = TRUE), add = TRUE)
+    pm <- dicom_synthesize(out_dir = m_dir, modality = m, dims = c(8L, 8L, 2L), mixed_series = TRUE, phi = FALSE)
+    expect_equal(unname(dicom_tag_value(pm$extra_files[1L], "SOPClassUID")), expected_scout_sop[[m]])
+  }
+
+  # 4. Cine reverse_order = TRUE keeps top-level ImagePositionPatient at canonical origin
+  cine_rev_dir <- tempfile("synth_cine_rev_")
+  on.exit(unlink(cine_rev_dir, recursive = TRUE), add = TRUE)
+  p_cine_rev <- dicom_synthesize(
+    out_dir = cine_rev_dir,
+    modality = "XA_CINE",
+    dims = c(8L, 8L, 3L),
+    origin = c(-12.5, 8.0, 3.5),
+    spacing = c(1.0, 1.0, 2.5),
+    reverse_order = TRUE,
+    phi = FALSE
+  )
+  expect_equal(
+    parse_ds_vec(dicom_tag_value(p_cine_rev$files[1L], "ImagePositionPatient")),
+    c(-12.5, 8.0, 3.5),
+    tolerance = 1e-7
+  )
+
+  # 5. Strict PS3.5 Section B.2 single-arc 2.25.<integer> UIDs & <=16-char DS formatting
+  uids_tv <- dicom_tag_value(
+    p_third$files[1L],
+    c("StudyInstanceUID", "SeriesInstanceUID", "SOPInstanceUID", "FrameOfReferenceUID")
+  )
+  for (u in uids_tv) {
+    expect_match(u, "^2\\.25\\.[1-9][0-9]*$")
+    expect_lte(nchar(u), 64L)
+  }
+  expect_lte(nchar(dicomtk:::synth_fmt_ds(-1.234567891234e100)), 16L)
 })
 

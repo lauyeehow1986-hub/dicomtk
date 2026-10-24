@@ -9,13 +9,17 @@ synth_or <- function(x, y) {
 synth_next_uid <- function(sub_id = 1L) {
   .synth_env$uid_seq <- .synth_env$uid_seq + 1L
   ts_ms <- sprintf("%.0f", as.numeric(Sys.time()) * 1000)
-  pid <- abs(as.integer(Sys.getpid()))
-  uid <- sprintf("2.25.%s%d.%d.%d", ts_ms, pid, .synth_env$uid_seq, as.integer(sub_id))
-  if (nchar(uid) > 64L) {
-    uid <- substr(uid, 1L, 64L)
-    uid <- sub("\\.$", "1", uid)
+  if (!nzchar(ts_ms) || substr(ts_ms, 1L, 1L) == "0") {
+    ts_ms <- paste0("1", ts_ms)
   }
-  uid
+  pid_str <- sprintf("%06d", abs(as.integer(Sys.getpid())) %% 1000000L)
+  seq_str <- sprintf("%07d", .synth_env$uid_seq %% 10000000L)
+  sub_str <- sprintf("%04d", abs(as.integer(sub_id)) %% 10000L)
+  int_part <- paste0(ts_ms, pid_str, seq_str, sub_str)
+  if (nchar(int_part) > 38L) {
+    int_part <- substr(int_part, 1L, 38L)
+  }
+  paste0("2.25.", int_part)
 }
 
 synth_cross3 <- function(a, b) {
@@ -35,8 +39,9 @@ synth_fmt_ds <- function(x) {
       return(sprintf("%.0f", round(val)))
     }
     s <- sprintf("%.10g", val)
-    if (nchar(s) > 16L) {
-      s <- sprintf("%.9g", val)
+    for (prec in 9:6) {
+      if (nchar(s) <= 16L) break
+      s <- sprintf(paste0("%.", prec, "g"), val)
     }
     s
   }, character(1L))
@@ -110,74 +115,89 @@ synth_modality_spec <- function(modality, voi_params = list()) {
     )
   ))
 
+  mg_classic_sop <- if (identical(pres_intent, "FOR PROCESSING")) {
+    "1.2.840.10008.5.1.4.1.1.1.2.1"
+  } else {
+    "1.2.840.10008.5.1.4.1.1.1.2"
+  }
+  dx_classic_sop <- if (identical(pres_intent, "FOR PROCESSING")) {
+    "1.2.840.10008.5.1.4.1.1.1.1.1"
+  } else {
+    "1.2.840.10008.5.1.4.1.1.1.1"
+  }
+
   switch(
     modality,
     CT = list(
       dicom_modality = "CT",
       sop_class_uid = "1.2.840.10008.5.1.4.1.1.2",
+      scout_sop_class_uid = "1.2.840.10008.5.1.4.1.1.2",
       kind = "classic"
     ),
     MR = list(
       dicom_modality = "MR",
       sop_class_uid = "1.2.840.10008.5.1.4.1.1.4",
+      scout_sop_class_uid = "1.2.840.10008.5.1.4.1.1.4",
       kind = "classic"
     ),
     PT = list(
       dicom_modality = "PT",
       sop_class_uid = "1.2.840.10008.5.1.4.1.1.128",
+      scout_sop_class_uid = "1.2.840.10008.5.1.4.1.1.128",
       kind = "classic"
     ),
     DX = list(
       dicom_modality = "DX",
-      sop_class_uid = if (identical(pres_intent, "FOR PROCESSING")) {
-        "1.2.840.10008.5.1.4.1.1.1.1.1"
-      } else {
-        "1.2.840.10008.5.1.4.1.1.1.1"
-      },
+      sop_class_uid = dx_classic_sop,
+      scout_sop_class_uid = dx_classic_sop,
       kind = "classic"
     ),
     MG = list(
       dicom_modality = "MG",
-      sop_class_uid = if (identical(pres_intent, "FOR PROCESSING")) {
-        "1.2.840.10008.5.1.4.1.1.1.2.1"
-      } else {
-        "1.2.840.10008.5.1.4.1.1.1.2"
-      },
+      sop_class_uid = mg_classic_sop,
+      scout_sop_class_uid = mg_classic_sop,
       kind = "classic"
     ),
     US = list(
       dicom_modality = "US",
       sop_class_uid = "1.2.840.10008.5.1.4.1.1.6.1",
+      scout_sop_class_uid = "1.2.840.10008.5.1.4.1.1.6.1",
       kind = "classic"
     ),
     XA = list(
       dicom_modality = "XA",
       sop_class_uid = "1.2.840.10008.5.1.4.1.1.12.1",
+      scout_sop_class_uid = "1.2.840.10008.5.1.4.1.1.12.1",
       kind = "classic"
     ),
     ENHCT = list(
       dicom_modality = "CT",
       sop_class_uid = "1.2.840.10008.5.1.4.1.1.2.1",
+      scout_sop_class_uid = "1.2.840.10008.5.1.4.1.1.2",
       kind = "enhanced"
     ),
     ENHMR = list(
       dicom_modality = "MR",
       sop_class_uid = "1.2.840.10008.5.1.4.1.1.4.1",
+      scout_sop_class_uid = "1.2.840.10008.5.1.4.1.1.4",
       kind = "enhanced"
     ),
     DBT = list(
       dicom_modality = "MG",
       sop_class_uid = "1.2.840.10008.5.1.4.1.1.13.1.3",
+      scout_sop_class_uid = mg_classic_sop,
       kind = "enhanced"
     ),
     XA_CINE = list(
       dicom_modality = "XA",
       sop_class_uid = "1.2.840.10008.5.1.4.1.1.12.1",
+      scout_sop_class_uid = "1.2.840.10008.5.1.4.1.1.12.1",
       kind = "cine"
     ),
     US_CINE = list(
       dicom_modality = "US",
       sop_class_uid = "1.2.840.10008.5.1.4.1.1.3.1",
+      scout_sop_class_uid = "1.2.840.10008.5.1.4.1.1.6.1",
       kind = "cine"
     )
   )
@@ -197,19 +217,40 @@ synth_build_voxels <- function(rows,
     core_val <- 120.0
     corners <- c(1000.0, 1500.0, 2000.0, 2500.0, 3000.0)
   } else if (modality == "PT") {
-    act <- as.double(synth_or(pet_params$activity_bqml, 10000.0))
-    intercept <- as.double(synth_or(
+    act_raw <- synth_or(pet_params$activity_bqml, 10000.0)
+    if (!is.numeric(act_raw) || length(act_raw) != 1L || !is.finite(act_raw)) {
+      cli::cli_abort("{.field activity_bqml} in {.arg pet_params} must be a single finite number.")
+    }
+    act <- as.double(act_raw)
+
+    inter_raw <- synth_or(
       pet_params$rescale_intercept,
       synth_or(pet_params$RescaleIntercept, 0.0)
-    ))
+    )
+    if (!is.numeric(inter_raw) || length(inter_raw) != 1L || !is.finite(inter_raw)) {
+      cli::cli_abort("{.field rescale_intercept} in {.arg pet_params} must be a single finite number.")
+    }
+    intercept <- as.double(inter_raw)
+
     user_slope <- synth_or(pet_params$rescale_slope, pet_params$RescaleSlope)
     if (!is.null(user_slope)) {
+      if (!is.numeric(user_slope) || length(user_slope) != 1L ||
+          !is.finite(user_slope) || user_slope <= 0) {
+        cli::cli_abort("{.field rescale_slope} in {.arg pet_params} must be a strictly positive finite number.")
+      }
       slope <- as.double(user_slope)
     } else if ((act + 5000.0 - intercept) > 60000.0) {
       slope <- (act + 5000.0 - intercept) / 30000.0
     } else {
       slope <- 1.0
     }
+
+    slope <- as.double(synth_fmt_ds(slope))
+    intercept <- as.double(synth_fmt_ds(intercept))
+    if (!is.finite(slope) || slope <= 0) {
+      cli::cli_abort("{.field rescale_slope} in {.arg pet_params} must serialize to a strictly positive DICOM DS value.")
+    }
+
     bg_val <- 100.0
     ellip_val <- act
     core_val <- act
@@ -223,6 +264,9 @@ synth_build_voxels <- function(rows,
     core_val <- 600.0
     corners <- c(1000.0, 1500.0, 2000.0, 2500.0, 3000.0)
   }
+
+  slope <- as.double(synth_fmt_ds(slope))
+  intercept <- as.double(synth_fmt_ds(intercept))
 
   voxels <- array(bg_val, dim = c(rows, cols, nslices))
 
@@ -360,6 +404,8 @@ synth_build_voxels <- function(rows,
 #'   - `extra_files`: character vector of extra `.dcm` files when `mixed_series = TRUE`
 #'   - `out_dir`: normalized output directory path
 #'   - `modality`: requested modality string
+#'   - `dims`: integer vector `c(rows, cols, slices)`
+#'   - `orientation`: canonical orientation string (`"axial"`, `"coronal"`, `"sagittal"`, or `"oblique"`)
 #'   - `truth_affine_lps`: 4x4 numeric LPS voxel-to-world affine matrix (0-based `[r, c, s, 1]`)
 #'   - `truth_voxels`: `[rows, cols, slices]` numeric array in rescaled units
 #'   - `direction`: list with `d_row`, `d_col`, and `normal` unit vectors in LPS
@@ -396,6 +442,9 @@ dicom_synthesize <- function(out_dir = tempfile("dicom_synth_"),
                              voi_params = list(),
                              extra_tags = list(),
                              seed = 42L) {
+  if (!is.character(out_dir) || length(out_dir) != 1L || is.na(out_dir) || !nzchar(out_dir)) {
+    cli::cli_abort("{.arg out_dir} must be a single non-empty directory path.")
+  }
   if (!is.character(modality) || length(modality) < 1L || is.na(modality[1L])) {
     cli::cli_abort("{.arg modality} must be a non-empty character string.")
   }
@@ -435,6 +484,12 @@ dicom_synthesize <- function(out_dir = tempfile("dicom_synth_"),
   }
   gantry_tilt_deg <- as.double(gantry_tilt_deg)
 
+  if (length(extra_tags) > 0L) {
+    if (is.null(names(extra_tags)) || any(!nzchar(names(extra_tags)))) {
+      cli::cli_abort("{.arg extra_tags} must be a named list of DICOM tags/keywords and values.")
+    }
+  }
+
   if (!is.null(seed)) {
     has_old_seed <- exists(".Random.seed", envir = globalenv(), inherits = FALSE)
     if (has_old_seed) {
@@ -449,11 +504,6 @@ dicom_synthesize <- function(out_dir = tempfile("dicom_synth_"),
       }
     }, add = TRUE)
   }
-
-  if (!dir.exists(out_dir)) {
-    dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
-  }
-  out_dir_norm <- normalizePath(out_dir, winslash = "/", mustWork = TRUE)
 
   # 1. Compute orthonormal direction cosines & canonical slice positions in LPS
   direction <- synth_direction_basis(orientation, oblique_angles_deg)
@@ -653,9 +703,6 @@ dicom_synthesize <- function(out_dir = tempfile("dicom_synth_"),
 
   # Apply user extra_tags overrides if provided
   if (length(extra_tags) > 0L) {
-    if (is.null(names(extra_tags)) || any(!nzchar(names(extra_tags)))) {
-      cli::cli_abort("{.arg extra_tags} must be a named list of DICOM tags/keywords and values.")
-    }
     for (nm in names(extra_tags)) {
       common_tags[[nm]] <- as.character(extra_tags[[nm]])
     }
@@ -667,6 +714,19 @@ dicom_synthesize <- function(out_dir = tempfile("dicom_synth_"),
 
   disk_order <- if (isTRUE(reverse_order)) rev(seq_len(nslices)) else seq_len(nslices)
   written_files <- character(0)
+
+  # Create output directory only after all validations succeed, with rollback on failure
+  dir_existed <- dir.exists(out_dir)
+  wrote_ok <- FALSE
+  if (!dir_existed) {
+    dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
+  }
+  on.exit({
+    if (!wrote_ok && !dir_existed && dir.exists(out_dir)) {
+      unlink(out_dir, recursive = TRUE)
+    }
+  }, add = TRUE)
+  out_dir_norm <- normalizePath(out_dir, winslash = "/", mustWork = TRUE)
 
   # 4. Write DICOM files according to IOD kind
   if (spec$kind == "classic") {
@@ -757,7 +817,7 @@ dicom_synthesize <- function(out_dir = tempfile("dicom_synth_"),
     cine_tags$NumberOfFrames <- as.character(nslices)
     cine_tags$FrameTime <- "33.3333"
     cine_tags$FrameIncrementPointer <- "(0018,1063)"
-    cine_tags$ImagePositionPatient <- synth_fmt_ds(slice_positions_lps[disk_order[1L], ])
+    cine_tags$ImagePositionPatient <- synth_fmt_ds(slice_positions_lps[1L, ])
     cine_tags$ImageOrientationPatient <- iop_str
     cine_tags$PixelSpacing <- ps_str
     cine_tags$SliceThickness <- st_str
@@ -793,11 +853,7 @@ dicom_synthesize <- function(out_dir = tempfile("dicom_synth_"),
       synth_fmt_ds(c(0, 1, 0, 0, 0, -1))
     }
     scout_tags <- common_tags
-    scout_tags$SOPClassUID <- if (spec$dicom_modality == "MR") {
-      "1.2.840.10008.5.1.4.1.1.4"
-    } else {
-      "1.2.840.10008.5.1.4.1.1.2"
-    }
+    scout_tags$SOPClassUID <- spec$scout_sop_class_uid
     scout_tags$SOPInstanceUID <- synth_next_uid(999L)
     scout_tags$InstanceNumber <- "999"
     scout_tags$ImageType <- "ORIGINAL\\PRIMARY\\LOCALIZER"
@@ -821,6 +877,8 @@ dicom_synthesize <- function(out_dir = tempfile("dicom_synth_"),
     }
     extra_files <- normalizePath(scout_file, winslash = "/", mustWork = TRUE)
   }
+
+  wrote_ok <- TRUE
 
   phantom <- structure(
     list(

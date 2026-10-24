@@ -95,6 +95,8 @@ Invisibly returns an S3 object of class \code{"dicom_phantom"} containing:
 \item \code{extra_files}: character vector of extra \code{.dcm} files when \code{mixed_series = TRUE}
 \item \code{out_dir}: normalized output directory path
 \item \code{modality}: requested modality string
+\item \code{dims}: integer vector \code{c(rows, cols, slices)}
+\item \code{orientation}: canonical orientation string (\code{"axial"}, \code{"coronal"}, \code{"sagittal"}, or \code{"oblique"})
 \item \code{truth_affine_lps}: 4x4 numeric LPS voxel-to-world affine matrix (0-based \verb{[r, c, s, 1]})
 \item \code{truth_voxels}: \verb{[rows, cols, slices]} numeric array in rescaled units
 \item \code{direction}: list with \code{d_row}, \code{d_col}, and \code{normal} unit vectors in LPS
