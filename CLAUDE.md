@@ -91,6 +91,8 @@ dicomtk/
 
 ## Common Commands
 
+Worktree directory preference: `.worktrees/` (ignored in `.gitignore` and `.Rbuildignore`).
+
 ```bash
 # Generate RcppExports and roxygen documentation
 Rscript -e "Rcpp::compileAttributes(); roxygen2::roxygenise()"

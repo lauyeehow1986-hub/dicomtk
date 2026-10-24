@@ -22,3 +22,7 @@ src/dcmtk-build/
 *.tar.gz
 *.zip
 *.tgz
+
+# Git worktrees
+.worktrees/
+
