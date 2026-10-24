@@ -214,6 +214,93 @@ static void parse_dataset_range(const std::vector<uint8_t>& buf,
                                 std::size_t& pos,
                                 std::size_t end_pos,
                                 DcmParsedFile& out,
+                                std::vector<DcmElementRecord>* current_item_elems,
+                                bool stop_at_pixels,
+                                int depth,
+                                int max_depth,
+                                const std::string& seq_prefix);
+
+static void parse_sequence_items(const std::vector<uint8_t>& buf,
+                                 std::size_t& pos,
+                                 std::size_t sq_end,
+                                 DcmParsedFile& out,
+                                 std::vector<std::vector<DcmElementRecord>>& sq_items,
+                                 bool stop_at_pixels,
+                                 int depth,
+                                 int max_depth,
+                                 const std::string& seq_tag_prefix) {
+  int item_idx = 0;
+  bool big_endian = out.big_endian;
+
+  while (pos + 8 <= sq_end && pos + 8 <= buf.size()) {
+    uint16_t ig = read_u16(&buf[pos], big_endian);
+    uint16_t ie = read_u16(&buf[pos + 2], big_endian);
+
+    if (ig == 0xFFFE) {
+      uint32_t ilen = read_u32(&buf[pos + 4], big_endian);
+      pos += 8;
+
+      if (ie == 0xE0DD) {
+        // Sequence Delimitation Item — end of undefined-length sequence
+        break;
+      }
+      if (ie == 0xE00D) {
+        // Stray Item Delimitation Item at sequence level
+        continue;
+      }
+      if (ie == 0xE000) {
+        std::string item_prefix = seq_tag_prefix + "[" + std::to_string(item_idx++) + "]";
+        std::vector<DcmElementRecord> item_elems;
+
+        if (ilen == 0xFFFFFFFFU) {
+          parse_dataset_range(
+              buf, pos, sq_end, out,
+              (depth < max_depth) ? &item_elems : nullptr,
+              stop_at_pixels, depth + 1, std::max(max_depth, depth + 1), item_prefix);
+        } else {
+          std::size_t bound = std::min<std::size_t>(sq_end, buf.size());
+          std::size_t item_end = (ilen <= bound - pos) ? (pos + ilen) : bound;
+          if (depth < max_depth && ilen > 0) {
+            parse_dataset_range(
+                buf, pos, item_end, out, &item_elems,
+                stop_at_pixels, depth + 1, max_depth, item_prefix);
+          }
+          pos = item_end;
+        }
+
+        if (depth < max_depth) {
+          sq_items.push_back(std::move(item_elems));
+        }
+        continue;
+      }
+
+      if (ilen != 0xFFFFFFFFU) {
+        std::size_t bound = std::min<std::size_t>(sq_end, buf.size());
+        pos = (ilen <= bound - pos) ? (pos + ilen) : bound;
+      }
+      continue;
+    }
+
+    // Fallback for non-standard sequence lacking (FFFE,E000) item wrapper
+    std::string item_prefix = seq_tag_prefix + "[" + std::to_string(item_idx++) + "]";
+    std::vector<DcmElementRecord> item_elems;
+    if (depth < max_depth) {
+      parse_dataset_range(
+          buf, pos, sq_end, out, &item_elems,
+          stop_at_pixels, depth + 1, max_depth, item_prefix);
+      sq_items.push_back(std::move(item_elems));
+    } else {
+      pos = sq_end;
+    }
+    break;
+  }
+}
+
+static void parse_dataset_range(const std::vector<uint8_t>& buf,
+                                std::size_t& pos,
+                                std::size_t end_pos,
+                                DcmParsedFile& out,
+                                std::vector<DcmElementRecord>* current_item_elems,
                                 bool stop_at_pixels,
                                 int depth,
                                 int max_depth,
@@ -239,10 +326,11 @@ static void parse_dataset_range(const std::vector<uint8_t>& buf,
       }
       if (element == 0xE000) {
         if (item_len == 0xFFFFFFFFU) {
-          parse_dataset_range(buf, pos, end_pos, out, stop_at_pixels, depth, max_depth, seq_prefix);
+          parse_dataset_range(buf, pos, end_pos, out, current_item_elems, stop_at_pixels, depth, max_depth, seq_prefix);
         } else {
-          std::size_t item_end = std::min<std::size_t>(pos + item_len, buf.size());
-          parse_dataset_range(buf, pos, item_end, out, stop_at_pixels, depth, max_depth, seq_prefix);
+          std::size_t bound = std::min<std::size_t>(end_pos, buf.size());
+          std::size_t item_end = (item_len <= bound - pos) ? (pos + item_len) : bound;
+          parse_dataset_range(buf, pos, item_end, out, current_item_elems, stop_at_pixels, depth, max_depth, seq_prefix);
           pos = item_end;
         }
         continue;
@@ -373,24 +461,42 @@ static void parse_dataset_range(const std::vector<uint8_t>& buf,
       rec.value_str = "[Sequence]";
       rec.depth = depth;
       rec.seq_path = seq_prefix;
+
+      std::size_t sq_flat_idx = out.elements.size();
       out.elements.push_back(rec);
 
-      std::string next_prefix = seq_prefix.empty()
-                                  ? format_tag(group, element)
-                                  : (seq_prefix + "/" + format_tag(group, element));
+      std::string seq_tag_prefix = seq_prefix.empty()
+                                     ? format_tag(group, element)
+                                     : (seq_prefix + "/" + format_tag(group, element));
+      std::vector<std::vector<DcmElementRecord>> sq_items;
+
       if (length == 0xFFFFFFFFU) {
-        parse_dataset_range(buf, pos, end_pos, out, stop_at_pixels, depth + 1, std::max(max_depth, depth + 1), next_prefix);
+        std::size_t sq_start = pos;
+        parse_sequence_items(
+            buf, pos, end_pos, out, sq_items,
+            stop_at_pixels, depth, std::max(max_depth, depth + 1), seq_tag_prefix);
+        out.elements[sq_flat_idx].length = static_cast<uint32_t>(pos >= sq_start ? (pos - sq_start) : 0);
       } else {
-        std::size_t sq_end = std::min<std::size_t>(pos + length, buf.size());
+        std::size_t bound = std::min<std::size_t>(end_pos, buf.size());
+        std::size_t sq_end = (length <= bound - pos) ? (pos + length) : bound;
         if (depth < max_depth && length > 0) {
-          parse_dataset_range(buf, pos, sq_end, out, stop_at_pixels, depth + 1, max_depth, next_prefix);
+          parse_sequence_items(
+              buf, pos, sq_end, out, sq_items,
+              stop_at_pixels, depth, max_depth, seq_tag_prefix);
         }
         pos = sq_end;
+      }
+
+      out.elements[sq_flat_idx].items = sq_items;
+      if (current_item_elems != nullptr) {
+        rec.length = out.elements[sq_flat_idx].length;
+        rec.items = std::move(sq_items);
+        current_item_elems->push_back(std::move(rec));
       }
       continue;
     }
 
-    if (pos + length > buf.size()) {
+    if (length > buf.size() - pos) {
       break;
     }
 
@@ -419,7 +525,7 @@ static void parse_dataset_range(const std::vector<uint8_t>& buf,
     rec.depth = depth;
     rec.seq_path = seq_prefix;
     rec.value_str = decode_element_value(vr, &buf[pos], length, big_endian);
-    if (length <= 65536 || (group == 0x0042 && element == 0x0011)) {
+    if (!big_endian && (length <= 65536 || depth > 0 || (group == 0x0042 && element == 0x0011))) {
       rec.raw_bytes.assign(buf.begin() + pos, buf.begin() + pos + length);
     }
 
@@ -438,6 +544,9 @@ static void parse_dataset_range(const std::vector<uint8_t>& buf,
       }
     }
 
+    if (current_item_elems != nullptr) {
+      current_item_elems->push_back(rec);
+    }
     out.elements.push_back(std::move(rec));
     pos += length;
   }
@@ -483,7 +592,7 @@ DcmParsedFile parse_dicom_file(const std::string& path, bool stop_at_pixels, int
     }
   }
 
-  parse_dataset_range(buf, pos, buf.size(), result, stop_at_pixels, 0, max_depth, "");
+  parse_dataset_range(buf, pos, buf.size(), result, nullptr, stop_at_pixels, 0, max_depth, "");
   return result;
 }
 

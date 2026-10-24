@@ -73,3 +73,7 @@ cpp_write_dicom_matrix <- function(pixels, out_path, meta_tags, meta_values) {
     .Call(`_dicomtk_cpp_write_dicom_matrix`, pixels, out_path, meta_tags, meta_values)
 }
 
+cpp_write_dicom_multiframe <- function(pixels, dims, out_path, meta_tags = as.character( c()), meta_values = as.character( c()), shared_fg = NULL, per_frame_fg = NULL, extra_sequences = NULL) {
+    .Call(`_dicomtk_cpp_write_dicom_multiframe`, pixels, dims, out_path, meta_tags, meta_values, shared_fg, per_frame_fg, extra_sequences)
+}
+

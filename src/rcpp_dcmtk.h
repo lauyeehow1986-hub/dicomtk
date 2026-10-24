@@ -45,6 +45,7 @@ struct DcmElementRecord {
   std::vector<uint8_t> raw_bytes;
   int depth = 0;
   std::string seq_path;
+  std::vector<std::vector<DcmElementRecord>> items;
 };
 
 struct DcmParsedFile {

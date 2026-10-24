@@ -230,6 +230,24 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// cpp_write_dicom_multiframe
+bool cpp_write_dicom_multiframe(const Rcpp::NumericVector& pixels, const Rcpp::IntegerVector& dims, const std::string& out_path, const Rcpp::CharacterVector& meta_tags, const Rcpp::CharacterVector& meta_values, Rcpp::Nullable<Rcpp::List> shared_fg, Rcpp::Nullable<Rcpp::List> per_frame_fg, Rcpp::Nullable<Rcpp::List> extra_sequences);
+RcppExport SEXP _dicomtk_cpp_write_dicom_multiframe(SEXP pixelsSEXP, SEXP dimsSEXP, SEXP out_pathSEXP, SEXP meta_tagsSEXP, SEXP meta_valuesSEXP, SEXP shared_fgSEXP, SEXP per_frame_fgSEXP, SEXP extra_sequencesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type pixels(pixelsSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type dims(dimsSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type out_path(out_pathSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::CharacterVector& >::type meta_tags(meta_tagsSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::CharacterVector& >::type meta_values(meta_valuesSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::List> >::type shared_fg(shared_fgSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::List> >::type per_frame_fg(per_frame_fgSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::List> >::type extra_sequences(extra_sequencesSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_write_dicom_multiframe(pixels, dims, out_path, meta_tags, meta_values, shared_fg, per_frame_fg, extra_sequences));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_dicomtk_cpp_dcm_to_xml", (DL_FUNC) &_dicomtk_cpp_dcm_to_xml, 1},
@@ -250,6 +268,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_dicomtk_cpp_create_dicom_sr", (DL_FUNC) &_dicomtk_cpp_create_dicom_sr, 6},
     {"_dicomtk_cpp_modify_dicom", (DL_FUNC) &_dicomtk_cpp_modify_dicom, 7},
     {"_dicomtk_cpp_write_dicom_matrix", (DL_FUNC) &_dicomtk_cpp_write_dicom_matrix, 4},
+    {"_dicomtk_cpp_write_dicom_multiframe", (DL_FUNC) &_dicomtk_cpp_write_dicom_multiframe, 8},
     {NULL, NULL, 0}
 };
 
