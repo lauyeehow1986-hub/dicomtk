@@ -38,6 +38,8 @@ dicom_to_png <- function(path,
 
   grDevices::png(filename = out_path, width = width, height = height, bg = "black")
   on.exit(grDevices::dev.off(), add = TRUE)
+  oldpar <- graphics::par(no.readonly = TRUE)
+  on.exit(graphics::par(oldpar), add = TRUE)
   graphics::par(mar = c(0, 0, 0, 0), oma = c(0, 0, 0, 0))
 
   if (length(dims) == 3L && dims[3L] == 3L) {

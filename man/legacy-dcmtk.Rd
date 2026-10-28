@@ -67,3 +67,28 @@ Backward-compatible wrappers for functions in the original \code{dcmtk} R packag
 \code{dcmcrle}, \code{check_dcmtk_cmd}), now powered by the native \code{dicomtk} C++17
 engine without requiring external CLI binaries.
 }
+\value{
+Return values depend on the specific legacy wrapper function called:
+\describe{
+  \item{\code{dcmdump}}{Character vector formatted similarly to CLI \code{dcmdump} output
+    with tag, VR, value, length, VM, and keyword.}
+  \item{\code{dcmdump_full}}{A \code{\link[tibble:tibble]{tibble::tibble}} containing full header and nested
+    sequence items as returned by \code{\link[=read_dicom]{read_dicom()}}.}
+  \item{\code{dcmhd}}{A \code{\link[tibble:tibble]{tibble::tibble}} containing the top-level DICOM header elements.}
+  \item{\code{wide_hdr}}{A wide \code{\link[tibble:tibble]{tibble::tibble}} with one row per file and columns
+    corresponding to DICOM element keywords.}
+  \item{\code{burned_annot}}{Character scalar value of the \code{BurnedInAnnotation (0028,0301)} tag.}
+  \item{\code{dcmodify}}{Character vector of modified DICOM file paths as returned
+    by \code{\link[=dicom_modify]{dicom_modify()}}.}
+  \item{\code{dcm_anon}, \code{dcm_subtract_date}}{Character vector of anonymized DICOM
+    file paths as returned by \code{\link[=dicom_anonymize]{dicom_anonymize()}}.}
+  \item{\code{dcmj2pnm}}{Character path to the rendered output PNG file as returned
+    by \code{\link[=dicom_to_png]{dicom_to_png()}}.}
+  \item{\code{dcmdjpeg}, \code{dcmdrle}}{Character path to the decompressed DICOM file
+    as returned by \code{\link[=dicom_decompress]{dicom_decompress()}}.}
+  \item{\code{dcmcrle}}{Character path to the compressed DICOM file as returned
+    by \code{\link[=dicom_compress]{dicom_compress()}}.}
+  \item{\code{check_dcmtk_cmd}}{Logical \code{TRUE} indicating the native DCMTK engine
+    is available.}
+}
+}

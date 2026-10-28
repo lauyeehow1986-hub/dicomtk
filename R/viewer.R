@@ -29,6 +29,7 @@ dicom_viewer <- function(path = NULL, launch.browser = interactive(), ...) {
   if (!nzchar(app_dir) || !dir.exists(app_dir)) {
     app_dir <- file.path("inst", "shiny", "viewer")
   }
-  options(dicomtk.viewer.path = normalizePath(path, mustWork = FALSE))
+  old_opt <- options(dicomtk.viewer.path = normalizePath(path, mustWork = FALSE))
+  on.exit(options(old_opt), add = TRUE)
   shiny::runApp(app_dir, launch.browser = launch.browser, ...)
 }

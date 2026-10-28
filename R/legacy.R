@@ -10,7 +10,33 @@
 #' @param outfile Optional output file path.
 #' @param opts Optional command-line style options (ignored in native C++ mode).
 #' @param ... Additional arguments passed to modern `dicomtk` equivalents.
+#'
+#' @return
+#' Return values depend on the specific legacy wrapper function called:
+#' \describe{
+#'   \item{`dcmdump`}{Character vector formatted similarly to CLI `dcmdump` output
+#'     with tag, VR, value, length, VM, and keyword.}
+#'   \item{`dcmdump_full`}{A [tibble::tibble] containing full header and nested
+#'     sequence items as returned by [read_dicom()].}
+#'   \item{`dcmhd`}{A [tibble::tibble] containing the top-level DICOM header elements.}
+#'   \item{`wide_hdr`}{A wide [tibble::tibble] with one row per file and columns
+#'     corresponding to DICOM element keywords.}
+#'   \item{`burned_annot`}{Character scalar value of the `BurnedInAnnotation (0028,0301)` tag.}
+#'   \item{`dcmodify`}{Character vector of modified DICOM file paths as returned
+#'     by [dicom_modify()].}
+#'   \item{`dcm_anon`, `dcm_subtract_date`}{Character vector of anonymized DICOM
+#'     file paths as returned by [dicom_anonymize()].}
+#'   \item{`dcmj2pnm`}{Character path to the rendered output PNG file as returned
+#'     by [dicom_to_png()].}
+#'   \item{`dcmdjpeg`, `dcmdrle`}{Character path to the decompressed DICOM file
+#'     as returned by [dicom_decompress()].}
+#'   \item{`dcmcrle`}{Character path to the compressed DICOM file as returned
+#'     by [dicom_compress()].}
+#'   \item{`check_dcmtk_cmd`}{Logical `TRUE` indicating the native DCMTK engine
+#'     is available.}
+#' }
 #' @name legacy-dcmtk
+#' @aliases legacy-dcmtk dcmdump dcmdump_full dcmhd wide_hdr burned_annot dcmodify dcm_anon dcm_subtract_date dcmj2pnm dcmdjpeg dcmdrle dcmcrle check_dcmtk_cmd
 NULL
 
 #' @rdname legacy-dcmtk

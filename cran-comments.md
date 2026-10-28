@@ -1,3 +1,12 @@
+## Resubmission
+
+This is a resubmission of the new package `dicomtk` 0.1.0 addressing feedback from CRAN reviewer Konstanze Lauseker:
+
+* Added a detailed `\value` documentation tag in `man/legacy-dcmtk.Rd` describing the return values, structure, and classes of all exported legacy wrapper functions.
+* Ensured graphical parameters in `R/convert.R` (`dicom_to_png`) properly save `oldpar <- graphics::par(no.readonly = TRUE)` and restore them via an immediate `on.exit(graphics::par(oldpar), add = TRUE)`.
+* Ensured options changed in `R/viewer.R` (`dicom_viewer`) properly save `old_opt <- options(...)` and restore them via an immediate `on.exit(options(old_opt), add = TRUE)`.
+* Ensured working directory changes in `R/utils.R` preserve and immediately reset state via `on.exit(setwd(old_wd), add = TRUE)`.
+
 ## R CMD check results
 
 0 errors | 0 warnings | 0 notes
