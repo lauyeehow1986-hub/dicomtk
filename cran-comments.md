@@ -1,10 +1,12 @@
 ## Resubmission
 
-This is a resubmission of the new package `dicomtk` 0.1.0 addressing feedback from CRAN reviewer Konstanze Lauseker and CRAN auto-check service:
+This is a resubmission of the new package `dicomtk` 0.1.0 addressing feedback from CRAN reviewer Konstanze Lauseker and CRAN incoming checks:
 
+* Prebuilt vignette outputs and index (`inst/doc/` and `build/vignette.rds`) included in the package source archive as required by CRAN policies.
+* Replaced hyphenated word `de-identification` with standard single word `deidentification` in DESCRIPTION to satisfy spell checking.
 * Fixed executable file permissions on `configure` and `cleanup` (set to `0755` for POSIX systems).
 * Removed non-standard file `cran-comments.md` and auxiliary folders from package tarball.
-* Fixed spelling notes in DESCRIPTION by quoting proper noun `'tidyverse'` and technical terms `'DICOM'` and `'anonymization'`.
+* Fixed spelling notes in DESCRIPTION by quoting proper noun `'tidyverse'` and technical terms `'DICOM'`.
 * Added a detailed `\value` documentation tag in `man/legacy-dcmtk.Rd` describing the return values, structure, and classes of all exported legacy wrapper functions.
 * Ensured graphical parameters in `R/convert.R` (`dicom_to_png`) properly save `oldpar <- graphics::par(no.readonly = TRUE)` and restore them via an immediate `on.exit(graphics::par(oldpar), add = TRUE)`.
 * Ensured options changed in `R/viewer.R` (`dicom_viewer`) properly save `old_opt <- options(...)` and restore them via an immediate `on.exit(options(old_opt), add = TRUE)`.
