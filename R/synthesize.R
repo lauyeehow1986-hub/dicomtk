@@ -633,16 +633,16 @@ dicom_synthesize <- function(out_dir = tempfile("dicom_synth_"),
     common_tags$WindowCenter <- "400"
     common_tags$WindowWidth <- "800"
   } else if (modality == "PT") {
-    pt_weight <- synth_or(pet_params$patient_weight, synth_or(pet_params$PatientWeight, 70))
-    pt_size <- synth_or(pet_params$patient_size, synth_or(pet_params$PatientSize, 1.75))
+    pt_weight <- synth_or(pet_params$weight_kg, synth_or(pet_params$patient_weight, synth_or(pet_params$PatientWeight, 70)))
+    pt_size <- synth_or(pet_params$height_m, synth_or(pet_params$patient_size, synth_or(pet_params$PatientSize, 1.75)))
     pt_sex <- as.character(synth_or(pet_params$patient_sex, synth_or(pet_params$PatientSex, "M")))
-    pt_stime <- as.character(synth_or(pet_params$series_time, synth_or(pet_params$SeriesTime, "094946.200000")))
+    pt_stime <- as.character(synth_or(pet_params$scan_time, synth_or(pet_params$series_time, synth_or(pet_params$SeriesTime, "094946.200000"))))
     pt_atime <- as.character(synth_or(pet_params$acquisition_time, synth_or(pet_params$AcquisitionTime, pt_stime)))
     pt_units <- as.character(synth_or(pet_params$units, synth_or(pet_params$Units, "BQML")))
     pt_corr <- as.character(synth_or(pet_params$corrected_image, synth_or(pet_params$CorrectedImage, "DECY\\ATTN")))
     pt_decay <- as.character(synth_or(pet_params$decay_correction, synth_or(pet_params$DecayCorrection, "START")))
-    pt_dose <- synth_or(pet_params$total_dose, synth_or(pet_params$RadionuclideTotalDose, 350000000))
-    pt_hl <- synth_or(pet_params$half_life, synth_or(pet_params$RadionuclideHalfLife, 6586.2))
+    pt_dose <- synth_or(pet_params$injected_dose_bq, synth_or(pet_params$total_dose, synth_or(pet_params$RadionuclideTotalDose, 350000000)))
+    pt_hl <- synth_or(pet_params$halflife_sec, synth_or(pet_params$half_life, synth_or(pet_params$RadionuclideHalfLife, 6586.2)))
     pt_start <- as.character(synth_or(
       pet_params$start_time,
       synth_or(pet_params$RadiopharmaceuticalStartTime, "080000.000000")
