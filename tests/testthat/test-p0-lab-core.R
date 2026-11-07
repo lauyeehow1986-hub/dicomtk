@@ -1,15 +1,16 @@
 # Task 8: dicomtk-lab Core PACS (Orthanc, dcm4chee, Keycloak) Integration Smoke Test
 
 test_that("dicomtk-lab Orthanc core container connects, echoes, round-trips series, and preserves exact affine", {
+  testthat::skip_on_cran()
   skip_if_not(
     identical(tolower(Sys.getenv("DICOMTK_TEST_LAB")), "true"),
     "dicomtk-lab container smoke tests skipped. Set DICOMTK_TEST_LAB=true to run."
   )
 
-  orthanc_host <- Sys.getenv("DICOMTK_LAB_ORTHANC_HOST", "127.0.0.1")
-  dimse_port   <- as.integer(Sys.getenv("DICOMTK_LAB_ORTHANC_PORT", "4242"))
-  http_port    <- as.integer(Sys.getenv("DICOMTK_LAB_ORTHANC_HTTP", "8042"))
-  called_ae    <- Sys.getenv("DICOMTK_LAB_ORTHANC_AET", "ORTHANC")
+  orthanc_host <- Sys.getenv("DICOMTK_LAB_ORTHANC_HOST", Sys.getenv("ORTHANC_HOST", "127.0.0.1"))
+  dimse_port   <- as.integer(Sys.getenv("DICOMTK_LAB_ORTHANC_PORT", Sys.getenv("ORTHANC_DICOM_PORT", "4242")))
+  http_port    <- as.integer(Sys.getenv("DICOMTK_LAB_ORTHANC_HTTP", Sys.getenv("ORTHANC_HTTP_PORT", "8042")))
+  called_ae    <- Sys.getenv("DICOMTK_LAB_ORTHANC_AET", Sys.getenv("ORTHANC_AET", "ORTHANC"))
 
   # 1. Verify HTTP REST API health
   rest_url <- sprintf("http://%s:%d/system", orthanc_host, http_port)
@@ -58,10 +59,23 @@ test_that("dicomtk-lab Orthanc core container connects, echoes, round-trips seri
 
   # 4. Upload synthesized instances to Orthanc via HTTP REST
   instance_ids <- character(0)
+  # Clean up uploaded instances from Orthanc on test exit (registered early to capture partial uploads)
+  on.exit({
+    for (id in instance_ids) {
+      tryCatch({
+        del_req <- httr2::request(sprintf("http://%s:%d/instances/%s", orthanc_host, http_port, id)) |>
+          httr2::req_method("DELETE") |>
+          httr2::req_timeout(5)
+        httr2::req_perform(del_req)
+      }, error = function(e) NULL)
+    }
+  }, add = TRUE)
+
   for (f in ph$files) {
     up_req <- httr2::request(sprintf("http://%s:%d/instances", orthanc_host, http_port)) |>
       httr2::req_method("POST") |>
-      httr2::req_body_file(f, type = "application/dicom")
+      httr2::req_body_file(f, type = "application/dicom") |>
+      httr2::req_timeout(10)
     up_resp <- httr2::req_perform(up_req)
     expect_equal(httr2::resp_status(up_resp), 200L)
     res_json <- httr2::resp_body_json(up_resp)
@@ -69,22 +83,12 @@ test_that("dicomtk-lab Orthanc core container connects, echoes, round-trips seri
   }
   expect_equal(length(instance_ids), 4L)
 
-  # Clean up uploaded instances from Orthanc on test exit
-  on.exit({
-    for (id in instance_ids) {
-      tryCatch({
-        del_req <- httr2::request(sprintf("http://%s:%d/instances/%s", orthanc_host, http_port, id)) |>
-          httr2::req_method("DELETE")
-        httr2::req_perform(del_req)
-      }, error = function(e) NULL)
-    }
-  }, add = TRUE)
-
   # 5. Download instances back from Orthanc into dl_dir
   dir.create(dl_dir, recursive = TRUE, showWarnings = FALSE)
   for (i in seq_along(instance_ids)) {
     inst_id <- instance_ids[i]
-    get_req <- httr2::request(sprintf("http://%s:%d/instances/%s/file", orthanc_host, http_port, inst_id))
+    get_req <- httr2::request(sprintf("http://%s:%d/instances/%s/file", orthanc_host, http_port, inst_id)) |>
+      httr2::req_timeout(10)
     dest_file <- file.path(dl_dir, sprintf("downloaded_%02d.dcm", i))
     httr2::req_perform(get_req, path = dest_file)
     expect_true(file.exists(dest_file))
