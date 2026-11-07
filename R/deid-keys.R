@@ -78,7 +78,11 @@ dicom_key_provider <- function(mode = c("local", "broker", "ttp"),
       master_key <- key
     } else {
       # Fallback to random 32-byte key
-      master_key <- as.raw(sample(0:255, 32L, replace = TRUE))
+      if (requireNamespace("openssl", quietly = TRUE)) {
+        master_key <- openssl::rand_bytes(32L)
+      } else {
+        master_key <- as.raw(sample(0:255, 32L, replace = TRUE))
+      }
     }
 
     # Derive 5 domain-separated subkeys via HKDF-SHA256
@@ -136,10 +140,10 @@ deid_get_subkey <- function(key_provider, name = c("uid", "pid", "date", "aead",
     return(env[[var_name]])
   } else {
     res <- env$resolver_fn(name)
-    if (is.raw(res)) {
-      return(res)
+    if (!is.raw(res) || length(res) != 32L) {
+      cli::cli_abort("Resolver function must return a 32-byte raw vector for '{name}', got {class(res)[1]} of length {length(res)}.")
     }
-    cli::cli_abort("Resolver function did not return a valid subkey for '{name}'.")
+    return(res)
   }
 }
 
@@ -173,6 +177,14 @@ deid_map_uid <- function(uid, key_provider) {
   vapply(uid, function(u) {
     if (is.na(u) || identical(u, "")) {
       return(if (is.na(u)) NA_character_ else "")
+    }
+    if (grepl("\\", u, fixed = TRUE)) {
+      sub_uids <- strsplit(u, "\\", fixed = TRUE)[[1L]]
+      mapped <- vapply(sub_uids, function(sub_u) {
+        if (identical(sub_u, "")) return("")
+        cpp_hmac_uid(uid_key, sub_u)
+      }, FUN.VALUE = character(1L), USE.NAMES = FALSE)
+      return(paste(mapped, collapse = "\\"))
     }
     cpp_hmac_uid(uid_key, u)
   }, FUN.VALUE = character(1L), USE.NAMES = FALSE)

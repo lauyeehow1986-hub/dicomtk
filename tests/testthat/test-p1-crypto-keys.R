@@ -26,6 +26,15 @@ test_that("RFC 4231 HMAC-SHA256 and RFC 8439 ChaCha20-Poly1305 vectors pass", {
 })
 
 test_that("RFC 5869 HKDF-SHA256 and PBKDF2-HMAC-SHA256 determinism", {
+  # RFC 5869 Test Case 1 Known Answer Test (SHA-256)
+  rfc_ikm <- rep(as.raw(0x0b), 22L)
+  rfc_salt <- as.raw(0x00:0x0c)
+  rfc_info <- as.raw(0xf0:0xf9)
+  rfc_L <- 42L
+  rfc_okm <- dicomtk:::cpp_hkdf_sha256(rfc_ikm, rfc_salt, rfc_info, rfc_L)
+  rfc_okm_hex <- paste(as.character(rfc_okm), collapse = "")
+  expect_equal(rfc_okm_hex, "3cb25f25faacd57a90434f64d0362f2a2d2d0a90cf1a5a4c5db02d56ecc4c5bf34007208d5b887185865")
+
   k1 <- dicomtk:::cpp_pbkdf2_sha256(charToRaw("test-passphrase"), charToRaw("salt-1"), 1000L, 32L)
   k2 <- dicomtk:::cpp_pbkdf2_sha256(charToRaw("test-passphrase"), charToRaw("salt-1"), 1000L, 32L)
   k3 <- dicomtk:::cpp_pbkdf2_sha256(charToRaw("test-passphrase"), charToRaw("salt-2"), 1000L, 32L)
@@ -72,6 +81,16 @@ test_that("Deterministic HMAC UID mapper preserves standard UIDs and obeys 64-ch
 
   # Empty or invalid input
   expect_equal(deid_map_uid("", kp), "")
+
+  # Multi-valued DICOM UIDs separated by backslash
+  multi_uid <- "1.2.840.10008.1.2.1\\1.3.6.1.4.1.999"
+  mapped_multi <- deid_map_uid(multi_uid, kp)
+  parts <- strsplit(mapped_multi, "\\", fixed = TRUE)[[1L]]
+  expect_equal(length(parts), 2L)
+  expect_equal(parts[1], "1.2.840.10008.1.2.1")
+  expect_match(parts[2], "^2\\.25\\.[1-9][0-9]*$")
+  expect_lte(nchar(parts[2]), 64L)
+  expect_equal(parts[2], deid_map_uid("1.3.6.1.4.1.999", kp))
 })
 
 test_that("Per-patient date shift is deterministic and strictly within range", {
@@ -105,11 +124,25 @@ test_that("dicom_key_provider() S3 security, print redaction, and broker/ttp mod
   expect_false(grepl("correct horse battery staple", out_str, fixed = TRUE))
 
   # Mode broker and ttp
-  kp_broker <- dicom_key_provider(mode = "broker", resolver_fn = function(id) charToRaw(paste0("mock-key-", id)))
+  kp_broker <- dicom_key_provider(mode = "broker", resolver_fn = function(id) rep(as.raw(0x42), 32L))
   expect_true(is_dicom_key_provider(kp_broker))
+  expect_equal(length(dicomtk:::deid_get_subkey(kp_broker, "uid")), 32L)
 
-  kp_ttp <- dicom_key_provider(mode = "ttp", resolver_fn = function(id) charToRaw(paste0("mock-ttp-", id)))
+  kp_ttp <- dicom_key_provider(mode = "ttp", resolver_fn = function(id) rep(as.raw(0x43), 32L))
   expect_true(is_dicom_key_provider(kp_ttp))
+  expect_equal(length(dicomtk:::deid_get_subkey(kp_ttp, "uid")), 32L)
+
+  # Invalid return type or invalid length from resolver
+  kp_broker_bad_len <- dicom_key_provider(mode = "broker", resolver_fn = function(id) as.raw(1:16))
+  expect_error(dicomtk:::deid_get_subkey(kp_broker_bad_len, "uid"), "32-byte raw vector")
+
+  kp_broker_bad_type <- dicom_key_provider(mode = "broker", resolver_fn = function(id) "not-raw")
+  expect_error(dicomtk:::deid_get_subkey(kp_broker_bad_type, "uid"), "32-byte raw vector")
+
+  # Default key generation (openssl or fallback)
+  kp_random <- dicom_key_provider()
+  expect_true(is_dicom_key_provider(kp_random))
+  expect_equal(length(dicomtk:::deid_get_subkey(kp_random, "uid")), 32L)
 
   # Aborts if broker/ttp has no resolver
   expect_error(dicom_key_provider(mode = "broker"), "resolver_fn")

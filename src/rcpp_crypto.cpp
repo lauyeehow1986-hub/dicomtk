@@ -645,7 +645,7 @@ int hmac_patient_shift_days(const std::array<uint8_t, 32>& date_key,
     val = (val << 8) | static_cast<uint64_t>(mac[i]);
   }
 
-  uint64_t range = static_cast<uint64_t>(max_days - min_days + 1);
+  uint64_t range = static_cast<uint64_t>(static_cast<int64_t>(max_days) - static_cast<int64_t>(min_days) + 1);
   uint64_t offset = val % range;
   return min_days + static_cast<int>(offset);
 }

@@ -50,7 +50,8 @@ Suggests:
     rmarkdown,
     pkgdown,
     withr,
-    magick
+    magick,
+    openssl
 LinkingTo:
     Rcpp
 SystemRequirements: 
