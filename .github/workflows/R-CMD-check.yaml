@@ -25,6 +25,8 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
+      NOT_CRAN: true
+      DICOMTK_FIXTURE_DIR: ${{ runner.temp }}/dicomtk-fixtures
 
     steps:
       - uses: actions/checkout@v4
@@ -34,10 +36,28 @@ jobs:
           r-version: ${{ matrix.config.r }}
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
+
+      - name: Install dcm2niix (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dcm2niix
+
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::rcmdcheck
           needs: check
+
+      - name: Cache external DICOM reference fixtures
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.DICOMTK_FIXTURE_DIR }}
+          key: dicomtk-fixtures-v1-${{ hashFiles('tests/testthat/helper-fixtures.R') }}
+
+      - name: Populate external DICOM reference fixtures
+        run: Rscript tools/download_fixtures.R
+        shell: bash
+
       - uses: r-lib/actions/check-r-package@v2
         with:
           upload-snapshots: true
