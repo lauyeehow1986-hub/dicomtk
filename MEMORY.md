@@ -44,7 +44,7 @@
 
 ### Phase 0 (`v0.2.0` Foundations) — Completed
 - [x] **Task 1: C++ Hierarchical Sequences & Nested `SQ` Writer**:
-  - Implemented `cpp_set_sequence_item()` and `cpp_write_dicom_file()` in `src/rcpp_read.cpp` and `src/rcpp_write.cpp` supporting arbitrary nested sequences from R list structures.
+  - Implemented recursive sequence indexing and explicit-length nested `SQ` serialization via `cpp_write_dicom_multiframe()`, `cpp_modify_dicom()`, and `cpp_dcm_transcode_rle()` in `src/rcpp_read.cpp`, `src/rcpp_write.cpp`, and `src/rcpp_convert.cpp`.
 - [x] **Task 2: Synthetic Phantom Generator (`dicom_synthesize()`)**:
   - Parametric synthesis of CT, MR, and PET series in `R/synthesize.R` with known analytical ground-truth LPS/RAS affines, voxel arrays, non-orthogonal gantry tilt, and PHI injection/scrubbing.
 - [x] **Task 3: `dicom_volume` S3 Class & Spatial Transforms**:

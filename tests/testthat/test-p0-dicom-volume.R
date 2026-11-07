@@ -462,3 +462,62 @@ test_that("Internal provenance helpers and subscript/transform validation guard 
   expect_no_warning(expect_error(plot(vol4, frame = Inf), "frame"))
   expect_no_warning(expect_error(plot(vol4, frame = 3e9), "frame"))
 })
+
+test_that("dicom_orientation() computes true 3-letter anatomical codes across orientations and coordinate frames", {
+  mk_orient_vol <- function(orient, angles = c(15, -10, 5)) {
+    d <- tempfile(paste0("orient_", orient, "_"))
+    on.exit(unlink(d, recursive = TRUE), add = TRUE)
+    dicom_synthesize(
+      out_dir = d,
+      modality = "CT",
+      dims = c(8L, 8L, 4L),
+      orientation = orient,
+      oblique_angles_deg = angles,
+      phi = FALSE
+    )
+    read_dicom_volume(d, warn = FALSE)
+  }
+
+  v_ax <- mk_orient_vol("axial")
+  v_cor <- mk_orient_vol("coronal")
+  v_sag <- mk_orient_vol("sagittal")
+  v_obl <- mk_orient_vol("oblique", c(15, -10, 5))
+
+  expect_equal(dicom_orientation(v_ax), "LPS")
+  expect_equal(dicom_orientation(v_cor), "LIP")
+  expect_equal(dicom_orientation(v_sag), "PIR")
+  expect_equal(dicom_orientation(v_obl), "LPS")
+
+  # Reversing slice order flips 3rd letter (S -> I, R -> L)
+  expect_equal(dicom_orientation(v_ax[, , 4:1]), "LPI")
+  expect_equal(dicom_orientation(v_sag[, , 4:1]), "PIL")
+
+  # to_ras() changes world coordinate convention without permuting voxels,
+  # so anatomical patient orientation of image axes stays invariant
+  v_sag_ras <- to_ras(v_sag)
+  expect_equal(v_sag_ras$coord_system, "RAS")
+  expect_equal(dicom_orientation(v_sag_ras), "PIR")
+  expect_equal(dicom_orientation(to_ras(v_cor)), "LIP")
+
+  # Raw 4x4 and 3x3 affine matrices
+  expect_equal(dicom_orientation(v_sag$affine, coord_system = "LPS"), "PIR")
+  expect_equal(dicom_orientation(v_sag$affine[1:3, 1:3], coord_system = "LPS"), "PIR")
+  expect_equal(dicom_orientation(v_sag_ras$affine, coord_system = "RAS"), "PIR")
+
+  # Steep oblique (~44 deg) never repeats an anatomical axis family
+  v_steep <- mk_orient_vol("oblique", c(44, 25, -30))
+  code <- dicom_orientation(v_steep)
+  expect_equal(nchar(code), 3L)
+  chars <- strsplit(code, "", fixed = TRUE)[[1L]]
+  families <- vapply(chars, function(ch) {
+    if (ch %in% c("L", "R")) "LR" else if (ch %in% c("P", "A")) "PA" else "SI"
+  }, character(1L))
+  expect_equal(length(unique(families)), 3L)
+
+  # Invalid inputs error cleanly
+  expect_error(dicom_orientation(matrix("a", 3L, 3L)), "numeric")
+  expect_error(dicom_orientation(matrix(1, 2L, 2L)), "3x3|4x4")
+  bad_m <- diag(4L)
+  bad_m[1L, 1L] <- NA_real_
+  expect_error(dicom_orientation(bad_m), "finite")
+})

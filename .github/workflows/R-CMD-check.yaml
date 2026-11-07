@@ -55,6 +55,7 @@ jobs:
           key: dicomtk-fixtures-v1-${{ hashFiles('tests/testthat/helper-fixtures.R') }}
 
       - name: Populate external DICOM reference fixtures
+        continue-on-error: ${{ runner.os != 'Linux' }}
         run: Rscript tools/download_fixtures.R
         shell: bash
 

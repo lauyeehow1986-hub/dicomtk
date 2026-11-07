@@ -18,6 +18,7 @@
 #'   text = "No acute cardiopulmonary abnormality."
 #' )
 #' read_dicom_sr(sr_file)
+#' unlink(sr_file)
 read_dicom_sr <- function(path) {
   if (length(path) != 1L || !file.exists(path)) {
     rlang::abort("`path` must be a single existing DICOM file path.")
@@ -50,6 +51,7 @@ read_dicom_sr <- function(path) {
 #'   text = "FINDINGS: Unremarkable brain parenchyma. IMPRESSION: Normal head CT."
 #' )
 #' read_dicom_sr(sr_file)
+#' unlink(sr_file)
 create_dicom_sr <- function(out_path,
                             title = "Radiology Structured Report",
                             text,

@@ -28,4 +28,5 @@ Exports the DICOM header and dataset elements to XML format.
 dcm_file <- system.file("extdata", "example.dcm", package = "dicomtk")
 xml_file <- dcm2xml(dcm_file)
 head(readLines(xml_file), 10)
+unlink(xml_file)
 }

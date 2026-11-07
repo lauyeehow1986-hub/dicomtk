@@ -124,6 +124,7 @@ append_provenance <- function(x, action, params = list()) {
 #'   transformations applied to the volume.
 #'
 #' @return A validated S3 object of class `"dicom_volume"`.
+#' @aliases dicom_volume
 #' @export
 #' @examples
 #' vox <- array(seq_len(8 * 8 * 4), dim = c(8L, 8L, 4L))
@@ -390,7 +391,7 @@ resolve_axis_subscript <- function(quo, axis_len, axis_num, axis_names = NULL) {
 #'   frame from a 4D volume (`vol[, , , 2, drop = TRUE]`) with all 3 spatial
 #'   dimensions `> 1`, drops the 4th dimension and returns a 3D `dicom_volume`.
 #'
-#' @return A `dicom_volume` object (always when `drop = FALSE`, or when 3–4
+#' @return A `dicom_volume` object (always when `drop = FALSE`, or when 3-4
 #'   spatial/temporal dimensions remain under `drop = TRUE`), or a base R
 #'   array/matrix/vector when `drop = TRUE` reduces spatial dimensions `< 3`.
 #' @export
@@ -780,25 +781,99 @@ dicom_to_lps <- to_lps
 
 #' Query Anatomical Orientation of a DICOM Volume
 #'
-#' Determines the standard 3-letter anatomical coordinate orientation
-#' (e.g., `"LPS"`, `"RAS"`) of a `dicom_volume` or orientation matrix.
+#' Determines the standard 3-letter patient anatomical orientation code
+#' (e.g., `"LPS"` for axial, `"LIP"` for coronal, `"PIR"` for sagittal) giving
+#' the physical patient direction (`L`/`R`, `P`/`A`, `S`/`I`) of increasing
+#' image columns (`d_row`), rows (`d_col`), and slices (`normal` / slice step).
 #'
-#' @param vol A `dicom_volume` object, or a 4x4 / 3x3 numeric affine/direction matrix.
-#' @return A length-1 character string naming the coordinate orientation (e.g. `"LPS"`, `"RAS"`).
+#' @param vol A `dicom_volume` object, or a finite numeric `3x3` / `4x4`
+#'   `dicom_volume`-style affine matrix (column 1 = row step, column 2 = column
+#'   step, column 3 = slice step).
+#' @param coord_system World coordinate convention (`"LPS"` or `"RAS"`) used
+#'   when `vol` is a raw numeric matrix. Ignored when `vol` is a `dicom_volume`
+#'   (whose `vol$coord_system` is used automatically).
+#' @return A length-1 3-character string naming the anatomical orientation
+#'   (e.g., `"LPS"`, `"LIP"`, `"PIR"`).
 #' @export
 #' @examples
-#' aff <- diag(c(0.8, 0.8, 2.5, 1.0))
+#' aff <- diag(4L)
+#' aff[1:3, 1:3] <- matrix(c(0, 0.8, 0, 0.8, 0, 0, 0, 0, 2.5), nrow = 3L)
 #' vol <- new_dicom_volume(array(0, dim = c(8L, 8L, 4L)), affine = aff, coord_system = "LPS")
 #' dicom_orientation(vol)
-dicom_orientation <- function(vol) {
+dicom_orientation <- function(vol, coord_system = c("LPS", "RAS")) {
   if (is_dicom_volume(vol)) {
-    if (!is.null(vol$coord_system) && nzchar(vol$coord_system)) {
-      return(as.character(vol$coord_system))
+    cs <- vol$coord_system
+    v1 <- as.double(vol$affine[1:3, 2L])
+    v2 <- as.double(vol$affine[1:3, 1L])
+    v3 <- as.double(vol$affine[1:3, 3L])
+    if (sum(v1^2) <= 1e-24) v1 <- as.double(vol$direction$d_row)
+    if (sum(v2^2) <= 1e-24) v2 <- as.double(vol$direction$d_col)
+    if (sum(v3^2) <= 1e-24) v3 <- as.double(vol$direction$normal)
+  } else if (is.matrix(vol)) {
+    if (!is.numeric(vol)) {
+      cli::cli_abort("{.arg vol} must be a {.cls dicom_volume} or a finite numeric 3x3 or 4x4 matrix.")
     }
-  } else if (!is.matrix(vol)) {
-    cli::cli_abort("{.arg vol} must be a {.cls dicom_volume} or numeric matrix.")
+    d <- dim(vol)
+    if (!(identical(d, c(3L, 3L)) || identical(d, c(4L, 4L)))) {
+      cli::cli_abort("{.arg vol} matrix must have dimensions 3x3 or 4x4.")
+    }
+    if (any(!is.finite(vol[1:3, 1:3]))) {
+      cli::cli_abort("{.arg vol} matrix must contain only finite numeric values.")
+    }
+    cs <- match.arg(coord_system)
+    v1 <- as.double(vol[1:3, 2L])
+    v2 <- as.double(vol[1:3, 1L])
+    v3 <- as.double(vol[1:3, 3L])
+    if (sum(v3^2) <= 1e-24) v3 <- vol_cross3(v1, v2)
+  } else {
+    cli::cli_abort("{.arg vol} must be a {.cls dicom_volume} or a finite numeric 3x3 or 4x4 matrix.")
   }
-  "LPS"
+
+  if (identical(cs, "RAS")) {
+    flip3 <- c(-1.0, -1.0, 1.0)
+    v1 <- v1 * flip3
+    v2 <- v2 * flip3
+    v3 <- v3 * flip3
+  }
+
+  norm_unit <- function(v, fallback) {
+    n <- sqrt(sum(v^2))
+    if (n > 1e-12) v / n else fallback
+  }
+  u_mat <- cbind(
+    norm_unit(v1, c(1.0, 0.0, 0.0)),
+    norm_unit(v2, c(0.0, 1.0, 0.0)),
+    norm_unit(v3, c(0.0, 0.0, 1.0))
+  )
+  abs_u <- abs(u_mat)
+
+  pos_codes <- c("L", "P", "S")
+  neg_codes <- c("R", "A", "I")
+  out_chars <- character(3L)
+  used_phys <- rep(FALSE, 3L)
+  used_img <- rep(FALSE, 3L)
+
+  for (step in 1:3) {
+    best_val <- -1.0
+    best_p <- 1L
+    best_j <- 1L
+    for (j in 1:3) {
+      if (used_img[j]) next
+      for (p in 1:3) {
+        if (used_phys[p]) next
+        if (abs_u[p, j] > best_val) {
+          best_val <- abs_u[p, j]
+          best_p <- p
+          best_j <- j
+        }
+      }
+    }
+    used_phys[best_p] <- TRUE
+    used_img[best_j] <- TRUE
+    out_chars[best_j] <- if (u_mat[best_p, best_j] >= 0.0) pos_codes[best_p] else neg_codes[best_p]
+  }
+
+  paste0(out_chars, collapse = "")
 }
 
 #' Map Between Voxel Indices and Physical World Coordinates

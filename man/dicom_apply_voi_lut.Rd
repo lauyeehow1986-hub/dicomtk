@@ -2,13 +2,15 @@
 % Please edit documentation in R/modality-transforms.R
 \name{dicom_apply_voi_lut}
 \alias{dicom_apply_voi_lut}
-\title{Apply VOI LUT (Window/Level or Non-Linear Table) to DICOM Volume}
+\title{Apply VOI LUT (Window/Level or Sigmoidal Transfer Function) to DICOM Volume}
 \usage{
 dicom_apply_voi_lut(
   x,
   window_center = NULL,
   window_width = NULL,
-  function_type = c("auto", "LINEAR", "SIGMOID")
+  function_type = c("auto", "LINEAR", "LINEAR_EXACT", "SIGMOID"),
+  index = 1L,
+  invert_monochrome1 = TRUE
 )
 }
 \arguments{
@@ -18,17 +20,27 @@ dicom_apply_voi_lut(
 
 \item{window_width}{Optional numeric window width override.}
 
-\item{function_type}{Function type: \code{"auto"} (reads from metadata),
-\code{"LINEAR"}, or \code{"SIGMOID"}.}
+\item{function_type}{VOI LUT function type: \code{"auto"} (reads \code{VOILUTFunction}
+from metadata, defaulting to \code{"LINEAR"}), \code{"LINEAR"}, \code{"LINEAR_EXACT"}, or
+\code{"SIGMOID"}.}
+
+\item{index}{1-based integer index selecting which \verb{(WindowCenter, WindowWidth)} preset to apply when multi-valued presets (e.g. \code{"40\\\\400"})
+are stored in the DICOM header. Default is \code{1L}.}
+
+\item{invert_monochrome1}{Logical. When \code{TRUE} (default) and
+\code{PhotometricInterpretation == "MONOCHROME1"}, inverts normalized intensities
+(\code{1 - y}) for standard presentation polarity.}
 }
 \value{
 A \code{\link[=new_dicom_volume]{dicom_volume}} with voxels scaled to \verb{[0, 1]}
 and \code{units = "normalized"}.
 }
 \description{
-Applies DICOM Value of Interest (VOI) Look-Up Table transformations (linear
-window/level, \code{"SIGMOID"}, or embedded sequence LUTs) to a
-\code{\link[=new_dicom_volume]{dicom_volume}}, scaling output voxels to \verb{[0, 1]}.
+Applies DICOM PS3.3 Section C.11.2.1 Value of Interest (VOI) transformations
+(\code{"LINEAR"}, \code{"LINEAR_EXACT"}, or \code{"SIGMOID"}) to a
+\code{\link[=new_dicom_volume]{dicom_volume}}, scaling output voxels to \verb{[0, 1]} and
+optionally inverting \code{PhotometricInterpretation == "MONOCHROME1"} so higher
+attenuation appears brighter.
 }
 \examples{
 out_dir <- tempfile("mg_demo_")

@@ -17,6 +17,7 @@
 #' out <- tempfile(fileext = ".dcm")
 #' write_dicom(mat, out, metadata = list(PatientName = "TEST^PATIENT", Modality = "CT"))
 #' read_dicom(out, wide = TRUE)
+#' unlink(out)
 write_dicom <- function(x, path, metadata = list()) {
   if (inherits(x, "dicom_series")) {
     x <- x$volume

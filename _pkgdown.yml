@@ -7,10 +7,14 @@ reference:
     desc: "Standards-compliant 3D/4D DICOM volume reconstruction, LPS/RAS coordinate transforms, and slicing."
     contents:
       - read_dicom_volume
-      - dicom_volume
+      - dicom_split_series
+      - new_dicom_volume
+      - is_dicom_volume
+      - "[.dicom_volume"
+      - plot.dicom_volume
       - dicom_orientation
-      - dicom_to_lps
-      - dicom_to_ras
+      - to_ras
+      - voxel_to_world
 
   - title: "Core DICOM I/O"
     desc: "Read and write DICOM headers, pixel matrices, and 3D multi-slice series."

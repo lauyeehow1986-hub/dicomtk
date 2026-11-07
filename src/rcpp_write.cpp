@@ -164,9 +164,15 @@ static void write_explicit_element(std::vector<uint8_t>& buf,
   }
 
   if (is_long_vr_write(vr)) {
+    if (padded.size() > 0xFFFFFFFEULL) {
+      Rcpp::stop("DICOM element length exceeds 32-bit Explicit VR limit.");
+    }
     append_u16_le(buf, 0);
     append_u32_le(buf, static_cast<uint32_t>(padded.size()));
   } else {
+    if (padded.size() > 65534U) {
+      Rcpp::stop("DICOM short-length VR (" + vr + ") exceeds 65534-byte limit.");
+    }
     append_u16_le(buf, static_cast<uint16_t>(padded.size()));
   }
   buf.insert(buf.end(), padded.begin(), padded.end());
@@ -500,7 +506,7 @@ bool cpp_modify_dicom(const std::string& in_path,
                       const Rcpp::CharacterVector& del_tags,
                       bool erase_private = false,
                       bool regenerate_uids = false) {
-  dicomtk::DcmParsedFile dcm = dicomtk::parse_dicom_file(in_path, false, 16);
+  dicomtk::DcmParsedFile dcm = dicomtk::parse_dicom_file(in_path, false, 64);
   if (!dcm.encapsulated_pixels) {
     dcm.transfer_syntax = "1.2.840.10008.1.2.1";
     dcm.explicit_vr = true;
@@ -581,6 +587,15 @@ bool cpp_write_dicom_matrix(const Rcpp::NumericVector& pixels,
   int rows = dims[0];
   int cols = dims[1];
   int frames = (dims.size() >= 3) ? dims[2] : 1;
+  if (rows <= 0 || cols <= 0 || frames <= 0) {
+    Rcpp::stop("pixels dimensions [rows, cols, frames] must be strictly positive.");
+  }
+  std::size_t npix_expected = static_cast<std::size_t>(rows) *
+                              static_cast<std::size_t>(cols) *
+                              static_cast<std::size_t>(frames);
+  if (static_cast<std::size_t>(pixels.size()) < npix_expected) {
+    Rcpp::stop("pixels length is smaller than rows * cols * frames.");
+  }
 
   dicomtk::DcmParsedFile dcm;
   dcm.valid_dicom = true;
@@ -658,7 +673,8 @@ bool cpp_write_dicom_matrix(const Rcpp::NumericVector& pixels,
         double v = pixels[r_idx];
         if (!R_finite(v)) v = 0.0;
         uint16_t u = has_negative
-                       ? static_cast<uint16_t>(static_cast<int16_t>(std::round(v)))
+                       ? static_cast<uint16_t>(static_cast<int16_t>(
+                           std::max(-32768.0, std::min(32767.0, std::round(v)))))
                        : static_cast<uint16_t>(std::max(0.0, std::min(65535.0, std::round(v))));
         dcm.pixel_data[out_idx++] = static_cast<uint8_t>(u & 0xFF);
         dcm.pixel_data[out_idx++] = static_cast<uint8_t>((u >> 8) & 0xFF);

@@ -28,4 +28,5 @@ mat <- matrix(seq(0, 255), nrow = 16, ncol = 16)
 out <- tempfile(fileext = ".dcm")
 write_dicom(mat, out, metadata = list(PatientName = "TEST^PATIENT", Modality = "CT"))
 read_dicom(out, wide = TRUE)
+unlink(out)
 }

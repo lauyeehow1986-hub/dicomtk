@@ -43,4 +43,5 @@ create_dicom_sr(
   text = "FINDINGS: Unremarkable brain parenchyma. IMPRESSION: Normal head CT."
 )
 read_dicom_sr(sr_file)
+unlink(sr_file)
 }

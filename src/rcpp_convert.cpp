@@ -151,16 +151,24 @@ bool cpp_dcm_extract_pdf(const std::string& path, const std::string& out_path) {
 bool cpp_dcm_transcode_rle(const std::string& in_path,
                            const std::string& out_path,
                            bool compress = true) {
-  dicomtk::DcmParsedFile dcm = dicomtk::parse_dicom_file(in_path, false, 16);
+  dicomtk::DcmParsedFile dcm = dicomtk::parse_dicom_file(in_path, false, 64);
+
+  auto safe_stoi = [](const std::string& s, int fallback) -> int {
+    try {
+      return std::stoi(s);
+    } catch (...) {
+      return fallback;
+    }
+  };
 
   int rows = 0, cols = 0, nframes = 1, samples = 1, bits_alloc = 16;
   for (const auto& el : dcm.elements) {
     if (el.depth > 0) continue;
-    if (el.group == 0x0028 && el.element == 0x0010) rows = std::stoi(el.value_str);
-    if (el.group == 0x0028 && el.element == 0x0011) cols = std::stoi(el.value_str);
-    if (el.group == 0x0028 && el.element == 0x0008) nframes = std::max(1, std::stoi(el.value_str));
-    if (el.group == 0x0028 && el.element == 0x0002) samples = std::max(1, std::stoi(el.value_str));
-    if (el.group == 0x0028 && el.element == 0x0100) bits_alloc = std::stoi(el.value_str);
+    if (el.group == 0x0028 && el.element == 0x0010) rows = safe_stoi(el.value_str, 0);
+    if (el.group == 0x0028 && el.element == 0x0011) cols = safe_stoi(el.value_str, 0);
+    if (el.group == 0x0028 && el.element == 0x0008) nframes = std::max(1, safe_stoi(el.value_str, 1));
+    if (el.group == 0x0028 && el.element == 0x0002) samples = std::max(1, safe_stoi(el.value_str, 1));
+    if (el.group == 0x0028 && el.element == 0x0100) bits_alloc = safe_stoi(el.value_str, 16);
   }
   int bytes_per_sample = std::max(1, (bits_alloc + 7) / 8);
   std::size_t pixels_per_frame = static_cast<std::size_t>(rows) * static_cast<std::size_t>(cols);

@@ -27,4 +27,5 @@ create_dicom_sr(
   text = "No acute cardiopulmonary abnormality."
 )
 read_dicom_sr(sr_file)
+unlink(sr_file)
 }

@@ -368,4 +368,23 @@ test_that("RLE transcoding, sequence pruning, AT VR, tag precedence, and nesting
   writeBin(c(rep(as.raw(0x00), 128L), charToRaw("DICM"), meta_gl, ts_elem, nested_payload), deep_dcm)
 
   expect_error(read_dicom(deep_dcm, include_sequences = FALSE), "maximum allowed depth")
+
+  # Direct nested (FFFE,E000) item headers inside dataset range also enforce kMaxStreamNesting
+  item_open <- c(u16(0xFFFEL), u16(0xE000L), u32(-1L))
+  item_close <- c(u16(0xFFFEL), u16(0xE00DL), u32(0L))
+  deep_items_dcm <- tempfile(fileext = ".dcm")
+  on.exit(unlink(deep_items_dcm), add = TRUE)
+  writeBin(
+    c(rep(as.raw(0x00), 128L), charToRaw("DICM"), meta_gl, ts_elem, rep(item_open, 70L), rep(item_close, 70L)),
+    deep_items_dcm
+  )
+  expect_error(read_dicom(deep_items_dcm, include_sequences = FALSE), "maximum allowed depth")
+
+  # cpp_write_dicom_matrix clamps signed int16 overflow cleanly and validates buffer length
+  clamp_dcm <- tempfile(fileext = ".dcm")
+  on.exit(unlink(clamp_dcm), add = TRUE)
+  mat_extreme <- matrix(c(-100000, -100, 100, 100000), nrow = 2L, ncol = 2L)
+  expect_true(dicomtk:::cpp_write_dicom_matrix(mat_extreme, clamp_dcm, character(0), character(0)))
+  px_clamped <- read_dicom_pixels(clamp_dcm, rescale = FALSE)
+  expect_equal(as.numeric(px_clamped), c(-32768, -100, 100, 32767))
 })

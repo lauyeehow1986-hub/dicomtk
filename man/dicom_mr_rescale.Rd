@@ -2,21 +2,34 @@
 % Please edit documentation in R/modality-transforms.R
 \name{dicom_mr_rescale}
 \alias{dicom_mr_rescale}
-\title{Apply Philips MR Private Scale Intercept and Slope}
+\title{Apply Philips MR Quantitative Floating-Point or Console Display Scaling}
 \usage{
-dicom_mr_rescale(x)
+dicom_mr_rescale(x, philips_float = TRUE)
 }
 \arguments{
 \item{x}{A \code{\link[=new_dicom_volume]{dicom_volume}} or path to DICOM files.}
+
+\item{philips_float}{Logical. When \code{TRUE} (default) and Philips \code{ScaleSlope}
+\verb{(2005,100E)} is present, returns quantitative floating-point values
+\eqn{P = D / (RS \times SS)}{P = D / (RS * SS)}; when \code{FALSE}, returns
+console display values \code{D}.}
 }
 \value{
 A \code{\link[=new_dicom_volume]{dicom_volume}} with rescaled voxel values and
 appended provenance.
 }
 \description{
-Rescales MR pixel intensities using proprietary Philips private tags
-\verb{(2005,100D)} ScaleIntercept and \verb{(2005,100E)} ScaleSlope to produce
-quantitative floating-point values.
+Rescales MR pixel intensities following Chenevert et al. (2014) and the
+Philips DICOM Conformance Statement using public \code{RescaleIntercept (0028,1052)} (\code{RI}) / \code{RescaleSlope (0028,1053)} (\code{RS}) and proprietary
+Philips private tags \verb{(2005,100D)} (\code{ScaleIntercept}, \code{SI}) and \verb{(2005,100E)}
+(\code{ScaleSlope}, \code{SS}).
+}
+\details{
+For stored integer pixel values \code{R}, console display values are
+\eqn{D = R \times RS + RI}{D = R * RS + RI} and quantitative floating-point
+values are \eqn{P = D / (RS \times SS)}{P = D / (RS * SS)}. Automatically
+accounts for whether \code{x} was already \code{RS}/\code{RI}-rescaled by
+\code{\link[=read_dicom_volume]{read_dicom_volume()}}, preventing double-rescaling.
 }
 \examples{
 out_dir <- tempfile("mr_demo_")
@@ -27,7 +40,7 @@ dicom_synthesize(
   extra_tags = list("(2005,100D)" = "5.0", "(2005,100E)" = "2.0")
 )
 vol <- read_dicom_volume(out_dir)
-rescaled <- dicom_mr_rescale(vol)
+rescaled <- dicom_mr_rescale(vol, philips_float = TRUE)
 rescaled
 unlink(out_dir, recursive = TRUE)
 }

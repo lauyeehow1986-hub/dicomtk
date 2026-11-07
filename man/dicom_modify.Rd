@@ -41,4 +41,5 @@ dcm_file <- system.file("extdata", "example.dcm", package = "dicomtk")
 tmp <- tempfile(fileext = ".dcm")
 dicom_modify(dcm_file, tags = list(PatientName = "ANON^PATIENT"), out_path = tmp)
 dicom_tag_value(tmp, "PatientName")
+unlink(tmp)
 }

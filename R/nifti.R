@@ -131,7 +131,7 @@ nifti_put_chr <- function(buf, off, txt, maxlen) {
 }
 
 # Internal: dependency-free NIfTI-1 (single-file `n+1`) float32 writer
-nifti_write_builtin <- function(arr, sform, qp, out_path) {
+nifti_write_builtin <- function(arr, sform, qp, out_path, dt_sec = 1.0) {
   d <- dim(arr)
   ndim <- length(d)
   dim_vec <- c(ndim, d, rep(1L, 7L - ndim))
@@ -142,13 +142,13 @@ nifti_write_builtin <- function(arr, sform, qp, out_path) {
   buf <- nifti_put_num(buf, 40L, dim_vec, 2L, TRUE)                   # dim[8]
   buf <- nifti_put_num(buf, 70L, 16L, 2L, TRUE)                       # datatype = FLOAT32
   buf <- nifti_put_num(buf, 72L, 32L, 2L, TRUE)                       # bitpix
-  pixdim <- c(qp$qfac, qp$dx, qp$dy, qp$dz, rep(1, 4L))
-  if (ndim == 3L) pixdim[5L] <- 0
+  pixdim <- c(qp$qfac, qp$dx, qp$dy, qp$dz, if (ndim >= 4L) dt_sec else 0, rep(0, 3L))
   buf <- nifti_put_num(buf, 76L, pixdim, 4L)                          # pixdim[8]
   buf <- nifti_put_num(buf, 108L, 352, 4L)                            # vox_offset
   buf <- nifti_put_num(buf, 112L, 1, 4L)                              # scl_slope
   buf <- nifti_put_num(buf, 116L, 0, 4L)                              # scl_inter
-  buf <- nifti_put_num(buf, 123L, 2L, 1L, TRUE)                       # xyzt_units = mm
+  xyzt <- if (ndim >= 4L) 10L else 2L                                 # mm (+ sec for 4D)
+  buf <- nifti_put_num(buf, 123L, xyzt, 1L, TRUE)                     # xyzt_units
   fin <- arr[is.finite(arr)]
   if (length(fin) > 0L) {
     buf <- nifti_put_num(buf, 124L, max(fin), 4L)                     # cal_max
@@ -177,15 +177,20 @@ nifti_write_builtin <- function(arr, sform, qp, out_path) {
 }
 
 # Internal: RNifti-backed writer
-nifti_write_rnifti <- function(arr, sform, qp, out_path) {
+nifti_write_rnifti <- function(arr, sform, qp, out_path, dt_sec = 1.0) {
   nii <- RNifti::asNifti(
     array(as.double(arr), dim = dim(arr)),
     internal = FALSE
   )
+  ndim <- length(dim(arr))
   # `pixdim<-` silently ignores vectors whose length differs from the image
-  # dimensionality, so pad the temporal axis explicitly for 4D volumes.
-  RNifti::pixdim(nii) <- c(qp$dx, qp$dy, qp$dz, rep(1, length(dim(arr)) - 3L))
-  RNifti::pixunits(nii) <- "mm"
+  # dimensionality, so supply exact temporal step for 4D volumes.
+  RNifti::pixdim(nii) <- if (ndim >= 4L) {
+    c(qp$dx, qp$dy, qp$dz, dt_sec, rep(1, ndim - 4L))
+  } else {
+    c(qp$dx, qp$dy, qp$dz)
+  }
+  RNifti::pixunits(nii) <- if (ndim >= 4L) c("mm", "s") else "mm"
   RNifti::sform(nii) <- structure(sform, code = 1L)
   RNifti::qform(nii) <- structure(nifti_qform_matrix(qp), code = 1L)
   RNifti::writeNifti(nii, out_path, datatype = "float")
@@ -237,6 +242,40 @@ nifti_shear_deg <- function(vol_ras) {
   acos(cs) * 180 / pi
 }
 
+# Internal: lookup numeric DICOM tag (in ms) from frame_meta or first source file
+nifti_meta_ms_to_sec <- function(vol, kw) {
+  meta <- vol$frame_meta
+  if (kw %in% names(meta) && nrow(meta) > 0L) {
+    v <- vol_parse_ds(meta[[kw]][1L], expected_len = 1L)
+    if (!is.null(v) && is.finite(v) && v > 0) return(v / 1000.0)
+  }
+  files <- if ("file" %in% names(meta)) unique(meta$file[!is.na(meta$file)]) else character(0)
+  if (length(files) > 0L && file.exists(files[1L])) {
+    raw_v <- tryCatch(dicom_tag_value(files[1L], kw)[[1L]], error = function(e) NA_character_)
+    v <- vol_parse_ds(raw_v, expected_len = 1L)
+    if (!is.null(v) && is.finite(v) && v > 0) return(v / 1000.0)
+  }
+  NULL
+}
+
+# Internal: temporal frame interval (seconds) for 4D volumes
+nifti_extract_dt_sec <- function(vol) {
+  ft <- nifti_meta_ms_to_sec(vol, "FrameTime")
+  if (!is.null(ft)) return(ft)
+  tr <- nifti_meta_ms_to_sec(vol, "RepetitionTime")
+  if (!is.null(tr)) return(tr)
+  meta <- vol$frame_meta
+  if ("AcquisitionTime" %in% names(meta) && nrow(meta) >= 2L) {
+    ts <- vapply(meta$AcquisitionTime, vol_parse_tm_sec, double(1L), USE.NAMES = FALSE)
+    ts <- sort(unique(ts[is.finite(ts)]))
+    if (length(ts) >= 2L) {
+      dt <- stats::median(diff(ts))
+      if (is.finite(dt) && dt > 0) return(dt)
+    }
+  }
+  1.0
+}
+
 # Internal: BIDS-style JSON sidecar
 nifti_write_sidecar <- function(vol, out_path) {
   vol_lps <- to_lps(vol)
@@ -258,6 +297,10 @@ nifti_write_sidecar <- function(vol, out_path) {
     ImageOrientationPatientDICOM = as.double(c(vol_lps$direction$d_row, vol_lps$direction$d_col)),
     PixelSpacing = as.double(vol$spacing[1:2])
   )
+  tr_sec <- nifti_meta_ms_to_sec(vol, "RepetitionTime")
+  if (!is.null(tr_sec)) side$RepetitionTime <- tr_sec
+  te_sec <- nifti_meta_ms_to_sec(vol, "EchoTime")
+  if (!is.null(te_sec)) side$EchoTime <- te_sec
   if (!is.na(vol$modality) && nzchar(vol$modality)) side$Modality <- vol$modality
   if (!is.na(vol$units) && nzchar(vol$units)) side$Units <- vol$units
   jsonlite::write_json(side, paste0(stem, ".json"), auto_unbox = TRUE, digits = NA, pretty = TRUE)
@@ -280,7 +323,8 @@ nifti_write_sidecar <- function(vol, out_path) {
 #' @param json_sidecar Logical. When `TRUE` (default) writes a BIDS-style
 #'   `<stem>.json` sidecar (`Modality`, `ImageOrientationPatientDICOM`,
 #'   `SliceThickness` (nominal DICOM value), `SpacingBetweenSlices`,
-#'   `PixelSpacing`, `ConversionSoftware`, ...) next to the image.
+#'   `RepetitionTime`, `EchoTime`, `PixelSpacing`, `ConversionSoftware`, ...)
+#'   next to the image.
 #' @param backend Writer backend: `"auto"` (default; `RNifti` when installed,
 #'   otherwise the built-in dependency-free writer), `"rnifti"`, or
 #'   `"builtin"`.
@@ -293,7 +337,7 @@ nifti_write_sidecar <- function(vol, out_path) {
 #' vol <- read_dicom_volume(out_dir)
 #' nii <- write_nifti(vol, tempfile(fileext = ".nii"), backend = "builtin")
 #' file.exists(nii)
-#' unlink(out_dir, recursive = TRUE)
+#' unlink(c(out_dir, nii, sub("\\.nii$", ".json", nii)), recursive = TRUE)
 write_nifti <- function(x,
                         out_path = NULL,
                         json_sidecar = TRUE,
@@ -324,6 +368,7 @@ write_nifti <- function(x,
   rows <- dim(vol_ras$voxels)[1L]
   sform <- nifti_sform_from_ras_affine(vol_ras$affine, rows)
   qp <- mat44_to_nifti_quatern(sform)
+  dt_sec <- if (length(dim(vol_ras$voxels)) >= 4L) nifti_extract_dt_sec(vol) else 1.0
 
   shear <- nifti_shear_deg(vol_ras)
   if (shear > 0.05) {
@@ -341,9 +386,9 @@ write_nifti <- function(x,
 
   arr <- nifti_permute_voxels(vol_ras$voxels)
   if (identical(backend, "rnifti")) {
-    nifti_write_rnifti(arr, sform, qp, out_path)
+    nifti_write_rnifti(arr, sform, qp, out_path, dt_sec = dt_sec)
   } else {
-    nifti_write_builtin(arr, sform, qp, out_path)
+    nifti_write_builtin(arr, sform, qp, out_path, dt_sec = dt_sec)
   }
 
   if (isTRUE(json_sidecar)) nifti_write_sidecar(vol, out_path)

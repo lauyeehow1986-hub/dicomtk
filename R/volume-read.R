@@ -682,7 +682,8 @@ vol_read_subseries <- function(sub_row,
     if (regular_grid && has_temporal_variation) {
       # Reconstruct 4D [rows, cols, n_unique_slices, t_rep]
       na_to_inf <- function(v) ifelse(is.finite(v), v, Inf)
-      fref_rank <- ifelse(is.na(fref_dt) | !nzchar(fref_dt), "\uffff", fref_dt)
+      fref_missing <- ifelse(is.na(fref_dt) | !nzchar(fref_dt), 1L, 0L)
+      fref_clean <- ifelse(fref_missing == 1L, "", fref_dt)
 
       idx_matrix <- matrix(0L, nrow = n_unique_slices, ncol = t_rep)
       spatial_ipps <- matrix(0.0, nrow = n_unique_slices, ncol = 3L)
@@ -693,7 +694,8 @@ vol_read_subseries <- function(sub_row,
           na_to_inf(tp_idx[g]),
           na_to_inf(tp_id[g]),
           na_to_inf(trig_t[g]),
-          fref_rank[g],
+          fref_missing[g],
+          fref_clean[g],
           na_to_inf(acq_n[g]),
           na_to_inf(acq_t[g]),
           na_to_inf(cnt_t[g]),

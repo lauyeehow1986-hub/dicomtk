@@ -353,10 +353,10 @@ static void parse_dataset_range(const std::vector<uint8_t>& buf,
       }
       if (element == 0xE000) {
         if (item_len == 0xFFFFFFFFU) {
-          parse_dataset_range(buf, pos, limit, out, current_item_elems, stop_at_pixels, depth, max_depth, seq_prefix);
+          parse_dataset_range(buf, pos, limit, out, current_item_elems, stop_at_pixels, depth + 1, max_depth, seq_prefix);
         } else {
           std::size_t item_end = (item_len <= limit - pos) ? (pos + item_len) : limit;
-          parse_dataset_range(buf, pos, item_end, out, current_item_elems, stop_at_pixels, depth, max_depth, seq_prefix);
+          parse_dataset_range(buf, pos, item_end, out, current_item_elems, stop_at_pixels, depth + 1, max_depth, seq_prefix);
           pos = item_end;
         }
         continue;

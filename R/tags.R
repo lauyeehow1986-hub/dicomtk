@@ -67,6 +67,7 @@ dicom_tag_value <- function(path, tags) {
 #' tmp <- tempfile(fileext = ".dcm")
 #' dicom_modify(dcm_file, tags = list(PatientName = "ANON^PATIENT"), out_path = tmp)
 #' dicom_tag_value(tmp, "PatientName")
+#' unlink(tmp)
 dicom_modify <- function(path,
                          tags = list(),
                          out_path = path,

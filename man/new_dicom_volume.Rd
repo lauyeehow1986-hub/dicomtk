@@ -2,6 +2,7 @@
 % Please edit documentation in R/dicom-volume.R
 \name{new_dicom_volume}
 \alias{new_dicom_volume}
+\alias{dicom_volume}
 \alias{dim.dicom_volume}
 \alias{as.array.dicom_volume}
 \alias{print.dicom_volume}

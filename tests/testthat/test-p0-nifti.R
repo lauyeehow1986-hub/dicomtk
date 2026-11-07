@@ -381,3 +381,36 @@ test_that("rnifti backend records millimetre spatial units like the builtin writ
     expect_equal(bitwAnd(RNifti::niftiHeader(RNifti::readNifti(p))$xyzt_units, 7L), 2L, info = bk)
   }
 })
+
+test_that("BIDS sidecar extracts RepetitionTime/EchoTime in seconds and 4D NIfTI writes temporal pixdim[5] + sec units", {
+  skip_if_not_installed("RNifti")
+
+  aff <- diag(c(2.0, 2.0, 3.0, 1.0))
+  meta4 <- tibble::tibble(
+    SliceThickness = rep("3.0", 6L),
+    RepetitionTime = rep("2000", 6L),
+    EchoTime = rep("30", 6L)
+  )
+  vol4 <- new_dicom_volume(
+    array(runif(4 * 4 * 3 * 2), dim = c(4L, 4L, 3L, 2L)),
+    affine = aff,
+    frame_meta = meta4,
+    modality = "MR"
+  )
+
+  for (bk in c("builtin", "rnifti")) {
+    p <- tempfile(fileext = ".nii")
+    js_path <- sub("\\.nii$", ".json", p)
+    on.exit(unlink(c(p, js_path)), add = TRUE)
+    write_nifti(vol4, p, json_sidecar = TRUE, backend = bk)
+
+    js <- jsonlite::fromJSON(js_path)
+    expect_equal(as.numeric(js$RepetitionTime), 2.0, tolerance = 1e-6, info = bk)
+    expect_equal(as.numeric(js$EchoTime), 0.03, tolerance = 1e-6, info = bk)
+
+    hdr <- RNifti::niftiHeader(RNifti::readNifti(p))
+    expect_equal(as.numeric(hdr$pixdim[5L]), 2.0, tolerance = 1e-5, info = bk)
+    expect_equal(bitwAnd(hdr$xyzt_units, 7L), 2L, info = bk)
+    expect_equal(bitwAnd(hdr$xyzt_units, 56L), 8L, info = bk)
+  }
+})

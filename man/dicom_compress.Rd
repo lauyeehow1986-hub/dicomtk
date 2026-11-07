@@ -25,4 +25,5 @@ syntax (\verb{1.2.840.10008.1.2.5}, per DICOM PS3.5 Annex G).
 dcm_file <- system.file("extdata", "example.dcm", package = "dicomtk")
 rle_file <- dicom_compress(dcm_file)
 file.exists(rle_file)
+unlink(rle_file)
 }

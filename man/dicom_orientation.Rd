@@ -4,20 +4,30 @@
 \alias{dicom_orientation}
 \title{Query Anatomical Orientation of a DICOM Volume}
 \usage{
-dicom_orientation(vol)
+dicom_orientation(vol, coord_system = c("LPS", "RAS"))
 }
 \arguments{
-\item{vol}{A \code{dicom_volume} object, or a 4x4 / 3x3 numeric affine/direction matrix.}
+\item{vol}{A \code{dicom_volume} object, or a finite numeric \verb{3x3} / \verb{4x4}
+\code{dicom_volume}-style affine matrix (column 1 = row step, column 2 = column
+step, column 3 = slice step).}
+
+\item{coord_system}{World coordinate convention (\code{"LPS"} or \code{"RAS"}) used
+when \code{vol} is a raw numeric matrix. Ignored when \code{vol} is a \code{dicom_volume}
+(whose \code{vol$coord_system} is used automatically).}
 }
 \value{
-A length-1 character string naming the coordinate orientation (e.g. \code{"LPS"}, \code{"RAS"}).
+A length-1 3-character string naming the anatomical orientation
+(e.g., \code{"LPS"}, \code{"LIP"}, \code{"PIR"}).
 }
 \description{
-Determines the standard 3-letter anatomical coordinate orientation
-(e.g., \code{"LPS"}, \code{"RAS"}) of a \code{dicom_volume} or orientation matrix.
+Determines the standard 3-letter patient anatomical orientation code
+(e.g., \code{"LPS"} for axial, \code{"LIP"} for coronal, \code{"PIR"} for sagittal) giving
+the physical patient direction (\code{L}/\code{R}, \code{P}/\code{A}, \code{S}/\code{I}) of increasing
+image columns (\code{d_row}), rows (\code{d_col}), and slices (\code{normal} / slice step).
 }
 \examples{
-aff <- diag(c(0.8, 0.8, 2.5, 1.0))
+aff <- diag(4L)
+aff[1:3, 1:3] <- matrix(c(0, 0.8, 0, 0.8, 0, 0, 0, 0, 2.5), nrow = 3L)
 vol <- new_dicom_volume(array(0, dim = c(8L, 8L, 4L)), affine = aff, coord_system = "LPS")
 dicom_orientation(vol)
 }

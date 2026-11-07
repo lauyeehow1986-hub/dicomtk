@@ -906,6 +906,9 @@ dicom_synthesize <- function(out_dir = tempfile("dicom_synth_"),
   invisible(phantom)
 }
 
+#' @rdname dicom_synthesize
+#' @param x A `"dicom_phantom"` object returned by [dicom_synthesize()].
+#' @param ... Additional arguments (unused).
 #' @export
 print.dicom_phantom <- function(x, ...) {
   d <- dim(x$truth_voxels)

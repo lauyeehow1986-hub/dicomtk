@@ -21,7 +21,8 @@ a path to a DICOM file, directory, or vector of files.}
 \item{json_sidecar}{Logical. When \code{TRUE} (default) writes a BIDS-style
 \verb{<stem>.json} sidecar (\code{Modality}, \code{ImageOrientationPatientDICOM},
 \code{SliceThickness} (nominal DICOM value), \code{SpacingBetweenSlices},
-\code{PixelSpacing}, \code{ConversionSoftware}, ...) next to the image.}
+\code{RepetitionTime}, \code{EchoTime}, \code{PixelSpacing}, \code{ConversionSoftware}, ...)
+next to the image.}
 
 \item{backend}{Writer backend: \code{"auto"} (default; \code{RNifti} when installed,
 otherwise the built-in dependency-free writer), \code{"rnifti"}, or
@@ -44,5 +45,5 @@ dicom_synthesize(out_dir = out_dir, modality = "CT", dims = c(16L, 16L, 4L))
 vol <- read_dicom_volume(out_dir)
 nii <- write_nifti(vol, tempfile(fileext = ".nii"), backend = "builtin")
 file.exists(nii)
-unlink(out_dir, recursive = TRUE)
+unlink(c(out_dir, nii, sub("\\\\.nii$", ".json", nii)), recursive = TRUE)
 }

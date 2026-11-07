@@ -26,4 +26,5 @@ native NIfTI-1 binary writer with zero external dependencies.
 dcm_file <- system.file("extdata", "example.dcm", package = "dicomtk")
 nii_file <- dicom_to_nifti(dcm_file)
 file.exists(nii_file)
+unlink(nii_file)
 }

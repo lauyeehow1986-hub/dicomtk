@@ -64,24 +64,55 @@ dicom_pet_suv <- function(x,
     NA_character_
   }
 
+  # Verify pixel units are BQML when Units metadata is present
+  units_hdr <- find_val("Units")
+  if (is.na(units_hdr) && !is.na(vol$units) && nzchar(vol$units)) {
+    units_hdr <- vol$units
+  }
+  if (!is.na(units_hdr) && toupper(trimws(units_hdr)) != "BQML") {
+    cli::cli_abort(
+      "PET SUV calculation requires {.field Units} = {.val BQML}, got {.val {units_hdr}}."
+    )
+  }
+
   # Injected dose and half-life
   dose_str <- find_val("RadionuclideTotalDose")
   if (is.na(dose_str)) {
     cli::cli_abort("Missing {.field RadionuclideTotalDose} in RadiopharmaceuticalInformationSequence.")
   }
   injected_dose <- as.double(dose_str)
+  if (!is.finite(injected_dose) || injected_dose <= 0) {
+    cli::cli_abort("Invalid {.field RadionuclideTotalDose}: {dose_str}")
+  }
 
   halflife_str <- find_val("RadionuclideHalfLife")
   halflife <- if (!is.na(halflife_str)) as.double(halflife_str) else 6586.2 # Default F-18
 
-  # Times for decay
+  # Times and decay-correction mode
   start_tm_str <- find_val("RadiopharmaceuticalStartTime")
   scan_tm_str <- find_val("SeriesTime")
   if (is.na(scan_tm_str)) scan_tm_str <- find_val("AcquisitionTime")
 
+  should_decay <- FALSE
+  if (identical(decay_correct, "force")) {
+    should_decay <- TRUE
+  } else if (identical(decay_correct, "auto")) {
+    decay_tag <- find_val("DecayCorrection")
+    corr_tag <- find_val("CorrectedImage")
+    decay_mode <- if (!is.na(decay_tag)) toupper(trimws(decay_tag)) else NA_character_
+    has_decy <- !is.na(corr_tag) && grepl("DECY", toupper(corr_tag), fixed = TRUE)
+    if (!is.na(decay_mode)) {
+      should_decay <- identical(decay_mode, "START")
+    } else if (!is.na(corr_tag)) {
+      should_decay <- has_decy
+    } else {
+      should_decay <- TRUE
+    }
+  }
+
   decay_factor <- 1.0
-  if (decay_correct %in% c("auto", "force")) {
-    if (!is.na(start_tm_str) && !is.na(scan_tm_str) && halflife > 0) {
+  if (should_decay) {
+    if (!is.na(start_tm_str) && !is.na(scan_tm_str) && is.finite(halflife) && halflife > 0) {
       t_start <- vol_parse_tm_sec(start_tm_str)
       t_scan <- vol_parse_tm_sec(scan_tm_str)
       if (is.finite(t_start) && is.finite(t_scan)) {
@@ -121,7 +152,10 @@ dicom_pet_suv <- function(x,
     if (is.na(height_str)) {
       cli::cli_abort("Missing {.field PatientSize} (height in meters) required for SUVlbm.")
     }
-    height_m <- as.double(height_str)
+    height_m <- suppressWarnings(as.double(height_str))
+    if (!is.finite(height_m) || height_m <= 0) {
+      cli::cli_abort("Invalid {.field PatientSize} (height in meters): {height_str}")
+    }
     bmi <- weight_kg / (height_m^2)
     is_female <- !is.na(sex_str) && toupper(sex_str) %in% c("F", "FEMALE")
     lbm_kg <- if (is_female) {
@@ -137,7 +171,11 @@ dicom_pet_suv <- function(x,
     if (is.na(height_str)) {
       cli::cli_abort("Missing {.field PatientSize} required for SUVbsa.")
     }
-    height_cm <- as.double(height_str) * 100.0
+    height_m <- suppressWarnings(as.double(height_str))
+    if (!is.finite(height_m) || height_m <= 0) {
+      cli::cli_abort("Invalid {.field PatientSize} (height in meters): {height_str}")
+    }
+    height_cm <- height_m * 100.0
     bsa_m2 <- 0.007184 * (weight_kg^0.425) * (height_cm^0.725)
     # SUVbsa = (activity Bq/mL) / (decayed_dose Bq / (bsa_m2 * 10000 cm2))
     scale_factor <- (bsa_m2 * 10000.0) / decayed_dose
@@ -172,17 +210,26 @@ dicom_pet_suv <- function(x,
   )
 }
 
-#' Apply VOI LUT (Window/Level or Non-Linear Table) to DICOM Volume
+#' Apply VOI LUT (Window/Level or Sigmoidal Transfer Function) to DICOM Volume
 #'
-#' Applies DICOM Value of Interest (VOI) Look-Up Table transformations (linear
-#' window/level, `"SIGMOID"`, or embedded sequence LUTs) to a
-#' [`dicom_volume`][new_dicom_volume], scaling output voxels to `[0, 1]`.
+#' Applies DICOM PS3.3 Section C.11.2.1 Value of Interest (VOI) transformations
+#' (`"LINEAR"`, `"LINEAR_EXACT"`, or `"SIGMOID"`) to a
+#' [`dicom_volume`][new_dicom_volume], scaling output voxels to `[0, 1]` and
+#' optionally inverting `PhotometricInterpretation == "MONOCHROME1"` so higher
+#' attenuation appears brighter.
 #'
 #' @param x A [`dicom_volume`][new_dicom_volume] or path to DICOM files.
 #' @param window_center Optional numeric window center override.
 #' @param window_width Optional numeric window width override.
-#' @param function_type Function type: `"auto"` (reads from metadata),
-#'   `"LINEAR"`, or `"SIGMOID"`.
+#' @param function_type VOI LUT function type: `"auto"` (reads `VOILUTFunction`
+#'   from metadata, defaulting to `"LINEAR"`), `"LINEAR"`, `"LINEAR_EXACT"`, or
+#'   `"SIGMOID"`.
+#' @param index 1-based integer index selecting which `(WindowCenter,
+#'   WindowWidth)` preset to apply when multi-valued presets (e.g. `"40\\400"`)
+#'   are stored in the DICOM header. Default is `1L`.
+#' @param invert_monochrome1 Logical. When `TRUE` (default) and
+#'   `PhotometricInterpretation == "MONOCHROME1"`, inverts normalized intensities
+#'   (`1 - y`) for standard presentation polarity.
 #'
 #' @return A [`dicom_volume`][new_dicom_volume] with voxels scaled to `[0, 1]`
 #'   and `units = "normalized"`.
@@ -197,8 +244,19 @@ dicom_pet_suv <- function(x,
 dicom_apply_voi_lut <- function(x,
                                 window_center = NULL,
                                 window_width = NULL,
-                                function_type = c("auto", "LINEAR", "SIGMOID")) {
+                                function_type = c("auto", "LINEAR", "LINEAR_EXACT", "SIGMOID"),
+                                index = 1L,
+                                invert_monochrome1 = TRUE) {
   function_type <- match.arg(function_type)
+  if (!is.numeric(index) || length(index) != 1L || !is.finite(index) ||
+      index < 1 || index != floor(index)) {
+    cli::cli_abort("{.arg index} must be a positive integer.")
+  }
+  idx <- as.integer(index)
+  if (!is.logical(invert_monochrome1) || length(invert_monochrome1) != 1L || is.na(invert_monochrome1)) {
+    cli::cli_abort("{.arg invert_monochrome1} must be {.val TRUE} or {.val FALSE}.")
+  }
+
   vol <- if (is_dicom_volume(x)) x else read_dicom_volume(x, warn = FALSE)
 
   meta <- vol$frame_meta
@@ -206,18 +264,28 @@ dicom_apply_voi_lut <- function(x,
   ww <- window_width
   fn <- function_type
 
-  if (is.null(wc) && "WindowCenter" %in% names(meta)) {
-    v <- vol_parse_ds(meta$WindowCenter[1L], expected_len = 1L)
-    if (!is.null(v)) wc <- v
+  if (is.null(wc) && "WindowCenter" %in% names(meta) && nrow(meta) > 0L) {
+    vals <- vol_parse_ds(meta$WindowCenter[1L])
+    if (!is.null(vals) && length(vals) > 0L) {
+      if (idx > length(vals)) {
+        cli::cli_abort("Requested VOI {.arg index} = {idx}, but only {length(vals)} WindowCenter value(s) present.")
+      }
+      if (is.finite(vals[idx])) wc <- vals[idx]
+    }
   }
-  if (is.null(ww) && "WindowWidth" %in% names(meta)) {
-    v <- vol_parse_ds(meta$WindowWidth[1L], expected_len = 1L)
-    if (!is.null(v) && v > 0) ww <- v
+  if (is.null(ww) && "WindowWidth" %in% names(meta) && nrow(meta) > 0L) {
+    vals <- vol_parse_ds(meta$WindowWidth[1L])
+    if (!is.null(vals) && length(vals) > 0L) {
+      if (idx > length(vals)) {
+        cli::cli_abort("Requested VOI {.arg index} = {idx}, but only {length(vals)} WindowWidth value(s) present.")
+      }
+      if (is.finite(vals[idx]) && vals[idx] > 0) ww <- vals[idx]
+    }
   }
   if (identical(fn, "auto")) {
-    if ("VOILUTFunction" %in% names(meta)) {
+    if ("VOILUTFunction" %in% names(meta) && nrow(meta) > 0L) {
       v <- toupper(trimws(as.character(meta$VOILUTFunction[1L])))
-      fn <- if (v %in% c("LINEAR", "SIGMOID")) v else "LINEAR"
+      fn <- if (v %in% c("LINEAR", "LINEAR_EXACT", "SIGMOID")) v else "LINEAR"
     } else {
       fn <- "LINEAR"
     }
@@ -228,25 +296,53 @@ dicom_apply_voi_lut <- function(x,
     wc <- mean(qs)
     ww <- max(1e-6, diff(qs))
   }
+  if (!is.numeric(wc) || length(wc) != 1L || !is.finite(wc)) {
+    cli::cli_abort("{.arg window_center} must be a single finite number.")
+  }
+  if (!is.numeric(ww) || length(ww) != 1L || !is.finite(ww) || ww <= 0) {
+    cli::cli_abort("{.arg window_width} must be a single positive number.")
+  }
 
   arr <- vol$voxels
   if (identical(fn, "SIGMOID")) {
-    # DICOM PS3.3 Section C.11.2.1.3.2: 1 / (1 + exp(-4 * (2*x - 2*c) / w))
-    # Standard sigmoid LUT: 1 / (1 + exp(-4 * (x - wc) / ww))
+    # DICOM PS3.3 Section C.11.2.1.3.1
     norm_vox <- 1.0 / (1.0 + exp(-4.0 * (arr - wc) / ww))
-  } else {
-    # Standard linear VOI LUT
-    low <- wc - ww / 2.0
-    high <- wc + ww / 2.0
-    norm_vox <- (arr - low) / (high - low)
+  } else if (identical(fn, "LINEAR_EXACT")) {
+    # DICOM PS3.3 Section C.11.2.1.3.2
+    norm_vox <- (arr - wc) / ww + 0.5
     norm_vox[norm_vox < 0.0] <- 0.0
     norm_vox[norm_vox > 1.0] <- 1.0
+  } else {
+    # DICOM PS3.3 Section C.11.2.1.2.1 (LINEAR)
+    if (ww <= 1.0) {
+      norm_vox <- array(ifelse(arr <= (wc - 0.5), 0.0, 1.0), dim = dim(arr), dimnames = dimnames(arr))
+    } else {
+      norm_vox <- ((arr - (wc - 0.5)) / (ww - 1.0)) + 0.5
+      norm_vox[norm_vox < 0.0] <- 0.0
+      norm_vox[norm_vox > 1.0] <- 1.0
+    }
+  }
+
+  photo <- if ("PhotometricInterpretation" %in% names(meta) && nrow(meta) > 0L) {
+    toupper(trimws(as.character(meta$PhotometricInterpretation[1L])))
+  } else {
+    ""
+  }
+  inverted <- isTRUE(invert_monochrome1) && identical(photo, "MONOCHROME1")
+  if (inverted) {
+    norm_vox <- 1.0 - norm_vox
   }
 
   new_prov <- append_provenance(
     vol$provenance,
     action = "dicom_apply_voi_lut",
-    params = list(window_center = wc, window_width = ww, function_type = fn)
+    params = list(
+      window_center = wc,
+      window_width = ww,
+      function_type = fn,
+      index = idx,
+      monochrome1_inverted = inverted
+    )
   )
 
   new_dicom_volume(
@@ -264,13 +360,25 @@ dicom_apply_voi_lut <- function(x,
   )
 }
 
-#' Apply Philips MR Private Scale Intercept and Slope
+#' Apply Philips MR Quantitative Floating-Point or Console Display Scaling
 #'
-#' Rescales MR pixel intensities using proprietary Philips private tags
-#' `(2005,100D)` ScaleIntercept and `(2005,100E)` ScaleSlope to produce
-#' quantitative floating-point values.
+#' Rescales MR pixel intensities following Chenevert et al. (2014) and the
+#' Philips DICOM Conformance Statement using public `RescaleIntercept
+#' (0028,1052)` (`RI`) / `RescaleSlope (0028,1053)` (`RS`) and proprietary
+#' Philips private tags `(2005,100D)` (`ScaleIntercept`, `SI`) and `(2005,100E)`
+#' (`ScaleSlope`, `SS`).
+#'
+#' For stored integer pixel values `R`, console display values are
+#' \eqn{D = R \times RS + RI}{D = R * RS + RI} and quantitative floating-point
+#' values are \eqn{P = D / (RS \times SS)}{P = D / (RS * SS)}. Automatically
+#' accounts for whether `x` was already `RS`/`RI`-rescaled by
+#' [read_dicom_volume()], preventing double-rescaling.
 #'
 #' @param x A [`dicom_volume`][new_dicom_volume] or path to DICOM files.
+#' @param philips_float Logical. When `TRUE` (default) and Philips `ScaleSlope`
+#'   `(2005,100E)` is present, returns quantitative floating-point values
+#'   \eqn{P = D / (RS \times SS)}{P = D / (RS * SS)}; when `FALSE`, returns
+#'   console display values `D`.
 #'
 #' @return A [`dicom_volume`][new_dicom_volume] with rescaled voxel values and
 #'   appended provenance.
@@ -284,42 +392,115 @@ dicom_apply_voi_lut <- function(x,
 #'   extra_tags = list("(2005,100D)" = "5.0", "(2005,100E)" = "2.0")
 #' )
 #' vol <- read_dicom_volume(out_dir)
-#' rescaled <- dicom_mr_rescale(vol)
+#' rescaled <- dicom_mr_rescale(vol, philips_float = TRUE)
 #' rescaled
 #' unlink(out_dir, recursive = TRUE)
-dicom_mr_rescale <- function(x) {
-  vol <- if (is_dicom_volume(x)) x else read_dicom_volume(x, warn = FALSE)
+dicom_mr_rescale <- function(x, philips_float = TRUE) {
+  if (!is.logical(philips_float) || length(philips_float) != 1L || is.na(philips_float)) {
+    cli::cli_abort("{.arg philips_float} must be {.val TRUE} or {.val FALSE}.")
+  }
 
+  vol <- if (is_dicom_volume(x)) x else read_dicom_volume(x, rescale = FALSE, warn = FALSE)
   meta <- vol$frame_meta
-  slope <- 1.0
-  inter <- 0.0
 
-  # Check metadata table or source files for (2005,100D) / (2005,100E)
-  get_tag_val <- function(tg) {
-    if (tg %in% names(meta)) {
-      v <- meta[[tg]][1L]
-      if (!is.na(v) && nzchar(trimws(v))) return(as.double(trimws(v)))
+  was_rescaled <- FALSE
+  for (entry in vol$provenance) {
+    if (is.list(entry) && identical(entry$action, "read_dicom_volume")) {
+      was_rescaled <- isTRUE(entry$params$rescale)
+    }
+  }
+
+  get_tag_val <- function(candidates) {
+    for (tg in candidates) {
+      if (tg %in% names(meta) && nrow(meta) > 0L) {
+        v <- meta[[tg]][1L]
+        if (!is.na(v) && nzchar(trimws(as.character(v)))) {
+          num <- suppressWarnings(as.double(trimws(as.character(v))))
+          if (is.finite(num)) return(num)
+        }
+      }
     }
     files <- if ("file" %in% names(meta)) unique(meta$file[!is.na(meta$file)]) else character(0)
     if (length(files) > 0L && file.exists(files[1L])) {
-      v_raw <- dicom_tag_value(files[1L], tg)[[1L]]
-      if (!is.na(v_raw) && nzchar(trimws(v_raw))) return(as.double(trimws(v_raw)))
+      for (tg in candidates) {
+        v_raw <- tryCatch(dicom_tag_value(files[1L], tg)[[1L]], error = function(e) NA_character_)
+        if (!is.na(v_raw) && nzchar(trimws(v_raw))) {
+          num <- suppressWarnings(as.double(trimws(v_raw)))
+          if (is.finite(num)) return(num)
+        }
+      }
     }
     NULL
   }
 
-  s_val <- get_tag_val("(2005,100E)")
-  i_val <- get_tag_val("(2005,100D)")
+  # Recover raw stored pixel values PV if read_dicom_volume(rescale = TRUE) already applied RS/RI
+  rs_applied <- if ("rescale_slope" %in% names(meta) && nrow(meta) > 0L &&
+                    is.finite(as.double(meta$rescale_slope[1L])) &&
+                    as.double(meta$rescale_slope[1L]) != 0) {
+    as.double(meta$rescale_slope[1L])
+  } else {
+    1.0
+  }
+  ri_applied <- if ("rescale_intercept" %in% names(meta) && nrow(meta) > 0L &&
+                    is.finite(as.double(meta$rescale_intercept[1L]))) {
+    as.double(meta$rescale_intercept[1L])
+  } else {
+    0.0
+  }
 
-  if (!is.null(s_val)) slope <- s_val
-  if (!is.null(i_val)) inter <- i_val
+  pv <- if (was_rescaled) {
+    (vol$voxels - ri_applied) / rs_applied
+  } else {
+    vol$voxels
+  }
 
-  new_vox <- vol$voxels * slope + inter
+  rs_pub_raw <- get_tag_val(c("RescaleSlope", "(0028,1053)"))
+  ri_pub_raw <- get_tag_val(c("RescaleIntercept", "(0028,1052)"))
+  si_priv <- get_tag_val(c("(2005,100D)", "(2005,100d)"))
+  ss_priv <- get_tag_val(c("(2005,100E)", "(2005,100e)"))
+
+  # Also detect explicit zero ScaleSlope strings before numeric coercion drops non-finite
+  if (is.null(ss_priv)) {
+    files <- if ("file" %in% names(meta)) unique(meta$file[!is.na(meta$file)]) else character(0)
+    if (length(files) > 0L && file.exists(files[1L])) {
+      raw_ss <- tryCatch(dicom_tag_value(files[1L], "(2005,100E)")[[1L]], error = function(e) NA_character_)
+      if (!is.na(raw_ss) && nzchar(trimws(raw_ss))) {
+        cli::cli_abort("Invalid Philips private {.field ScaleSlope} (2005,100E): {raw_ss}")
+      }
+    }
+  }
+  if (!is.null(ss_priv) && abs(ss_priv) < 1e-12) {
+    cli::cli_abort("Invalid Philips private {.field ScaleSlope} (2005,100E): must be non-zero.")
+  }
+
+  rs_eff <- if (!is.null(rs_pub_raw) && abs(rs_pub_raw) >= 1e-12) rs_pub_raw else rs_applied
+  ri_eff <- if (!is.null(ri_pub_raw)) {
+    ri_pub_raw
+  } else if (!is.null(si_priv)) {
+    si_priv
+  } else {
+    ri_applied
+  }
+
+  dv <- pv * rs_eff + ri_eff
+  use_fp <- isTRUE(philips_float) && !is.null(ss_priv)
+  new_vox <- if (use_fp) {
+    dv / (rs_eff * ss_priv)
+  } else {
+    dv
+  }
 
   new_prov <- append_provenance(
     vol$provenance,
     action = "dicom_mr_rescale",
-    params = list(scale_slope = slope, scale_intercept = inter)
+    params = list(
+      philips_float = philips_float,
+      used_philips_float = use_fp,
+      rescale_slope = rs_eff,
+      rescale_intercept = ri_eff,
+      scale_slope = ss_priv,
+      scale_intercept = si_priv
+    )
   )
 
   new_dicom_volume(

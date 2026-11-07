@@ -12,8 +12,8 @@
   - Retained `read_dicom_series()` as a backward-compatible wrapper returning `dicom_series` / `dicom_volume`.
 
 * **C++ Hierarchical Sequences & SQ Writer**:
-  - Extended DCMTK C++ bindings with `cpp_set_sequence_item()` and `cpp_write_dicom_file()` to support arbitrary nested Sequence of Items (`VR=SQ`) writing from R list trees.
-  - Added full support for multi-level nested clinical sequences (e.g. `PerFrameFunctionalGroupsSequence`, `RadiopharmaceuticalInformationSequence`).
+  - Extended native C++17 bindings (`cpp_write_dicom_multiframe()`, `cpp_modify_dicom()`, and `cpp_dcm_transcode_rle()`) to read, prune, and write arbitrary nested Sequence of Items (`VR=SQ`) trees from R lists.
+  - Added full support for multi-level nested clinical sequences (e.g. `SharedFunctionalGroupsSequence`, `PerFrameFunctionalGroupsSequence`, `RadiopharmaceuticalInformationSequence`).
 
 * **Synthetic Modality Phantom Generator (`dicom_synthesize()`)**:
   - Implemented `dicom_synthesize()` generating standard-compliant synthetic DICOM series across CT, MR, and PET modalities.

@@ -36,4 +36,5 @@ Renders a DICOM slice with window/level transformation to a PNG image file.
 dcm_file <- system.file("extdata", "example.dcm", package = "dicomtk")
 png_file <- dicom_to_png(dcm_file)
 file.exists(png_file)
+unlink(png_file)
 }

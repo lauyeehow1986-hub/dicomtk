@@ -67,7 +67,7 @@ phantom <- dicom_synthesize(
 length(phantom$files)
 ```
 
-The returned generator object contains exact analytical ground-truth values for `truth_affine_lps`, `truth_affine_ras`, and `truth_voxels`.
+The returned generator object contains exact analytical ground-truth values for `truth_affine_lps`, `truth_voxels`, `direction`, and `spacing`.
 
 ---
 
@@ -88,28 +88,37 @@ vol$affine
 
 ### Checking Orientation
 
-`dicom_orientation()` extracts the standard 3-letter anatomical direction code (e.g., `LPS`, `RAS`, `PIR`):
+`dicom_orientation()` extracts the standard 3-letter patient anatomical direction code (e.g., `LPS` for axial, `LIP` for coronal, `PIR` for sagittal):
 
 ```{r orientation}
 dicom_orientation(vol)
+
+sag_dir <- tempfile("phantom_sag_")
+dicom_synthesize(out_dir = sag_dir, modality = "MR", dims = c(16L, 16L, 4L), orientation = "sagittal", phi = FALSE)
+vol_sag <- read_dicom_volume(sag_dir)
+dicom_orientation(vol_sag)
+unlink(sag_dir, recursive = TRUE)
 ```
 
 ---
 
 ## 3. Transforming Between LPS and RAS Coordinate Spaces
 
-To interface cleanly between DICOM clinical viewers (LPS) and neuroimaging packages like FSL, SPM, ANTs, or FreeSurfer (RAS), use `dicom_to_ras()` and `dicom_to_lps()`:
+To interface cleanly between DICOM clinical viewers (LPS) and neuroimaging packages like FSL, SPM, ANTs, or FreeSurfer (RAS), use `dicom_to_ras()` (`to_ras()`) and `dicom_to_lps()` (`to_lps()`):
 
 ```{r transforms}
-# Convert from DICOM LPS to Neuroimaging RAS
+# Convert world coordinate frame from DICOM LPS to Neuroimaging RAS
 vol_ras <- dicom_to_ras(vol)
+vol_ras$coord_system
+
+# Anatomical axis directions remain invariant because voxel memory is unpermuted
 dicom_orientation(vol_ras)
 
-# Inspect the inverted X/Y columns of the affine
+# Inspect the negated X/Y rows of the 4x4 RAS affine
 vol_ras$affine
 ```
 
-Spatial conversions adjust voxel arrays and affine matrices simultaneously, ensuring that voxel-to-world physical coordinates remain invariant.
+`to_ras()` and `to_lps()` premultiply `affine` and `direction` by `diag(c(-1, -1, 1, 1))` (a 180-degree rotation around the Superior $Z$ axis, $\det = +1$) without permuting in-memory voxel arrays, preserving right-handedness and physical world correspondence.
 
 ---
 
@@ -119,31 +128,55 @@ Raw stored pixel values in DICOM are typically integers requiring physics calibr
 
 ### PET Standardized Uptake Value (SUV)
 
-PET scanners record radioactivity concentrations (Bq/mL). `dicom_pet_suv()` calculates SUV normalized by patient Body Weight (`bw`), Lean Body Mass (`lbm`), or Body Surface Area (`bsa`), with radioactive half-life decay compensation:
+PET scanners record radioactivity concentrations (`BQML`). `dicom_pet_suv()` calculates SUV normalized by patient Body Weight (`bw`), Lean Body Mass (`lbm`), or Body Surface Area (`bsa`), with radioactive half-life decay compensation:
 
-```{r pet-suv, eval = FALSE}
-# Read raw PET volume
-pet_vol <- read_dicom_volume("path/to/pet_series/")
+```{r pet-suv}
+pet_dir <- tempfile("phantom_pet_")
+dicom_synthesize(out_dir = pet_dir, modality = "PT", dims = c(16L, 16L, 2L), phi = FALSE)
+pet_vol <- read_dicom_volume(pet_dir)
 
-# Compute body-weight SUV (g/mL)
-pet_suv <- dicom_pet_suv(pet_vol, type = "bw")
+# Compute body-weight SUV (g/ml)
+pet_suv <- dicom_pet_suv(pet_vol, method = "bw")
+pet_suv
+unlink(pet_dir, recursive = TRUE)
 ```
 
 ### Mammography & Radiography VOI LUT
 
-For digital radiography (DX) and mammography (MG), `dicom_apply_voi_lut()` maps stored pixel values using standard DICOM linear or sigmoidal transfer functions:
+For digital radiography (`DX`) and mammography (`MG`), `dicom_apply_voi_lut()` maps stored pixel values using standard DICOM PS3.3 `LINEAR`, `LINEAR_EXACT`, or `SIGMOID` transfer functions and automatically inverts `MONOCHROME1` images:
 
-```{r voi-lut, eval = FALSE}
-# Linear windowing or non-linear SIGMOID curve
-dx_viewable <- dicom_apply_voi_lut(dx_slice)
+```{r voi-lut}
+mg_dir <- tempfile("phantom_mg_")
+dicom_synthesize(out_dir = mg_dir, modality = "MG", dims = c(16L, 16L, 1L), phi = FALSE)
+mg_vol <- read_dicom_volume(mg_dir)
+
+mg_viewable <- dicom_apply_voi_lut(mg_vol)
+range(mg_viewable$voxels)
+unlink(mg_dir, recursive = TRUE)
 ```
 
 ### Philips MR Private Scaling
 
-Philips MR scanners store image display rescale slopes `(0028,1053)` alongside private true physical scaling slopes `(2005,100D)` and intercepts `(2005,100E)`. `dicom_mr_rescale()` extracts the exact physical scale:
+Philips MR scanners store console display rescale parameters `(0028,1052)` / `(0028,1053)` alongside private quantitative scaling intercept `(2005,100D)` (`ScaleIntercept`) and slope `(2005,100E)` (`ScaleSlope`). `dicom_mr_rescale()` recovers floating-point physical values $P = D / (RS \cdot SS)$ per Chenevert et al. (2014):
 
-```{r mr-rescale, eval = FALSE}
-mr_phys <- dicom_mr_rescale(mr_vol, scale_type = "precise")
+```{r mr-rescale}
+mr_dir <- tempfile("phantom_mr_")
+dicom_synthesize(
+  out_dir = mr_dir,
+  modality = "MR",
+  dims = c(16L, 16L, 2L),
+  extra_tags = list(
+    RescaleIntercept = "0",
+    RescaleSlope = "2.0",
+    "(2005,100D)" = "0",
+    "(2005,100E)" = "4.0"
+  ),
+  phi = FALSE
+)
+mr_vol <- read_dicom_volume(mr_dir)
+mr_phys <- dicom_mr_rescale(mr_vol, philips_float = TRUE)
+mr_phys
+unlink(mr_dir, recursive = TRUE)
 ```
 
 ---

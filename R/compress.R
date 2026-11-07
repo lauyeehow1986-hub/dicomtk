@@ -14,6 +14,7 @@
 #' dcm_file <- system.file("extdata", "example.dcm", package = "dicomtk")
 #' rle_file <- dicom_compress(dcm_file)
 #' file.exists(rle_file)
+#' unlink(rle_file)
 dicom_compress <- function(path,
                            out_path = tempfile(fileext = ".dcm"),
                            method = c("rle")) {
@@ -41,6 +42,7 @@ dicom_compress <- function(path,
 #' rle_file <- dicom_compress(dcm_file)
 #' dec_file <- dicom_decompress(rle_file)
 #' is_dicom(dec_file)
+#' unlink(c(rle_file, dec_file))
 dicom_decompress <- function(path, out_path = tempfile(fileext = ".dcm")) {
   if (length(path) != 1L || !file.exists(path)) {
     rlang::abort("`path` must be a single existing DICOM file path.")

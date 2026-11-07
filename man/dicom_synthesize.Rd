@@ -2,6 +2,7 @@
 % Please edit documentation in R/synthesize.R
 \name{dicom_synthesize}
 \alias{dicom_synthesize}
+\alias{print.dicom_phantom}
 \title{Synthesize Multi-Modality DICOM Phantoms with Exact Ground-Truth Geometry}
 \usage{
 dicom_synthesize(
@@ -23,6 +24,8 @@ dicom_synthesize(
   extra_tags = list(),
   seed = 42L
 )
+
+\method{print}{dicom_phantom}(x, ...)
 }
 \arguments{
 \item{out_dir}{Output directory where synthesized \code{.dcm} file(s) will be
@@ -87,6 +90,10 @@ embed in every written file.}
 
 \item{seed}{Optional integer seed reserved for deterministic phantom
 extensions without mutating the caller's \code{.Random.seed}. Default is \code{42L}.}
+
+\item{x}{A \code{"dicom_phantom"} object returned by \code{\link[=dicom_synthesize]{dicom_synthesize()}}.}
+
+\item{...}{Additional arguments (unused).}
 }
 \value{
 Invisibly returns an S3 object of class \code{"dicom_phantom"} containing:

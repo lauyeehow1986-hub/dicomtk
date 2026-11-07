@@ -20,7 +20,7 @@ frame from a 4D volume (\code{vol[, , , 2, drop = TRUE]}) with all 3 spatial
 dimensions \verb{> 1}, drops the 4th dimension and returns a 3D \code{dicom_volume}.}
 }
 \value{
-A \code{dicom_volume} object (always when \code{drop = FALSE}, or when 3–4
+A \code{dicom_volume} object (always when \code{drop = FALSE}, or when 3-4
 spatial/temporal dimensions remain under \code{drop = TRUE}), or a base R
 array/matrix/vector when \code{drop = TRUE} reduces spatial dimensions \verb{< 3}.
 }

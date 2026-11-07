@@ -24,4 +24,5 @@ dcm_file <- system.file("extdata", "example.dcm", package = "dicomtk")
 rle_file <- dicom_compress(dcm_file)
 dec_file <- dicom_decompress(rle_file)
 is_dicom(dec_file)
+unlink(c(rle_file, dec_file))
 }

@@ -16,6 +16,7 @@
 #' dcm_file <- system.file("extdata", "example.dcm", package = "dicomtk")
 #' png_file <- dicom_to_png(dcm_file)
 #' file.exists(png_file)
+#' unlink(png_file)
 dicom_to_png <- function(path,
                          out_path = tempfile(fileext = ".png"),
                          frame = 1L,
@@ -70,6 +71,7 @@ dicom_to_png <- function(path,
 #' dcm_file <- system.file("extdata", "example.dcm", package = "dicomtk")
 #' nii_file <- dicom_to_nifti(dcm_file)
 #' file.exists(nii_file)
+#' unlink(nii_file)
 dicom_to_nifti <- function(path, out_path = NULL) {
   write_nifti(path, out_path = out_path, json_sidecar = FALSE)
 }
@@ -92,6 +94,7 @@ dicom_to_nifti <- function(path, out_path = NULL) {
 #' dcm_file <- system.file("extdata", "example.dcm", package = "dicomtk")
 #' xml_file <- dcm2xml(dcm_file)
 #' head(readLines(xml_file), 10)
+#' unlink(xml_file)
 dcm2xml <- function(file, out_path = NULL, opts = "", ...) {
   if (length(file) != 1L || !file.exists(file)) {
     rlang::abort("`file` must be a single existing DICOM file path.")
