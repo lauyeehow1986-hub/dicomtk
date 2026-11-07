@@ -16,12 +16,12 @@ write_nifti(
 a path to a DICOM file, directory, or vector of files.}
 
 \item{out_path}{Output \code{.nii} / \code{.nii.gz} path. Defaults to a temporary
-\code{.nii} file.}
+\code{.nii} file. \code{".nii"} is appended when the path has neither extension.}
 
 \item{json_sidecar}{Logical. When \code{TRUE} (default) writes a BIDS-style
 \verb{<stem>.json} sidecar (\code{Modality}, \code{ImageOrientationPatientDICOM},
-\code{SliceThickness}, \code{PixelSpacing}, \code{ConversionSoftware}, ...) next to the
-image.}
+\code{SliceThickness} (nominal DICOM value), \code{SpacingBetweenSlices},
+\code{PixelSpacing}, \code{ConversionSoftware}, ...) next to the image.}
 
 \item{backend}{Writer backend: \code{"auto"} (default; \code{RNifti} when installed,
 otherwise the built-in dependency-free writer), \code{"rnifti"}, or

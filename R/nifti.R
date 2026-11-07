@@ -182,7 +182,10 @@ nifti_write_rnifti <- function(arr, sform, qp, out_path) {
     array(as.double(arr), dim = dim(arr)),
     internal = FALSE
   )
-  RNifti::pixdim(nii) <- c(qp$dx, qp$dy, qp$dz)
+  # `pixdim<-` silently ignores vectors whose length differs from the image
+  # dimensionality, so pad the temporal axis explicitly for 4D volumes.
+  RNifti::pixdim(nii) <- c(qp$dx, qp$dy, qp$dz, rep(1, length(dim(arr)) - 3L))
+  RNifti::pixunits(nii) <- "mm"
   RNifti::sform(nii) <- structure(sform, code = 1L)
   RNifti::qform(nii) <- structure(nifti_qform_matrix(qp), code = 1L)
   RNifti::writeNifti(nii, out_path, datatype = "float")
@@ -197,11 +200,22 @@ nifti_as_volume <- function(x) {
   if (inherits(x, "dicom_series")) {
     vox <- array(as.double(x$volume), dim = dim(x$volume))
     mod <- attr(x$volume, "modality")
+    aff <- x$affine
+    if (!is.matrix(aff) || !identical(dim(aff), c(4L, 4L))) {
+      # v0.1.0 dicom_series objects carry no affine: rebuild the axis-aligned
+      # fallback used by read_dicom_volume() for files without IPP/IOP.
+      ps <- attr(x$volume, "pixel_spacing")
+      if (!is.numeric(ps) || length(ps) < 2L || any(!is.finite(ps[1:2]))) ps <- c(1, 1)
+      st <- attr(x$volume, "slice_thickness")
+      if (!is.numeric(st) || length(st) < 1L || !is.finite(st[1L])) st <- 1
+      aff <- diag(c(ps[1L], ps[2L], st[1L], 1))
+    }
+    meta <- if (inherits(x$metadata, "data.frame")) x$metadata else NULL
     return(new_dicom_volume(
       voxels = vox,
-      affine = x$affine,
+      affine = aff,
       coord_system = "LPS",
-      frame_meta = x$metadata,
+      frame_meta = meta,
       modality = if (is.null(mod)) NA_character_ else as.character(mod)
     ))
   }
@@ -228,10 +242,19 @@ nifti_write_sidecar <- function(vol, out_path) {
   vol_lps <- to_lps(vol)
   stem <- sub("\\.nii(\\.gz)?$", "", out_path, ignore.case = TRUE)
   ver <- tryCatch(as.character(utils::packageVersion("dicomtk")), error = function(e) "0.2.0")
+  step <- as.double(vol$spacing[3L])
+  # BIDS / dcm2niix: SliceThickness is the nominal (0018,0050) value; the
+  # geometric inter-slice step is reported separately.
+  thick <- step
+  if ("SliceThickness" %in% names(vol$frame_meta) && nrow(vol$frame_meta) > 0L) {
+    tv <- vol_parse_ds(vol$frame_meta$SliceThickness[1L], expected_len = 1L)
+    if (!is.null(tv) && tv > 0) thick <- tv
+  }
   side <- list(
     ConversionSoftware = "dicomtk",
     ConversionSoftwareVersion = ver,
-    SliceThickness = as.double(vol$spacing[3L]),
+    SliceThickness = thick,
+    SpacingBetweenSlices = step,
     ImageOrientationPatientDICOM = as.double(c(vol_lps$direction$d_row, vol_lps$direction$d_col)),
     PixelSpacing = as.double(vol$spacing[1:2])
   )
@@ -253,11 +276,11 @@ nifti_write_sidecar <- function(vol, out_path) {
 #' @param x A [`dicom_volume`][new_dicom_volume], a `"dicom_series"` object, or
 #'   a path to a DICOM file, directory, or vector of files.
 #' @param out_path Output `.nii` / `.nii.gz` path. Defaults to a temporary
-#'   `.nii` file.
+#'   `.nii` file. `".nii"` is appended when the path has neither extension.
 #' @param json_sidecar Logical. When `TRUE` (default) writes a BIDS-style
 #'   `<stem>.json` sidecar (`Modality`, `ImageOrientationPatientDICOM`,
-#'   `SliceThickness`, `PixelSpacing`, `ConversionSoftware`, ...) next to the
-#'   image.
+#'   `SliceThickness` (nominal DICOM value), `SpacingBetweenSlices`,
+#'   `PixelSpacing`, `ConversionSoftware`, ...) next to the image.
 #' @param backend Writer backend: `"auto"` (default; `RNifti` when installed,
 #'   otherwise the built-in dependency-free writer), `"rnifti"`, or
 #'   `"builtin"`.
@@ -285,6 +308,11 @@ write_nifti <- function(x,
   if (!is.character(out_path) || length(out_path) != 1L || is.na(out_path) || !nzchar(out_path)) {
     cli::cli_abort("{.arg out_path} must be a single non-empty file path.")
   }
+  # Both backends must agree on the file actually written (RNifti silently
+  # appends ".nii" to extensionless paths).
+  if (!grepl("\\.nii(\\.gz)?$", out_path, ignore.case = TRUE)) {
+    out_path <- paste0(out_path, ".nii")
+  }
 
   if (identical(backend, "auto")) {
     backend <- if (requireNamespace("RNifti", quietly = TRUE)) "rnifti" else "builtin"
@@ -302,6 +330,12 @@ write_nifti <- function(x,
     cli::cli_warn(c(
       "Gantry/detector tilt of {round(shear, 2)} deg detected.",
       "i" = "The quaternion {.field qform} orthogonalizes this shear; the {.field sform} preserves the exact sheared geometry."
+    ))
+  }
+  if (isTRUE(vol$diagnostics$irregular_spacing)) {
+    cli::cli_warn(c(
+      "Irregular slice spacing detected; NIfTI stores a single uniform slice step.",
+      "i" = "World coordinates of slices beyond a gap or overlap will be approximate. Consider resampling first."
     ))
   }
 

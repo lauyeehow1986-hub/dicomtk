@@ -274,3 +274,110 @@ test_that("dicom_to_nifti delegates to write_nifti with matching geometry", {
   target <- analytic_sform_ras(ph$truth_affine_lps, rows = 8L)
   expect_lt(max(abs(as_plain_matrix(RNifti::xform(nii)) - target)), 1e-4)
 })
+
+test_that("write_nifti warns when slice spacing is irregular (uniform NIfTI grid is approximate)", {
+  out_dir <- tempfile("nii_irr_")
+  on.exit(unlink(out_dir, recursive = TRUE), add = TRUE)
+  dicom_synthesize(out_dir = out_dir, modality = "CT", dims = c(8L, 8L, 6L), irregular_z = TRUE)
+  vol <- suppressWarnings(read_dicom_volume(out_dir))
+  expect_true(isTRUE(vol$diagnostics$irregular_spacing))
+
+  p <- tempfile(fileext = ".nii")
+  on.exit(unlink(p), add = TRUE)
+  expect_warning(
+    write_nifti(vol, p, json_sidecar = FALSE, backend = "builtin"),
+    "[Ii]rregular"
+  )
+
+  # Regular series must stay silent
+  reg_dir <- tempfile("nii_reg_")
+  on.exit(unlink(reg_dir, recursive = TRUE), add = TRUE)
+  dicom_synthesize(out_dir = reg_dir, modality = "CT", dims = c(8L, 8L, 4L))
+  p2 <- tempfile(fileext = ".nii")
+  on.exit(unlink(p2), add = TRUE)
+  expect_no_warning(write_nifti(read_dicom_volume(reg_dir), p2, json_sidecar = FALSE, backend = "builtin"))
+})
+
+test_that("write_nifti accepts legacy v0.1.0 dicom_series objects without $affine", {
+  skip_if_not_installed("RNifti")
+  legacy <- structure(
+    list(
+      volume = structure(array(as.double(1:32), dim = c(4L, 4L, 2L)),
+                         pixel_spacing = c(0.5, 0.75), slice_thickness = 2),
+      metadata = tibble::tibble(), files = character(0),
+      dims = c(rows = 4L, cols = 4L, slices = 2L)
+    ),
+    class = "dicom_series"
+  )
+  p <- tempfile(fileext = ".nii")
+  on.exit(unlink(p), add = TRUE)
+  expect_no_error(write_nifti(legacy, p, json_sidecar = FALSE, backend = "builtin"))
+  nii <- RNifti::readNifti(p)
+  expect_equal(unname(dim(nii)), c(4L, 4L, 2L))
+  # column spacing (0.75) on i, row spacing (0.5) on j, slice thickness on k
+  sf <- as_plain_matrix(RNifti::xform(nii))
+  expect_equal(sqrt(colSums(sf[1:3, 1:3]^2)), c(0.75, 0.5, 2), tolerance = 1e-6)
+})
+
+test_that("write_nifti appends .nii to extensionless paths and returns the real file for every backend", {
+  skip_if_not_installed("RNifti")
+  vol <- new_dicom_volume(array(1, dim = c(4L, 4L, 2L)))
+  for (bk in c("rnifti", "builtin")) {
+    stem <- tempfile(paste0("noext_", bk, "_"))
+    on.exit(unlink(paste0(stem, c("", ".nii"))), add = TRUE)
+    ret <- write_nifti(vol, stem, json_sidecar = FALSE, backend = bk)
+    expect_equal(ret, paste0(stem, ".nii"), info = bk)
+    expect_true(file.exists(ret), info = bk)
+    expect_false(file.exists(stem), info = bk)
+  }
+})
+
+test_that("rnifti backend writes 4D volumes identically to the builtin writer", {
+  skip_if_not_installed("RNifti")
+  vox4 <- array(as.numeric(seq_len(6 * 5 * 3 * 2)), dim = c(6L, 5L, 3L, 2L))
+  aff <- diag(c(0.5, 0.5, 2, 1))
+  aff[1:3, 4L] <- c(-5, -6, 7)
+  vol4 <- new_dicom_volume(vox4, affine = aff, modality = "MR")
+  pr <- tempfile(fileext = ".nii")
+  pb <- tempfile(fileext = ".nii")
+  on.exit(unlink(c(pr, pb)), add = TRUE)
+  write_nifti(vol4, pr, json_sidecar = FALSE, backend = "rnifti")
+  write_nifti(vol4, pb, json_sidecar = FALSE, backend = "builtin")
+  a <- RNifti::readNifti(pr)
+  b <- RNifti::readNifti(pb)
+  expect_equal(unname(dim(a)), c(5L, 6L, 3L, 2L))
+  expect_equal(as.array(a), as.array(b), ignore_attr = TRUE)
+  expect_lt(max(abs(as_plain_matrix(RNifti::xform(a)) - as_plain_matrix(RNifti::xform(b)))), 1e-6)
+})
+
+test_that("BIDS sidecar SliceThickness follows the DICOM tag; step goes to SpacingBetweenSlices", {
+  # Overlapping recon: 5 mm thick slices reconstructed every 2.5 mm
+  aff <- diag(c(0.8, 0.8, 2.5, 1))
+  vol <- new_dicom_volume(
+    array(0, dim = c(4L, 4L, 3L)), affine = aff, modality = "CT",
+    frame_meta = tibble::tibble(SliceThickness = rep("5", 3L))
+  )
+  p <- tempfile(fileext = ".nii")
+  json <- sub("\\.nii$", ".json", p)
+  on.exit(unlink(c(p, json)), add = TRUE)
+  write_nifti(vol, p, json_sidecar = TRUE, backend = "builtin")
+  js <- jsonlite::fromJSON(json)
+  expect_equal(as.numeric(js$SliceThickness), 5)
+  expect_equal(as.numeric(js$SpacingBetweenSlices), 2.5)
+
+  # No tag -> SliceThickness falls back to the geometric step
+  vol2 <- new_dicom_volume(array(0, dim = c(4L, 4L, 3L)), affine = aff)
+  write_nifti(vol2, p, json_sidecar = TRUE, backend = "builtin")
+  expect_equal(as.numeric(jsonlite::fromJSON(json)$SliceThickness), 2.5)
+})
+
+test_that("rnifti backend records millimetre spatial units like the builtin writer", {
+  skip_if_not_installed("RNifti")
+  vol <- new_dicom_volume(array(1, dim = c(4L, 4L, 2L)))
+  for (bk in c("rnifti", "builtin")) {
+    p <- tempfile(fileext = ".nii")
+    on.exit(unlink(p), add = TRUE)
+    write_nifti(vol, p, json_sidecar = FALSE, backend = bk)
+    expect_equal(bitwAnd(RNifti::niftiHeader(RNifti::readNifti(p))$xyzt_units, 7L), 2L, info = bk)
+  }
+})
