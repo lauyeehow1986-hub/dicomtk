@@ -42,6 +42,26 @@
 
 
 
+### Phase 0 (`v0.2.0` Foundations) — Completed
+- [x] **Task 1: C++ Hierarchical Sequences & Nested `SQ` Writer**:
+  - Implemented `cpp_set_sequence_item()` and `cpp_write_dicom_file()` in `src/rcpp_read.cpp` and `src/rcpp_write.cpp` supporting arbitrary nested sequences from R list structures.
+- [x] **Task 2: Synthetic Phantom Generator (`dicom_synthesize()`)**:
+  - Parametric synthesis of CT, MR, and PET series in `R/synthesize.R` with known analytical ground-truth LPS/RAS affines, voxel arrays, non-orthogonal gantry tilt, and PHI injection/scrubbing.
+- [x] **Task 3: `dicom_volume` S3 Class & Spatial Transforms**:
+  - Implemented `new_dicom_volume()`, `print.dicom_volume()`, `dim.dicom_volume()`, `[.dicom_volume()` (with affine translation/rescaling), `as.array.dicom_volume()`, `dicom_orientation()`, `dicom_to_lps()`, and `dicom_to_ras()` in `R/dicom-volume.R`.
+- [x] **Task 4: Geometry-Aware `read_dicom_volume()`**:
+  - Implemented `read_dicom_volume()` in `R/volume-read.R` with enhanced multi-frame support (`SharedFunctionalGroupsSequence` / `PerFrameFunctionalGroupsSequence`), series splitting, and transparent delegation for `read_dicom_series()`.
+- [x] **Task 5: Modality Quantitative Transforms**:
+  - Implemented `dicom_pet_suv()` (bw, lbm James/Janmahasatian, bsa with decay correction), `dicom_apply_voi_lut()` (linear and sigmoid windowing), and `dicom_mr_rescale()` (Philips private attributes 2005,100D/100E) in `R/modality-transforms.R`.
+- [x] **Task 6: `write_nifti()` with `dcm2niix` Parity**:
+  - Implemented `write_nifti()` in `R/nifti.R` with exact RAS `sform`, polar SVD `qform` decomposition, BIDS JSON sidecar, zero-dependency pure R binary writer, `RNifti` backend fallback, gantry-tilt notification, and `dicom_to_nifti()` delegation.
+- [x] **Task 7: CI Fixture Downloader & Parity Validation**:
+  - Implemented `tools/download_fixtures.R` syncing 11 scanner fixtures, `tests/testthat/helper-fixtures.R` Chris Rorden oracle, and `tests/testthat/test-p0-dcm2niix-parity.R`.
+- [x] **Task 8: `dicomtk-lab` Container Testbed**:
+  - Standalone multi-profile Docker Compose environment at `C:/Users/lauye/.gemini/antigravity/scratch/dicomtk-lab` with `core`, `enterprise`, `ehr`, `ohdsi`, `ttp`, and `fl` profiles, and `tests/testthat/test-p0-lab-core.R` smoke test.
+- [x] **Task 9: `v0.2.0` Release Documentation & Vignettes**:
+  - Updated `DESCRIPTION` (0.2.0), `NEWS.md`, `_pkgdown.yml`, `vignettes/volume-geometry.Rmd`, and verified full test suite.
+
 ### Next Phase Roadmap (validated 2026-10-24)
 - Design: `dev/plans/2026-10-24-roadmap-v0.2-v1.0-design.md` (plans live in `dev/` because `docs/` is pkgdown output).
 - Packages: `dicomtk` (CRAN core) + `dicomtk.ai` + `dicomtk.server` + `dicomtk.fl`; test lab in separate repo `dicomtk-lab` (docker-compose profiles: core, ai, ehr, ohdsi, ttp, fl).

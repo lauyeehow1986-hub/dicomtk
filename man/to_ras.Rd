@@ -3,11 +3,17 @@
 \name{to_ras}
 \alias{to_ras}
 \alias{to_lps}
+\alias{dicom_to_ras}
+\alias{dicom_to_lps}
 \title{Convert a \code{dicom_volume} Between DICOM LPS and NIfTI RAS World Coordinates}
 \usage{
 to_ras(vol)
 
 to_lps(vol)
+
+dicom_to_ras(vol)
+
+dicom_to_lps(vol)
 }
 \arguments{
 \item{vol}{A \code{dicom_volume} object.}

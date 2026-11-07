@@ -770,6 +770,37 @@ to_lps <- function(vol) {
   append_provenance(vol, action = "to_lps", params = list(from = "RAS", to = "LPS"))
 }
 
+#' @rdname to_ras
+#' @export
+dicom_to_ras <- to_ras
+
+#' @rdname to_ras
+#' @export
+dicom_to_lps <- to_lps
+
+#' Query Anatomical Orientation of a DICOM Volume
+#'
+#' Determines the standard 3-letter anatomical coordinate orientation
+#' (e.g., `"LPS"`, `"RAS"`) of a `dicom_volume` or orientation matrix.
+#'
+#' @param vol A `dicom_volume` object, or a 4x4 / 3x3 numeric affine/direction matrix.
+#' @return A length-1 character string naming the coordinate orientation (e.g. `"LPS"`, `"RAS"`).
+#' @export
+#' @examples
+#' aff <- diag(c(0.8, 0.8, 2.5, 1.0))
+#' vol <- new_dicom_volume(array(0, dim = c(8L, 8L, 4L)), affine = aff, coord_system = "LPS")
+#' dicom_orientation(vol)
+dicom_orientation <- function(vol) {
+  if (is_dicom_volume(vol)) {
+    if (!is.null(vol$coord_system) && nzchar(vol$coord_system)) {
+      return(as.character(vol$coord_system))
+    }
+  } else if (!is.matrix(vol)) {
+    cli::cli_abort("{.arg vol} must be a {.cls dicom_volume} or numeric matrix.")
+  }
+  "LPS"
+}
+
 #' Map Between Voxel Indices and Physical World Coordinates
 #'
 #' Maps 3D voxel coordinates `(r, c, s)` to physical world coordinates

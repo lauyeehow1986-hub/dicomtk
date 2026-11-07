@@ -12,6 +12,7 @@
 ^src/.*\.o$
 ^src/.*\.so$
 ^src/.*\.dll$
+^\.git$
 ^\.gitattributes$
 ^cran-comments\.md$
 ^pkgdown$

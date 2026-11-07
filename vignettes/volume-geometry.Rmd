@@ -1,0 +1,177 @@
+---
+title: "3D/4D Volume Geometry, Spatial Transforms, and NIfTI Export"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{3D/4D Volume Geometry, Spatial Transforms, and NIfTI Export}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Overview
+
+Medical cross-sectional imaging (CT, MR, PET, SPECT) inherently captures 3D volumes across space and time. However, different software ecosystems adopt contrasting spatial coordinate systems:
+
+1. **DICOM Patient Coordinate System (LPS)**:
+   - $+X$: towards the patient's Left
+   - $+Y$: towards the patient's Posterior
+   - $+Z$: towards the patient's Superior (head)
+   - Defined by `ImageOrientationPatient` ($F_{col}$, $F_{row}$ direction cosines) and `ImagePositionPatient` ($S_0$).
+
+2. **Neuroimaging / NIfTI Coordinate System (RAS)**:
+   - $+X$: towards the patient's Right (inverted from LPS)
+   - $+Y$: towards the patient's Anterior (inverted from LPS)
+   - $+Z$: towards the patient's Superior
+   - Represented by a $4 \times 4$ homogeneous affine transformation matrix (`sform`) and quaternion rotation (`qform`).
+
+`dicomtk` v0.2.0 introduces end-to-end, standards-compliant 3D/4D volume processing:
+- `dicom_volume`: An S3 class binding numerical voxel arrays with analytical affine matrices and slice metadata.
+- `read_dicom_volume()`: Geometry-aware reader for multi-slice directories and enhanced multi-frame DICOM IODs.
+- `dicom_orientation()`, `dicom_to_lps()`, `dicom_to_ras()`: Lossless spatial transformations.
+- `dicom_pet_suv()`, `dicom_apply_voi_lut()`, `dicom_mr_rescale()`: Modality-specific quantitative physics calibrations.
+- `write_nifti()`: `dcm2niix`-compatible NIfTI-1 export with BIDS JSON sidecars.
+
+```{r setup}
+library(dicomtk)
+```
+
+---
+
+## 1. Synthesizing Ground-Truth Medical Phantoms
+
+For testing and reproducible research, `dicom_synthesize()` generates standards-compliant DICOM series for CT, MR, and PET modalities with known ground truth geometry, orientations (axial, coronal, sagittal, or oblique), and optional gantry tilt.
+
+```{r synthesize}
+synth_dir <- tempfile("phantom_ct_")
+dir.create(synth_dir, recursive = TRUE)
+
+# Generate a 4-slice oblique CT phantom
+phantom <- dicom_synthesize(
+  out_dir = synth_dir,
+  modality = "CT",
+  dims = c(32L, 32L, 4L),
+  spacing = c(0.8, 0.8, 2.5),
+  origin = c(-20.0, -15.0, 10.0),
+  orientation = "oblique",
+  oblique_angles_deg = c(15, -10, 5),
+  phi = FALSE
+)
+
+# Inspect synthesized files
+length(phantom$files)
+```
+
+The returned generator object contains exact analytical ground-truth values for `truth_affine_lps`, `truth_affine_ras`, and `truth_voxels`.
+
+---
+
+## 2. Reading 3D Volumes with `read_dicom_volume()`
+
+`read_dicom_volume()` inspects all slices in a folder, sorts them along the slice-normal trajectory, calculates the analytical $4 \times 4$ voxel-to-world affine matrix, and verifies slice continuity:
+
+```{r read-volume}
+vol <- read_dicom_volume(synth_dir)
+
+# Print summary of S3 dicom_volume object
+vol
+
+# Inspect dimensions and affine matrix
+dim(vol)
+vol$affine
+```
+
+### Checking Orientation
+
+`dicom_orientation()` extracts the standard 3-letter anatomical direction code (e.g., `LPS`, `RAS`, `PIR`):
+
+```{r orientation}
+dicom_orientation(vol)
+```
+
+---
+
+## 3. Transforming Between LPS and RAS Coordinate Spaces
+
+To interface cleanly between DICOM clinical viewers (LPS) and neuroimaging packages like FSL, SPM, ANTs, or FreeSurfer (RAS), use `dicom_to_ras()` and `dicom_to_lps()`:
+
+```{r transforms}
+# Convert from DICOM LPS to Neuroimaging RAS
+vol_ras <- dicom_to_ras(vol)
+dicom_orientation(vol_ras)
+
+# Inspect the inverted X/Y columns of the affine
+vol_ras$affine
+```
+
+Spatial conversions adjust voxel arrays and affine matrices simultaneously, ensuring that voxel-to-world physical coordinates remain invariant.
+
+---
+
+## 4. Modality Quantitative Transforms
+
+Raw stored pixel values in DICOM are typically integers requiring physics calibrations before analysis.
+
+### PET Standardized Uptake Value (SUV)
+
+PET scanners record radioactivity concentrations (Bq/mL). `dicom_pet_suv()` calculates SUV normalized by patient Body Weight (`bw`), Lean Body Mass (`lbm`), or Body Surface Area (`bsa`), with radioactive half-life decay compensation:
+
+```{r pet-suv, eval = FALSE}
+# Read raw PET volume
+pet_vol <- read_dicom_volume("path/to/pet_series/")
+
+# Compute body-weight SUV (g/mL)
+pet_suv <- dicom_pet_suv(pet_vol, type = "bw")
+```
+
+### Mammography & Radiography VOI LUT
+
+For digital radiography (DX) and mammography (MG), `dicom_apply_voi_lut()` maps stored pixel values using standard DICOM linear or sigmoidal transfer functions:
+
+```{r voi-lut, eval = FALSE}
+# Linear windowing or non-linear SIGMOID curve
+dx_viewable <- dicom_apply_voi_lut(dx_slice)
+```
+
+### Philips MR Private Scaling
+
+Philips MR scanners store image display rescale slopes `(0028,1053)` alongside private true physical scaling slopes `(2005,100D)` and intercepts `(2005,100E)`. `dicom_mr_rescale()` extracts the exact physical scale:
+
+```{r mr-rescale, eval = FALSE}
+mr_phys <- dicom_mr_rescale(mr_vol, scale_type = "precise")
+```
+
+---
+
+## 5. Exporting to NIfTI-1 with BIDS Sidecar (`write_nifti()`)
+
+`write_nifti()` writes standards-compliant NIfTI-1 (`.nii`) files matching Chris Rorden's `dcm2niix` specification:
+
+- Exact `sform` affine matrix in RAS coordinate space.
+- Exact `qform` quaternion rotation derived via polar SVD decomposition.
+- Companion BIDS JSON sidecar (`<filename>.json`) capturing scanner parameters (`RepetitionTime`, `EchoTime`, `SliceThickness`, `SpacingBetweenSlices`).
+
+```{r write-nifti}
+out_nii <- tempfile(fileext = ".nii")
+bids_json <- sub("\\.nii$", ".json", out_nii)
+write_nifti(vol, out_nii, json_sidecar = TRUE)
+
+file.exists(out_nii)
+file.exists(bids_json)
+
+# Clean up
+unlink(c(synth_dir, out_nii, bids_json), recursive = TRUE)
+```
+
+---
+
+## 6. Full Backward Compatibility
+
+All existing functions from `dicomtk` v0.1.0 remain fully functional:
+- `read_dicom_series()` delegates directly to `read_dicom_volume()`.
+- `dicom_to_nifti()` delegates directly to `write_nifti()`.

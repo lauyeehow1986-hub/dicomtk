@@ -3,6 +3,15 @@ template:
   bootstrap: 5
 
 reference:
+  - title: "3D/4D Volume Geometry & Coordinate Spaces"
+    desc: "Standards-compliant 3D/4D DICOM volume reconstruction, LPS/RAS coordinate transforms, and slicing."
+    contents:
+      - read_dicom_volume
+      - dicom_volume
+      - dicom_orientation
+      - dicom_to_lps
+      - dicom_to_ras
+
   - title: "Core DICOM I/O"
     desc: "Read and write DICOM headers, pixel matrices, and 3D multi-slice series."
     contents:
@@ -16,6 +25,17 @@ reference:
       - dicom_info
       - dicom_sync_upstream
 
+  - title: "Synthetic Modality Phantoms"
+    desc: "Generate analytical multi-slice DICOM series (CT, MR, PET) with known ground-truth geometry."
+    contents:
+      - dicom_synthesize
+
+  - title: "Quantitative Modality Transforms"
+    desc: "PET SUV quantification, Mammography VOI LUT curves, and Philips MR private scaling."
+    contents:
+      - dicom_pet_suv
+      - dicom_apply_voi_lut
+      - dicom_mr_rescale
 
   - title: "DICOM Tags & Dictionary"
     desc: "Inspect, modify, and query the 5,354-tag DCMTK 3.7.1 data dictionary."
@@ -45,8 +65,9 @@ reference:
   - title: "Conversion & Compression"
     desc: "Convert between DICOM, PNG, NIfTI, XML, JSON, PDF, and RLE compression."
     contents:
-      - dicom_to_png
+      - write_nifti
       - dicom_to_nifti
+      - dicom_to_png
       - dcm2xml
       - dcm2json
       - dcm2pdf
