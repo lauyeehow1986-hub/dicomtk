@@ -17,6 +17,38 @@ cpp_dcm_transcode_rle <- function(in_path, out_path, compress = TRUE) {
     .Call(`_dicomtk_cpp_dcm_transcode_rle`, in_path, out_path, compress)
 }
 
+cpp_hmac_sha256_hex <- function(key, data) {
+    .Call(`_dicomtk_cpp_hmac_sha256_hex`, key, data)
+}
+
+cpp_pbkdf2_sha256 <- function(password, salt, iterations, dk_len) {
+    .Call(`_dicomtk_cpp_pbkdf2_sha256`, password, salt, iterations, dk_len)
+}
+
+cpp_hkdf_sha256 <- function(ikm, salt, info, length) {
+    .Call(`_dicomtk_cpp_hkdf_sha256`, ikm, salt, info, length)
+}
+
+cpp_aead_encrypt <- function(key, plaintext, aad) {
+    .Call(`_dicomtk_cpp_aead_encrypt`, key, plaintext, aad)
+}
+
+cpp_aead_decrypt <- function(key, ciphertext, aad) {
+    .Call(`_dicomtk_cpp_aead_decrypt`, key, ciphertext, aad)
+}
+
+cpp_hmac_uid <- function(key, uid) {
+    .Call(`_dicomtk_cpp_hmac_uid`, key, uid)
+}
+
+cpp_hmac_shift_days <- function(key, patient_id, min_days, max_days) {
+    .Call(`_dicomtk_cpp_hmac_shift_days`, key, patient_id, min_days, max_days)
+}
+
+cpp_sha256_file <- function(path) {
+    .Call(`_dicomtk_cpp_sha256_file`, path)
+}
+
 cpp_read_dicom_pixels <- function(path, frame = 0L, rescale = TRUE) {
     .Call(`_dicomtk_cpp_read_dicom_pixels`, path, frame, rescale)
 }

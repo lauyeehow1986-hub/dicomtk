@@ -57,6 +57,109 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// cpp_hmac_sha256_hex
+std::string cpp_hmac_sha256_hex(Rcpp::RawVector key, Rcpp::RawVector data);
+RcppExport SEXP _dicomtk_cpp_hmac_sha256_hex(SEXP keySEXP, SEXP dataSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type key(keySEXP);
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type data(dataSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_hmac_sha256_hex(key, data));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_pbkdf2_sha256
+Rcpp::RawVector cpp_pbkdf2_sha256(Rcpp::RawVector password, Rcpp::RawVector salt, int iterations, int dk_len);
+RcppExport SEXP _dicomtk_cpp_pbkdf2_sha256(SEXP passwordSEXP, SEXP saltSEXP, SEXP iterationsSEXP, SEXP dk_lenSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type password(passwordSEXP);
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type salt(saltSEXP);
+    Rcpp::traits::input_parameter< int >::type iterations(iterationsSEXP);
+    Rcpp::traits::input_parameter< int >::type dk_len(dk_lenSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_pbkdf2_sha256(password, salt, iterations, dk_len));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_hkdf_sha256
+Rcpp::RawVector cpp_hkdf_sha256(Rcpp::RawVector ikm, Rcpp::RawVector salt, Rcpp::RawVector info, int length);
+RcppExport SEXP _dicomtk_cpp_hkdf_sha256(SEXP ikmSEXP, SEXP saltSEXP, SEXP infoSEXP, SEXP lengthSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type ikm(ikmSEXP);
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type salt(saltSEXP);
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type info(infoSEXP);
+    Rcpp::traits::input_parameter< int >::type length(lengthSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_hkdf_sha256(ikm, salt, info, length));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_aead_encrypt
+Rcpp::RawVector cpp_aead_encrypt(Rcpp::RawVector key, Rcpp::RawVector plaintext, Rcpp::RawVector aad);
+RcppExport SEXP _dicomtk_cpp_aead_encrypt(SEXP keySEXP, SEXP plaintextSEXP, SEXP aadSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type key(keySEXP);
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type plaintext(plaintextSEXP);
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type aad(aadSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_aead_encrypt(key, plaintext, aad));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_aead_decrypt
+Rcpp::RawVector cpp_aead_decrypt(Rcpp::RawVector key, Rcpp::RawVector ciphertext, Rcpp::RawVector aad);
+RcppExport SEXP _dicomtk_cpp_aead_decrypt(SEXP keySEXP, SEXP ciphertextSEXP, SEXP aadSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type key(keySEXP);
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type ciphertext(ciphertextSEXP);
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type aad(aadSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_aead_decrypt(key, ciphertext, aad));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_hmac_uid
+std::string cpp_hmac_uid(Rcpp::RawVector key, std::string uid);
+RcppExport SEXP _dicomtk_cpp_hmac_uid(SEXP keySEXP, SEXP uidSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type key(keySEXP);
+    Rcpp::traits::input_parameter< std::string >::type uid(uidSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_hmac_uid(key, uid));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_hmac_shift_days
+int cpp_hmac_shift_days(Rcpp::RawVector key, std::string patient_id, int min_days, int max_days);
+RcppExport SEXP _dicomtk_cpp_hmac_shift_days(SEXP keySEXP, SEXP patient_idSEXP, SEXP min_daysSEXP, SEXP max_daysSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type key(keySEXP);
+    Rcpp::traits::input_parameter< std::string >::type patient_id(patient_idSEXP);
+    Rcpp::traits::input_parameter< int >::type min_days(min_daysSEXP);
+    Rcpp::traits::input_parameter< int >::type max_days(max_daysSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_hmac_shift_days(key, patient_id, min_days, max_days));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_sha256_file
+std::string cpp_sha256_file(std::string path);
+RcppExport SEXP _dicomtk_cpp_sha256_file(SEXP pathSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type path(pathSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_sha256_file(path));
+    return rcpp_result_gen;
+END_RCPP
+}
 // cpp_read_dicom_pixels
 Rcpp::NumericVector cpp_read_dicom_pixels(const std::string& path, int frame, bool rescale);
 RcppExport SEXP _dicomtk_cpp_read_dicom_pixels(SEXP pathSEXP, SEXP frameSEXP, SEXP rescaleSEXP) {
@@ -254,6 +357,14 @@ static const R_CallMethodDef CallEntries[] = {
     {"_dicomtk_cpp_dcm_to_json", (DL_FUNC) &_dicomtk_cpp_dcm_to_json, 1},
     {"_dicomtk_cpp_dcm_extract_pdf", (DL_FUNC) &_dicomtk_cpp_dcm_extract_pdf, 2},
     {"_dicomtk_cpp_dcm_transcode_rle", (DL_FUNC) &_dicomtk_cpp_dcm_transcode_rle, 3},
+    {"_dicomtk_cpp_hmac_sha256_hex", (DL_FUNC) &_dicomtk_cpp_hmac_sha256_hex, 2},
+    {"_dicomtk_cpp_pbkdf2_sha256", (DL_FUNC) &_dicomtk_cpp_pbkdf2_sha256, 4},
+    {"_dicomtk_cpp_hkdf_sha256", (DL_FUNC) &_dicomtk_cpp_hkdf_sha256, 4},
+    {"_dicomtk_cpp_aead_encrypt", (DL_FUNC) &_dicomtk_cpp_aead_encrypt, 3},
+    {"_dicomtk_cpp_aead_decrypt", (DL_FUNC) &_dicomtk_cpp_aead_decrypt, 3},
+    {"_dicomtk_cpp_hmac_uid", (DL_FUNC) &_dicomtk_cpp_hmac_uid, 2},
+    {"_dicomtk_cpp_hmac_shift_days", (DL_FUNC) &_dicomtk_cpp_hmac_shift_days, 4},
+    {"_dicomtk_cpp_sha256_file", (DL_FUNC) &_dicomtk_cpp_sha256_file, 1},
     {"_dicomtk_cpp_read_dicom_pixels", (DL_FUNC) &_dicomtk_cpp_read_dicom_pixels, 3},
     {"_dicomtk_cpp_dcmtk_init", (DL_FUNC) &_dicomtk_cpp_dcmtk_init, 0},
     {"_dicomtk_cpp_dcmtk_cleanup", (DL_FUNC) &_dicomtk_cpp_dcmtk_cleanup, 0},
