@@ -48,41 +48,49 @@ test_that("analytical dcm2niix parity holds across orientations, reversed disk o
     list(modality = "MG",    orientation = "axial",    rev = FALSE, dims = c(12L, 10L, 1L), sp = c(0.1, 0.1, 1.0))
   )
 
+  before_tmp <- list.files(tempdir(), pattern = "^parity_in_", full.names = TRUE)
+
   for (tc in cases) {
-    lbl <- sprintf("%s/%s/rev=%s", tc$modality, tc$orientation, tc$rev)
-    in_dir <- tempfile("parity_in_")
-    nii_file <- tempfile(fileext = ".nii")
-    on.exit(unlink(c(in_dir, nii_file, sub("\\.nii$", ".json", nii_file)), recursive = TRUE), add = TRUE)
+    local({
+      lbl <- sprintf("%s/%s/rev=%s", tc$modality, tc$orientation, tc$rev)
+      in_dir <- tempfile("parity_in_")
+      nii_file <- tempfile(fileext = ".nii")
+      on.exit(unlink(c(in_dir, nii_file, sub("\\.nii$", ".json", nii_file)), recursive = TRUE), add = TRUE)
 
-    ph <- dicom_synthesize(
-      out_dir = in_dir,
-      modality = tc$modality,
-      dims = tc$dims,
-      spacing = tc$sp,
-      origin = c(-25.0, -18.0, 12.5),
-      orientation = tc$orientation,
-      reverse_order = tc$rev,
-      phi = FALSE
-    )
+      ph <- dicom_synthesize(
+        out_dir = in_dir,
+        modality = tc$modality,
+        dims = tc$dims,
+        spacing = tc$sp,
+        origin = c(-25.0, -18.0, 12.5),
+        orientation = tc$orientation,
+        reverse_order = tc$rev,
+        phi = FALSE
+      )
 
-    vol <- read_dicom_volume(in_dir, warn = FALSE)
-    write_nifti(vol, nii_file, json_sidecar = TRUE, backend = "builtin")
+      vol <- read_dicom_volume(in_dir, warn = FALSE)
+      write_nifti(vol, nii_file, json_sidecar = TRUE, backend = "builtin")
 
-    nii <- RNifti::readNifti(nii_file)
-    sf <- as_mat44(RNifti::xform(nii, useQuaternionFirst = FALSE))
-    qf <- as_mat44(RNifti::xform(nii, useQuaternionFirst = TRUE))
-    oracle <- dicomtk_analytic_dcm2niix_sform(ph)
+      nii <- RNifti::readNifti(nii_file)
+      sf <- as_mat44(RNifti::xform(nii, useQuaternionFirst = FALSE))
+      qf <- as_mat44(RNifti::xform(nii, useQuaternionFirst = TRUE))
+      oracle <- dicomtk_analytic_dcm2niix_sform(ph)
 
-    expect_lt(max(abs(sf - oracle)), 1e-4, label = paste("sform vs dcm2niix oracle:", lbl))
-    expect_lt(max(abs(qf - oracle)), 1e-4, label = paste("qform vs dcm2niix oracle:", lbl))
+      expect_lt(max(abs(sf - oracle)), 1e-4, label = paste("sform vs dcm2niix oracle:", lbl))
+      expect_lt(max(abs(qf - oracle)), 1e-4, label = paste("qform vs dcm2niix oracle:", lbl))
 
-    expected_nii_vox <- aperm(ph$truth_voxels[tc$dims[1L]:1L, , , drop = FALSE], c(2L, 1L, 3L))
-    if (tc$dims[3L] == 1L) {
-      expect_equal(as.numeric(as.array(nii)), as.numeric(expected_nii_vox), tolerance = 1e-4, info = lbl)
-    } else {
-      expect_equal(as.array(nii), expected_nii_vox, tolerance = 1e-4, ignore_attr = TRUE, info = lbl)
-    }
+      expected_nii_vox <- aperm(ph$truth_voxels[tc$dims[1L]:1L, , , drop = FALSE], c(2L, 1L, 3L))
+      if (tc$dims[3L] == 1L) {
+        expect_equal(as.numeric(as.array(nii)), as.numeric(expected_nii_vox), tolerance = 1e-4, info = lbl)
+      } else {
+        expect_equal(as.array(nii), expected_nii_vox, tolerance = 1e-4, ignore_attr = TRUE, info = lbl)
+      }
+    })
   }
+
+  # Verify zero leaked parity_in_ directories across all loop iterations
+  after_tmp <- list.files(tempdir(), pattern = "^parity_in_", full.names = TRUE)
+  expect_equal(setdiff(after_tmp, before_tmp), character(0))
 })
 
 test_that("live dcm2niix binary/Docker cross-check matches sform and voxels within 1e-4", {
@@ -99,38 +107,40 @@ test_that("live dcm2niix binary/Docker cross-check matches sform and voxels with
   )
 
   for (cfg in configs) {
-    lbl <- sprintf("live-%s-rev=%s", cfg$orientation, cfg$rev)
-    dcm_dir <- tempfile("dcm2niix_src_")
-    ref_dir <- tempfile("dcm2niix_ref_")
-    our_nii <- tempfile(fileext = ".nii")
-    dir.create(ref_dir, recursive = TRUE)
-    on.exit(unlink(c(dcm_dir, ref_dir, our_nii, sub("\\.nii$", ".json", our_nii)), recursive = TRUE), add = TRUE)
+    local({
+      lbl <- sprintf("live-%s-rev=%s", cfg$orientation, cfg$rev)
+      dcm_dir <- tempfile("dcm2niix_src_")
+      ref_dir <- tempfile("dcm2niix_ref_")
+      our_nii <- tempfile(fileext = ".nii")
+      dir.create(ref_dir, recursive = TRUE)
+      on.exit(unlink(c(dcm_dir, ref_dir, our_nii, sub("\\.nii$", ".json", our_nii)), recursive = TRUE), add = TRUE)
 
-    dicom_synthesize(
-      out_dir = dcm_dir,
-      modality = "CT",
-      dims = c(12L, 10L, 5L),
-      spacing = c(0.8, 0.9, 2.5),
-      origin = c(-20, -15, 10),
-      orientation = cfg$orientation,
-      reverse_order = cfg$rev,
-      phi = FALSE
-    )
+      dicom_synthesize(
+        out_dir = dcm_dir,
+        modality = "CT",
+        dims = c(12L, 10L, 5L),
+        spacing = c(0.8, 0.9, 2.5),
+        origin = c(-20, -15, 10),
+        orientation = cfg$orientation,
+        reverse_order = cfg$rev,
+        phi = FALSE
+      )
 
-    ref_nii <- run_dcm2niix_convert(dcm_dir, ref_dir, cmd = cmd)
-    expect_true(file.exists(ref_nii), info = lbl)
+      ref_nii <- run_dcm2niix_convert(dcm_dir, ref_dir, cmd = cmd)
+      expect_true(file.exists(ref_nii), info = lbl)
 
-    vol <- read_dicom_volume(dcm_dir, warn = FALSE)
-    write_nifti(vol, our_nii, json_sidecar = FALSE)
+      vol <- read_dicom_volume(dcm_dir, warn = FALSE)
+      write_nifti(vol, our_nii, json_sidecar = FALSE)
 
-    nii_ours <- RNifti::readNifti(our_nii)
-    nii_ref <- RNifti::readNifti(ref_nii)
+      nii_ours <- RNifti::readNifti(our_nii)
+      nii_ref <- RNifti::readNifti(ref_nii)
 
-    sf_ours <- as_mat44(RNifti::xform(nii_ours, useQuaternionFirst = FALSE))
-    sf_ref <- as_mat44(RNifti::xform(nii_ref, useQuaternionFirst = FALSE))
+      sf_ours <- as_mat44(RNifti::xform(nii_ours, useQuaternionFirst = FALSE))
+      sf_ref <- as_mat44(RNifti::xform(nii_ref, useQuaternionFirst = FALSE))
 
-    expect_lt(max(abs(sf_ours - sf_ref)), 1e-4, label = paste("sform:", lbl))
-    expect_lt(max(abs(as.array(nii_ours) - as.array(nii_ref))), 1e-4, label = paste("voxels:", lbl))
+      expect_lt(max(abs(sf_ours - sf_ref)), 1e-4, label = paste("sform:", lbl))
+      expect_lt(max(abs(as.array(nii_ours) - as.array(nii_ref))), 1e-4, label = paste("voxels:", lbl))
+    })
   }
 })
 
@@ -140,25 +150,27 @@ test_that("cached external reference DICOM fixtures load with valid non-singular
   skip_if(nrow(fixtures) == 0L, "No cached external DICOM fixtures; run `Rscript tools/download_fixtures.R` to populate.")
 
   for (i in seq_len(nrow(fixtures))) {
-    fx <- fixtures[i, , drop = FALSE]
-    lbl <- paste0(fx$id, " (", fx$modality, ")")
-    vol <- read_dicom_volume(fx$path, warn = FALSE)
-    expect_true(is_dicom_volume(vol), info = lbl)
-    expect_true(all(dim(vol) >= 1L), info = lbl)
-    expect_true(all(is.finite(vol$voxels)), info = lbl)
-    expect_gt(abs(det(vol$affine[1:3, 1:3])), 1e-8, label = paste("non-singular affine:", lbl))
+    local({
+      fx <- fixtures[i, , drop = FALSE]
+      lbl <- paste0(fx$id, " (", fx$modality, ")")
+      vol <- read_dicom_volume(fx$path, warn = FALSE)
+      expect_true(is_dicom_volume(vol), info = lbl)
+      expect_true(all(dim(vol) >= 1L), info = lbl)
+      expect_true(all(is.finite(vol$voxels)), info = lbl)
+      expect_gt(abs(det(vol$affine[1:3, 1:3])), 1e-8, label = paste("non-singular affine:", lbl))
 
-    nii_path <- tempfile(fileext = ".nii")
-    on.exit(unlink(c(nii_path, sub("\\.nii$", ".json", nii_path))), add = TRUE)
-    has_warn <- isTRUE(vol$diagnostics$has_gantry_tilt) || isTRUE(vol$diagnostics$irregular_spacing)
-    if (has_warn) {
-      expect_warning(write_nifti(vol, nii_path, json_sidecar = TRUE, backend = "builtin"))
-    } else {
-      expect_no_warning(write_nifti(vol, nii_path, json_sidecar = TRUE, backend = "builtin"))
-    }
-    nii <- RNifti::readNifti(nii_path)
-    expect_equal(unname(dim(nii)[1:2]), dim(vol)[c(2L, 1L)], info = lbl)
-    sf <- as_mat44(RNifti::xform(nii, useQuaternionFirst = FALSE))
-    expect_gt(abs(det(sf[1:3, 1:3])), 1e-8, label = paste("NIfTI sform det:", lbl))
+      nii_path <- tempfile(fileext = ".nii")
+      on.exit(unlink(c(nii_path, sub("\\.nii$", ".json", nii_path))), add = TRUE)
+      has_warn <- isTRUE(vol$diagnostics$has_gantry_tilt) || isTRUE(vol$diagnostics$irregular_spacing)
+      if (has_warn) {
+        expect_warning(write_nifti(vol, nii_path, json_sidecar = TRUE, backend = "builtin"))
+      } else {
+        expect_no_warning(write_nifti(vol, nii_path, json_sidecar = TRUE, backend = "builtin"))
+      }
+      nii <- RNifti::readNifti(nii_path)
+      expect_equal(unname(dim(nii)[1:2]), dim(vol)[c(2L, 1L)], info = lbl)
+      sf <- as_mat44(RNifti::xform(nii, useQuaternionFirst = FALSE))
+      expect_gt(abs(det(sf[1:3, 1:3])), 1e-8, label = paste("NIfTI sform det:", lbl))
+    })
   }
 })

@@ -14,7 +14,7 @@ dicomtk_fixture_manifest <- function() {
   dcmqa_ct     <- "https://raw.githubusercontent.com/neurolabusc/dcm_qa_ct/master/In/GE"
   dcmqa_nih    <- "https://raw.githubusercontent.com/neurolabusc/dcm_qa_nih/master/In/20180918GE/mr_0004"
 
-  tibble::tibble(
+  data.frame(
     id = c(
       "pydicom_ct_small",
       "dcmqa_ge_ct", "dcmqa_ge_ct", "dcmqa_ge_ct",
@@ -78,18 +78,21 @@ dicomtk_fixture_manifest <- function() {
       "MIT (pydicom-data)",
       "MIT (pydicom-data)",
       "MIT (pydicom-data)"
-    )
+    ),
+    stringsAsFactors = FALSE
   )
 }
 
 dicomtk_cached_fixtures <- function(root = dicomtk_fixture_dir()) {
+  empty_df <- data.frame(
+    id = character(0),
+    modality = character(0),
+    path = character(0),
+    n_files = integer(0),
+    stringsAsFactors = FALSE
+  )
   if (!dir.exists(root)) {
-    return(tibble::tibble(
-      id = character(0),
-      modality = character(0),
-      path = character(0),
-      n_files = integer(0)
-    ))
+    return(empty_df)
   }
   mf <- dicomtk_fixture_manifest()
   ids <- unique(mf$id)
@@ -101,23 +104,19 @@ dicomtk_cached_fixtures <- function(root = dicomtk_fixture_dir()) {
     expected_files <- file.path(dir_path, sub$filename)
     if (all(file.exists(expected_files)) && all(file.info(expected_files)$size > 128)) {
       n_ok <- n_ok + 1L
-      rows[[n_ok]] <- tibble::tibble(
+      rows[[n_ok]] <- data.frame(
         id = fx_id,
         modality = sub$modality[1L],
         path = normalizePath(dir_path, winslash = "/", mustWork = TRUE),
-        n_files = nrow(sub)
+        n_files = nrow(sub),
+        stringsAsFactors = FALSE
       )
     }
   }
   if (n_ok == 0L) {
-    return(tibble::tibble(
-      id = character(0),
-      modality = character(0),
-      path = character(0),
-      n_files = integer(0)
-    ))
+    return(empty_df)
   }
-  dplyr::bind_rows(rows[seq_len(n_ok)])
+  do.call(rbind, rows[seq_len(n_ok)])
 }
 
 # Independent Chris Rorden dcm2niix RAS sform oracle computed directly from
@@ -159,10 +158,10 @@ find_dcm2niix_cmd <- function() {
   bin <- Sys.which("dcm2niix")
   if (nzchar(bin)) {
     rc <- tryCatch(
-       suppressWarnings(system2(bin, "-v", stdout = FALSE, stderr = FALSE)),
+      suppressWarnings(system2(bin, "-h", stdout = FALSE, stderr = FALSE)),
       error = function(e) 127L
     )
-    if (rc %in% c(0L, 3L)) {
+    if (as.integer(rc) %in% c(0L, 1L, 2L, 3L)) {
       return(list(mode = "cli", bin = unname(bin)))
     }
   }
@@ -184,6 +183,14 @@ find_dcm2niix_cmd <- function() {
   NULL
 }
 
+docker_mount_path <- function(p) {
+  norm <- normalizePath(p, winslash = "/", mustWork = TRUE)
+  if (.Platform$OS.type == "windows") {
+    norm <- sub("^([A-Za-z]):", "/\\L\\1", norm, perl = TRUE)
+  }
+  norm
+}
+
 run_dcm2niix_convert <- function(in_dir, out_dir, cmd = find_dcm2niix_cmd()) {
   if (is.null(cmd)) {
     stop("dcm2niix command is not available.", call. = FALSE)
@@ -198,8 +205,8 @@ run_dcm2niix_convert <- function(in_dir, out_dir, cmd = find_dcm2niix_cmd()) {
   } else {
     args <- c(
       "run", "--rm",
-      "-v", paste0(in_norm, ":/in:ro"),
-      "-v", paste0(out_norm, ":/out"),
+      "-v", paste0(docker_mount_path(in_dir), ":/in:ro"),
+      "-v", paste0(docker_mount_path(out_dir), ":/out"),
       cmd$image,
       "dcm2niix", "-z", "n", "-b", "n", "-f", "ref", "-o", "/out", "/in"
     )
