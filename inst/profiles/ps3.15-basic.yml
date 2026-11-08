@@ -1782,6 +1782,36 @@ tags:
     name: Exposures on Detector Since Manufactured
     keyword: ExposuresOnDetectorSinceManufactured
     vr: IS
+  (2200,0001):
+    action: X/Z
+    name: Label Using Information Extracted From Instances
+    keyword: LabelUsingInformationExtractedFromInstances
+    vr: UT
+  (2200,0002):
+    action: X/Z
+    name: Label Text
+    keyword: LabelText
+    vr: UT
+  (2200,0003):
+    action: X/Z
+    name: Label Style Selection
+    keyword: LabelStyleSelection
+    vr: CS
+  (2200,0004):
+    action: X/Z
+    name: Media Disposition
+    keyword: MediaDisposition
+    vr: LT
+  (2200,0005):
+    action: X/Z
+    name: Barcode Value
+    keyword: BarcodeValue
+    vr: LT
+  (2200,0006):
+    action: X/Z
+    name: Barcode Symbology
+    keyword: BarcodeSymbology
+    vr: CS
   (50XX,XXXX):
     action: X
     name: ''
