@@ -9,7 +9,11 @@ dicom_deid_profile(
   options = character(0),
   jurisdictions = NULL,
   file = NULL,
-  override_tags = list()
+  override_tags = list(),
+  date_shift = NULL,
+  dob_policy = NULL,
+  patient_deid = TRUE,
+  deidentify = TRUE
 )
 }
 \arguments{
@@ -43,6 +47,24 @@ overrides \code{profile}.}
 \item{override_tags}{Optional named list of tag-action overrides
 (e.g., \code{list("(0010,0010)" = "X", "(0008,1030)" = "C")}) applied after all
 base rules, options, and jurisdictions have been resolved.}
+
+\item{date_shift}{Optional logical. Whether date shifting is explicitly enabled (\code{TRUE})
+or disabled (\code{FALSE}). If \code{NULL} (default), date shifting is determined by
+active options (e.g. \code{"retain_longitudinal_modified_dates"}) and jurisdictions.}
+
+\item{dob_policy}{Optional character string specifying policy for date of birth
+(\code{"year_month"}, \code{"year_only"}, \code{"shift_per_patient"}, \code{"dummy"}, or \code{"keep"}).
+Default is \code{NULL} (resolved from base profile and active jurisdictions, e.g. \code{"year_month"} for Singapore PDPA/HIB).}
+
+\item{patient_deid}{Logical. Whether patient-level de-identification is enabled.
+Default is \code{TRUE}. If \code{FALSE}, all patient identification tags
+(Group \code{(0010,xxxx)} such as \code{PatientName}, \code{PatientID},
+\code{PatientBirthDate}, \code{PatientSex}) are retained intact (\code{"K"})
+for operational or clinical routing use.}
+
+\item{deidentify}{Logical. Whether general de-identification is enabled.
+Default is \code{TRUE}. If \code{FALSE}, de-identification is entirely bypassed
+and all tags are retained (\code{"K"}) for operational use.}
 }
 \value{
 An object of class \code{"dicom_deid_profile"} containing:
@@ -50,13 +72,17 @@ An object of class \code{"dicom_deid_profile"} containing:
 \item{description}{Human-readable profile description.}
 \item{cid7050_codes}{Named character vector of CID 7050 codes and meanings.}
 \item{date_policy}{Resolved date policy (\code{"dummy"}, \code{"shift_per_patient"}, \code{"year_only"}, or \code{"keep"}).}
+\item{date_shift}{Explicit date shift setting (\code{TRUE}, \code{FALSE}, or \code{NULL}).}
+\item{dob_policy}{Resolved date of birth policy (e.g. \code{"year_month"}, \code{"year_only"}, or \code{NULL}).}
+\item{patient_deid}{Logical indicating whether patient-level de-identification is active.}
+\item{deidentify}{Logical indicating whether general de-identification is active.}
 \item{age_cap_years}{Integer age cap (e.g. 89L) or NULL.}
 \item{zip_prefix_digits}{Integer retained zip prefix digits (e.g. 3L) or NULL.}
 \item{regex_scrubbers}{Character vector of regular expression patterns for text scrubbing.}
 \item{disclaimers}{Character vector of legal disclaimers associated with active jurisdictions.}
 \item{flags}{Named list of arbitrary jurisdictional or workflow flags.}
 \item{safe_private}{Named list of allowlisted private creators and offset numbers.}
-\item{tags}{Data frame of compiled tags with columns \code{tag}, \code{action}, \code{name}, \code{keyword}, and \code{vr}.}
+\item{tags}{Tibble of compiled tags with columns \code{tag}, \code{action}, \code{name}, \code{keyword}, and \code{vr}.}
 }
 \description{
 Compiles declarative DICOM PS3.15 Annex E Table E.1-1 confidentiality profiles,
@@ -82,4 +108,7 @@ prof_multi <- dicom_deid_profile(
   options = c("retain_longitudinal_modified_dates", "retain_safe_private"),
   jurisdictions = c("sg_pdpa_hib", "hipaa_safe_harbor")
 )
+
+# Operational mode (patient identity retained intact)
+prof_ops <- dicom_deid_profile(patient_deid = FALSE)
 }

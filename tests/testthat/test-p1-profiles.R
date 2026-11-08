@@ -7,6 +7,7 @@ test_that("Default dicom_deid_profile() loads PS3.15 basic and resolves compound
   expect_true("113100" %in% names(p0$cid7050_codes) || "113100" %in% p0$cid7050_codes)
 
   # Check tags structure and atomic actions
+  expect_s3_class(p0$tags, "tbl_df")
   expect_s3_class(p0$tags, "data.frame")
   expect_gt(nrow(p0$tags), 200L)
   expect_true(all(p0$tags$action %in% c("X", "Z", "D", "U", "C", "K")))
@@ -157,4 +158,73 @@ test_that("Unknown options or jurisdictions abort with clear cli::cli_abort", {
     dicom_deid_profile(jurisdictions = "mars_privacy_law_2099"),
     class = "rlang_error"
   )
+})
+
+test_that("Jurisdiction date_policy merges along strictest lattice when no explicit date option is passed", {
+  p_hipaa <- dicom_deid_profile(jurisdictions = "hipaa_safe_harbor")
+  expect_equal(p_hipaa$date_policy, "year_only")
+
+  p_sg <- dicom_deid_profile(jurisdictions = "sg_pdpa_hib")
+  expect_equal(p_sg$date_policy, "shift_per_patient")
+
+  # Strictest wins: shift_per_patient (2) < year_only (3)
+  p_multi <- dicom_deid_profile(jurisdictions = c("sg_pdpa_hib", "hipaa_safe_harbor"))
+  expect_equal(p_multi$date_policy, "year_only")
+
+  # Explicit PS3.15 date option retains user intent over jurisdiction policy
+  p_override <- dicom_deid_profile(
+    options = "retain_longitudinal_full_dates",
+    jurisdictions = "hipaa_safe_harbor"
+  )
+  expect_equal(p_override$date_policy, "keep")
+})
+
+test_that("override_tags normalizes whitespace in tag keys", {
+  p_norm <- dicom_deid_profile(override_tags = list("(0010, 0010)" = "X", " (0008, 1030) " = "Z"))
+  tag_map <- setNames(p_norm$tags$action, p_norm$tags$tag)
+  expect_equal(tag_map[["(0010,0010)"]], "X")
+  expect_equal(tag_map[["(0008,1030)"]], "Z")
+})
+
+test_that("options and jurisdictions are cleanly deduplicated", {
+  p_dup <- dicom_deid_profile(
+    options = c("clean_pixel_data", "clean_pixel_data", "clean_graphics"),
+    jurisdictions = c("gdpr", "gdpr", "sg_pdpa_hib")
+  )
+  expect_equal(p_dup$options, c("clean_pixel_data", "clean_graphics"))
+  expect_equal(p_dup$jurisdictions, c("gdpr", "sg_pdpa_hib"))
+})
+
+test_that("sg_pdpa_hib keeps month and year for date of birth but not day (dob_policy year_month)", {
+  p_sg <- dicom_deid_profile(jurisdictions = "sg_pdpa_hib")
+  expect_equal(p_sg$dob_policy, "year_month")
+})
+
+test_that("date_shift can be explicitly turned on or off", {
+  # Explicitly turned off even with sg_pdpa_hib
+  p_off <- dicom_deid_profile(jurisdictions = "sg_pdpa_hib", date_shift = FALSE)
+  expect_identical(p_off$date_shift, FALSE)
+  expect_false(p_off$date_policy == "shift_per_patient")
+
+  # Explicitly turned on
+  p_on <- dicom_deid_profile(date_shift = TRUE)
+  expect_identical(p_on$date_shift, TRUE)
+  expect_equal(p_on$date_policy, "shift_per_patient")
+})
+
+test_that("patient deidentification can be turned off for operational use", {
+  # Patient identity preserved for operational use
+  p_ops <- dicom_deid_profile(patient_deid = FALSE)
+  expect_false(p_ops$patient_deid)
+  tag_map <- setNames(p_ops$tags$action, p_ops$tags$tag)
+  expect_equal(tag_map[["(0010,0010)"]], "K") # PatientName
+  expect_equal(tag_map[["(0010,0020)"]], "K") # PatientID
+  expect_equal(tag_map[["(0010,0030)"]], "K") # PatientBirthDate
+  expect_equal(tag_map[["(0010,0040)"]], "K") # PatientSex
+
+  # Entire de-identification bypassed for operational passthrough
+  p_pass <- dicom_deid_profile(deidentify = FALSE)
+  expect_false(p_pass$deidentify)
+  expect_true(all(p_pass$tags$action == "K"))
+  expect_equal(p_pass$date_policy, "keep")
 })

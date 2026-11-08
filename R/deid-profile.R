@@ -39,19 +39,37 @@
 #' @param override_tags Optional named list of tag-action overrides
 #'   (e.g., \code{list("(0010,0010)" = "X", "(0008,1030)" = "C")}) applied after all
 #'   base rules, options, and jurisdictions have been resolved.
+#' @param date_shift Optional logical. Whether date shifting is explicitly enabled (\code{TRUE})
+#'   or disabled (\code{FALSE}). If \code{NULL} (default), date shifting is determined by
+#'   active options (e.g. \code{"retain_longitudinal_modified_dates"}) and jurisdictions.
+#' @param dob_policy Optional character string specifying policy for date of birth
+#'   (\code{"year_month"}, \code{"year_only"}, \code{"shift_per_patient"}, \code{"dummy"}, or \code{"keep"}).
+#'   Default is \code{NULL} (resolved from base profile and active jurisdictions, e.g. \code{"year_month"} for Singapore PDPA/HIB).
+#' @param patient_deid Logical. Whether patient-level de-identification is enabled.
+#'   Default is \code{TRUE}. If \code{FALSE}, all patient identification tags
+#'   (Group \code{(0010,xxxx)} such as \code{PatientName}, \code{PatientID},
+#'   \code{PatientBirthDate}, \code{PatientSex}) are retained intact (\code{"K"})
+#'   for operational or clinical routing use.
+#' @param deidentify Logical. Whether general de-identification is enabled.
+#'   Default is \code{TRUE}. If \code{FALSE}, de-identification is entirely bypassed
+#'   and all tags are retained (\code{"K"}) for operational use.
 #'
 #' @return An object of class \code{"dicom_deid_profile"} containing:
 #'   \item{profile}{Profile name or file identifier.}
 #'   \item{description}{Human-readable profile description.}
 #'   \item{cid7050_codes}{Named character vector of CID 7050 codes and meanings.}
 #'   \item{date_policy}{Resolved date policy (\code{"dummy"}, \code{"shift_per_patient"}, \code{"year_only"}, or \code{"keep"}).}
+#'   \item{date_shift}{Explicit date shift setting (\code{TRUE}, \code{FALSE}, or \code{NULL}).}
+#'   \item{dob_policy}{Resolved date of birth policy (e.g. \code{"year_month"}, \code{"year_only"}, or \code{NULL}).}
+#'   \item{patient_deid}{Logical indicating whether patient-level de-identification is active.}
+#'   \item{deidentify}{Logical indicating whether general de-identification is active.}
 #'   \item{age_cap_years}{Integer age cap (e.g. 89L) or NULL.}
 #'   \item{zip_prefix_digits}{Integer retained zip prefix digits (e.g. 3L) or NULL.}
 #'   \item{regex_scrubbers}{Character vector of regular expression patterns for text scrubbing.}
 #'   \item{disclaimers}{Character vector of legal disclaimers associated with active jurisdictions.}
 #'   \item{flags}{Named list of arbitrary jurisdictional or workflow flags.}
 #'   \item{safe_private}{Named list of allowlisted private creators and offset numbers.}
-#'   \item{tags}{Data frame of compiled tags with columns \code{tag}, \code{action}, \code{name}, \code{keyword}, and \code{vr}.}
+#'   \item{tags}{Tibble of compiled tags with columns \code{tag}, \code{action}, \code{name}, \code{keyword}, and \code{vr}.}
 #' @export
 #' @examples
 #' # Basic PS3.15 Profile
@@ -63,17 +81,28 @@
 #'   options = c("retain_longitudinal_modified_dates", "retain_safe_private"),
 #'   jurisdictions = c("sg_pdpa_hib", "hipaa_safe_harbor")
 #' )
+#'
+#' # Operational mode (patient identity retained intact)
+#' prof_ops <- dicom_deid_profile(patient_deid = FALSE)
 dicom_deid_profile <- function(profile = "ps3.15",
                                options = character(0),
                                jurisdictions = NULL,
                                file = NULL,
-                               override_tags = list()) {
+                               override_tags = list(),
+                               date_shift = NULL,
+                               dob_policy = NULL,
+                               patient_deid = TRUE,
+                               deidentify = TRUE) {
   compile_deid_profile(
     profile = profile,
     options = options,
     jurisdictions = jurisdictions,
     file = file,
-    override_tags = override_tags
+    override_tags = override_tags,
+    date_shift = date_shift,
+    dob_policy = dob_policy,
+    patient_deid = patient_deid,
+    deidentify = deidentify
   )
 }
 
@@ -159,7 +188,11 @@ compile_deid_profile <- function(profile = "ps3.15",
                                  options = character(0),
                                  jurisdictions = NULL,
                                  file = NULL,
-                                 override_tags = list()) {
+                                 override_tags = list(),
+                                 date_shift = NULL,
+                                 dob_policy = NULL,
+                                 patient_deid = TRUE,
+                                 deidentify = TRUE) {
   ranks <- c(K = 1L, C = 2L, U = 3L, D = 4L, Z = 5L, X = 6L)
   valid_options <- c(
     "clean_pixel_data",
@@ -176,8 +209,25 @@ compile_deid_profile <- function(profile = "ps3.15",
     "retain_uids"
   )
 
+  # Handle operational profile names
+  if (is.character(profile) && profile %in% c("operational", "identity_preserve", "none")) {
+    patient_deid <- FALSE
+    deidentify <- FALSE
+  }
+
+  # Handle explicit date_shift argument if supplied
+  if (!is.null(date_shift)) {
+    if (isTRUE(date_shift)) {
+      if (!("retain_longitudinal_modified_dates" %in% options)) {
+        options <- c(options, "retain_longitudinal_modified_dates")
+      }
+    } else {
+      options <- setdiff(options, c("retain_longitudinal_modified_dates", "retain_longitudinal_full_dates"))
+    }
+  }
+
   # Validate options
-  options <- as.character(options)
+  options <- unique(as.character(options))
   invalid_opts <- setdiff(options, valid_options)
   if (length(invalid_opts) > 0L) {
     cli::cli_abort("Unknown de-identification option(s): {.val {invalid_opts}}. Valid options: {.val {valid_options}}")
@@ -186,7 +236,7 @@ compile_deid_profile <- function(profile = "ps3.15",
   # Validate jurisdictions
   valid_jurs <- dicom_list_jurisdictions()
   if (!is.null(jurisdictions)) {
-    jurisdictions <- as.character(jurisdictions)
+    jurisdictions <- unique(as.character(jurisdictions))
     invalid_jurs <- setdiff(jurisdictions, valid_jurs)
     if (length(invalid_jurs) > 0L) {
       cli::cli_abort("Unknown jurisdiction(s): {.val {invalid_jurs}}. Available: {.val {valid_jurs}}")
@@ -241,6 +291,8 @@ compile_deid_profile <- function(profile = "ps3.15",
 
   # Initial date policy, age cap, zip prefix
   date_policy <- if (!is.null(raw_prof$date_policy)) as.character(raw_prof$date_policy) else "dummy"
+  user_dob_policy <- dob_policy
+  dob_policy <- if (!is.null(user_dob_policy)) as.character(user_dob_policy) else if (!is.null(raw_prof$dob_policy)) as.character(raw_prof$dob_policy) else NULL
   age_cap_years <- if (!is.null(raw_prof$age_cap_years)) as.integer(raw_prof$age_cap_years) else NULL
   zip_prefix_digits <- if (!is.null(raw_prof$zip_prefix_digits)) as.integer(raw_prof$zip_prefix_digits) else NULL
   regex_scrubbers <- if (!is.null(raw_prof$regex_scrubbers)) as.character(unlist(raw_prof$regex_scrubbers)) else character(0)
@@ -266,6 +318,7 @@ compile_deid_profile <- function(profile = "ps3.15",
   }
 
   # Direct options overrides if not set in YAML
+  has_explicit_date_opt <- any(c("retain_longitudinal_full_dates", "retain_longitudinal_modified_dates") %in% options)
   if ("retain_longitudinal_modified_dates" %in% options) {
     if (!("113107" %in% names(cid7050_codes))) {
       cid7050_codes[["113107"]] <- "Retain Longitudinal Temporal Information With Modified Dates Option"
@@ -294,6 +347,7 @@ compile_deid_profile <- function(profile = "ps3.15",
   compiled_tags <- list()
 
   for (tg in names(raw_tags)) {
+    tg_clean <- gsub("[ \t]", "", toupper(tg))
     entry <- raw_tags[[tg]]
     base_act_raw <- if (is.character(entry)) entry else entry$action
     tag_opts <- if (is.list(entry) && !is.null(entry$options)) entry$options else list()
@@ -317,8 +371,8 @@ compile_deid_profile <- function(profile = "ps3.15",
     tg_kw <- if (is.list(entry) && !is.null(entry$keyword)) as.character(entry$keyword) else ""
     tg_vr <- if (is.list(entry) && !is.null(entry$vr)) as.character(entry$vr) else ""
 
-    compiled_tags[[toupper(tg)]] <- list(
-      tag = toupper(tg),
+    compiled_tags[[tg_clean]] <- list(
+      tag = tg_clean,
       action = resolved_act,
       name = tg_name,
       keyword = tg_kw,
@@ -328,6 +382,7 @@ compile_deid_profile <- function(profile = "ps3.15",
   }
 
   # Overlay composable statutory jurisdictions monotonically (strictest wins: K < C < U < D < Z < X)
+  jur_date_policies <- character(0)
   jur_dir <- find_jurisdiction_dir()
   if (length(jurisdictions) > 0L && nzchar(jur_dir)) {
     for (jur_id in jurisdictions) {
@@ -338,6 +393,16 @@ compile_deid_profile <- function(profile = "ps3.15",
       if (!file.exists(jf)) next
 
       jur_yaml <- yaml::read_yaml(jf)
+
+      # Date policy from jurisdiction
+      if (!is.null(jur_yaml$date_policy) && nzchar(as.character(jur_yaml$date_policy))) {
+        jur_date_policies <- c(jur_date_policies, as.character(jur_yaml$date_policy))
+      }
+
+      # DOB policy from jurisdiction
+      if (is.null(user_dob_policy) && !is.null(jur_yaml$dob_policy) && nzchar(as.character(jur_yaml$dob_policy))) {
+        dob_policy <- as.character(jur_yaml$dob_policy)
+      }
 
       # Disclaimer
       if (!is.null(jur_yaml$disclaimer)) {
@@ -372,17 +437,17 @@ compile_deid_profile <- function(profile = "ps3.15",
       overrides <- if (!is.null(jur_yaml$tag_overrides)) jur_yaml$tag_overrides else jur_yaml$overrides
       if (!is.null(overrides) && length(overrides) > 0L) {
         for (tg in names(overrides)) {
-          tg_upper <- toupper(tg)
+          tg_clean <- gsub("[ \t]", "", toupper(tg))
           jur_act <- resolve_ps315_action(as.character(overrides[[tg]]))
-          if (!is.null(compiled_tags[[tg_upper]])) {
-            cur_act <- compiled_tags[[tg_upper]]$action
+          if (!is.null(compiled_tags[[tg_clean]])) {
+            cur_act <- compiled_tags[[tg_clean]]$action
             # Monotonic lattice: update only if jurisdiction action is strictly greater in rank
             if (ranks[jur_act] > ranks[cur_act]) {
-              compiled_tags[[tg_upper]]$action <- jur_act
+              compiled_tags[[tg_clean]]$action <- jur_act
             }
           } else {
-            compiled_tags[[tg_upper]] <- list(
-              tag = tg_upper,
+            compiled_tags[[tg_clean]] <- list(
+              tag = tg_clean,
               action = jur_act,
               name = "",
               keyword = "",
@@ -395,16 +460,55 @@ compile_deid_profile <- function(profile = "ps3.15",
     }
   }
 
+  # Strictest date policy among active jurisdictions if no explicit PS3.15 date retention options passed:
+  # rank: keep (1) < shift_per_patient (2) < year_only (3) < dummy (4)
+  if (!has_explicit_date_opt && length(jur_date_policies) > 0L) {
+    date_ranks <- c(keep = 1L, shift_per_patient = 2L, year_only = 3L, dummy = 4L)
+    valid_jur_dates <- jur_date_policies[jur_date_policies %in% names(date_ranks)]
+    if (length(valid_jur_dates) > 0L) {
+      date_policy <- valid_jur_dates[which.max(date_ranks[valid_jur_dates])]
+    }
+  }
+
+  # If user explicitly disabled date_shift, prevent shift_per_patient
+  if (identical(date_shift, FALSE)) {
+    if (date_policy == "shift_per_patient") {
+      date_policy <- "dummy"
+    }
+  }
+
+  # Handle operational / passthrough mode (turning patient or general de-identification off)
+  if (!isTRUE(deidentify)) {
+    patient_deid <- FALSE
+    date_policy <- "keep"
+    dob_policy <- "keep"
+    flags$patient_deid <- FALSE
+    flags$deidentify <- FALSE
+    flags$operational_mode <- TRUE
+    for (tg in names(compiled_tags)) {
+      compiled_tags[[tg]]$action <- "K"
+    }
+  } else if (!isTRUE(patient_deid)) {
+    dob_policy <- "keep"
+    flags$patient_deid <- FALSE
+    flags$operational_mode <- TRUE
+    for (tg in names(compiled_tags)) {
+      if (grepl("^\\(0010,", tg)) {
+        compiled_tags[[tg]]$action <- "K"
+      }
+    }
+  }
+
   # Apply user-specified override_tags (explicit caller intent takes final precedence)
   if (length(override_tags) > 0L) {
     for (tg in names(override_tags)) {
-      tg_upper <- toupper(tg)
+      tg_clean <- gsub("[ \t]", "", toupper(tg))
       user_act <- resolve_ps315_action(as.character(override_tags[[tg]]))
-      if (!is.null(compiled_tags[[tg_upper]])) {
-        compiled_tags[[tg_upper]]$action <- user_act
+      if (!is.null(compiled_tags[[tg_clean]])) {
+        compiled_tags[[tg_clean]]$action <- user_act
       } else {
-        compiled_tags[[tg_upper]] <- list(
-          tag = tg_upper,
+        compiled_tags[[tg_clean]] <- list(
+          tag = tg_clean,
           action = user_act,
           name = "",
           keyword = "",
@@ -415,25 +519,22 @@ compile_deid_profile <- function(profile = "ps3.15",
     }
   }
 
-  # Build tags data frame
+  # Build tags tibble
   if (length(compiled_tags) > 0L) {
-    tags_df <- data.frame(
+    tags_df <- tibble::tibble(
       tag = vapply(compiled_tags, function(x) x$tag, character(1L)),
       action = vapply(compiled_tags, function(x) x$action, character(1L)),
       name = vapply(compiled_tags, function(x) x$name, character(1L)),
       keyword = vapply(compiled_tags, function(x) x$keyword, character(1L)),
-      vr = vapply(compiled_tags, function(x) x$vr, character(1L)),
-      stringsAsFactors = FALSE,
-      row.names = NULL
+      vr = vapply(compiled_tags, function(x) x$vr, character(1L))
     )
   } else {
-    tags_df <- data.frame(
+    tags_df <- tibble::tibble(
       tag = character(0),
       action = character(0),
       name = character(0),
       keyword = character(0),
-      vr = character(0),
-      stringsAsFactors = FALSE
+      vr = character(0)
     )
   }
 
@@ -443,6 +544,10 @@ compile_deid_profile <- function(profile = "ps3.15",
       description = prof_desc,
       cid7050_codes = cid7050_codes,
       date_policy = date_policy,
+      date_shift = date_shift,
+      dob_policy = dob_policy,
+      patient_deid = patient_deid,
+      deidentify = deidentify,
       age_cap_years = age_cap_years,
       zip_prefix_digits = zip_prefix_digits,
       regex_scrubbers = regex_scrubbers,
@@ -483,7 +588,19 @@ format.dicom_deid_profile <- function(x, ...) {
   }
 
   lines <- c(lines, "Configuration & Policies:")
+  if (!is.null(x$patient_deid) && !isTRUE(x$patient_deid)) {
+    lines <- c(lines, "  * Patient De-Identification: DISABLED (operational retention)")
+  }
+  if (!is.null(x$deidentify) && !isTRUE(x$deidentify)) {
+    lines <- c(lines, "  * De-Identification: DISABLED (operational passthrough)")
+  }
   lines <- c(lines, sprintf("  * Date Policy: %s", x$date_policy))
+  if (!is.null(x$dob_policy)) {
+    lines <- c(lines, sprintf("  * DOB Policy: %s", x$dob_policy))
+  }
+  if (!is.null(x$date_shift)) {
+    lines <- c(lines, sprintf("  * Date Shift: %s", if (isTRUE(x$date_shift)) "enabled" else "disabled"))
+  }
   lines <- c(lines, sprintf("  * Age Cap: %s", if (is.null(x$age_cap_years)) "None" else sprintf("%d years", x$age_cap_years)))
   lines <- c(lines, sprintf("  * Zip Prefix: %s", if (is.null(x$zip_prefix_digits)) "None" else sprintf("%d digits", x$zip_prefix_digits)))
   lines <- c(lines, sprintf("  * Options (%d): %s", length(x$options), if (length(x$options) == 0L) "none" else paste(x$options, collapse = ", ")))

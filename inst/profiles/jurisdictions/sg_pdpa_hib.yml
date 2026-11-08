@@ -2,12 +2,14 @@ id: sg_pdpa_hib
 name: "Singapore Personal Data Protection Act 2012 & Health Information Bill (HIB)"
 disclaimer: "Technical template only; not legal advice."
 date_policy: shift_per_patient
+dob_policy: year_month
 age_cap_years: ~
 zip_prefix_digits: ~
 flags:
   hib_enclave: true
   shi_enclave: true
   retain_shi: false
+  dob_policy: year_month
 regex_scrubbers:
   - "[STFGM][0-9]{7}[A-Z]"
   - "\\b[0-9]{6}\\b"
