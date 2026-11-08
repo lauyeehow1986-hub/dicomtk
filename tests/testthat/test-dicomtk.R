@@ -76,11 +76,14 @@ test_that("Writing, modifying, anonymizing, and RLE compressing/decompressing DI
   expect_equal(unname(dicom_tag_value(mod_dcm, "PatientName")), "SMITH^JOHN")
 
   # Anonymize with date shifting
-  anon_dcm <- dicom_anonymize(
-    tmp_dcm,
-    patient_name = "ANON^SUBJ",
-    patient_id = "ANON99",
-    shift_days = -10L
+  anon_dcm <- withr::with_options(
+    list(lifecycle_verbosity = "quiet"),
+    dicom_anonymize(
+      tmp_dcm,
+      patient_name = "ANON^SUBJ",
+      patient_id = "ANON99",
+      shift_days = -10L
+    )
   )
   on.exit(unlink(anon_dcm), add = TRUE)
   expect_equal(unname(dicom_tag_value(anon_dcm, "PatientName")), "ANON^SUBJ")

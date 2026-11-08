@@ -38,6 +38,8 @@ dicom_anonymize <- function(path,
                             regenerate_uids = TRUE,
                             extra_remove_tags = character(),
                             replace_tags = list()) {
+  lifecycle::deprecate_soft("0.3.0", "dicom_anonymize()", "dicom_deid()")
+
   if (length(path) != 1L || !file.exists(path)) {
     rlang::abort("`path` must be a single existing DICOM file path.")
   }
