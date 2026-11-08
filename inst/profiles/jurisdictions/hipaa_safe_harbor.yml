@@ -1,0 +1,19 @@
+id: hipaa_safe_harbor
+name: "HIPAA Safe Harbor (45 CFR 164.514(b)(2))"
+disclaimer: "Technical template only; not legal advice."
+date_policy: year_only
+age_cap_years: 89
+zip_prefix_digits: 3
+regex_scrubbers:
+  - "\\b[0-9]{3}-[0-9]{2}-[0-9]{4}\\b"
+  - "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b"
+  - "\\b(?:\\+?1[-.]?)?\\(?([0-9]{3})\\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})\\b"
+tag_overrides:
+  "(0010,0010)": "Z"
+  "(0010,0020)": "Z"
+  "(0010,0040)": "K"
+  "(0010,1010)": "C"
+  "(0010,1020)": "K"
+  "(0010,1030)": "K"
+  "(0010,1040)": "X"
+  "(0010,2154)": "X"

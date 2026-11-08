@@ -36,6 +36,7 @@ Imports:
     lifecycle (>= 1.0.3),
     httr2 (>= 1.0.0),
     jsonlite (>= 1.8.0),
+    yaml (>= 2.3.0),
     grDevices,
     graphics,
     stats,
@@ -51,7 +52,9 @@ Suggests:
     pkgdown,
     withr,
     magick,
-    openssl
+    openssl,
+    mirai,
+    tesseract
 LinkingTo:
     Rcpp
 SystemRequirements: 

@@ -1,0 +1,15 @@
+id: tcia_ctp
+name: "The Cancer Imaging Archive (TCIA) / MIRC Clinical Trial Processor (CTP)"
+disclaimer: "Technical template only; not legal advice."
+date_policy: shift_per_patient
+age_cap_years: 89
+zip_prefix_digits: ~
+regex_scrubbers:
+  - "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b"
+tag_overrides:
+  "(0010,0010)": "Z"
+  "(0010,0020)": "Z"
+  "(0010,1010)": "C"
+  "(0010,1040)": "X"
+  "(0008,1030)": "C"
+  "(0008,103E)": "C"

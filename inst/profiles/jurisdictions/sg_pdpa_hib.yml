@@ -1,0 +1,23 @@
+id: sg_pdpa_hib
+name: "Singapore Personal Data Protection Act 2012 & Health Information Bill (HIB)"
+disclaimer: "Technical template only; not legal advice."
+date_policy: shift_per_patient
+age_cap_years: ~
+zip_prefix_digits: ~
+flags:
+  hib_enclave: true
+  shi_enclave: true
+  retain_shi: false
+regex_scrubbers:
+  - "[STFGM][0-9]{7}[A-Z]"
+  - "\\b[0-9]{6}\\b"
+  - "\\b(?:\\+?65)?[689][0-9]{7}\\b"
+  - "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b"
+tag_overrides:
+  "(0010,0010)": "X"
+  "(0010,0020)": "Z"
+  "(0010,1000)": "X"
+  "(0010,1001)": "X"
+  "(0010,1040)": "X"
+  "(0008,1030)": "C"
+  "(0008,103E)": "C"

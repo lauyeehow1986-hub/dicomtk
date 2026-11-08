@@ -1,0 +1,40 @@
+# Safe Private Creator Dictionary for dicomtk
+# Allowlist of quantitative private creator blocks and elements required for image reconstruction,
+# MR scaling, SUV quantification, and diffusion gradient calculations.
+
+creators:
+  "PHILIPS IMAGING DD 001":
+    description: "Philips MR imaging private scale factors (rescale intercept/slope)"
+    group: "2005"
+    offsets: [13, 14] # 0x0D (rescale intercept), 0x0E (rescale slope)
+    vr_map:
+      13: "DS"
+      14: "DS"
+
+  "PHILIPS MR IMAGING DD 005":
+    description: "Philips MR imaging private attributes (rescale intercept/slope)"
+    group: "2005"
+    offsets: [13, 14] # 0x0D, 0x0E
+    vr_map:
+      13: "DS"
+      14: "DS"
+
+  "PHILIPS PET PRIVATE GROUP":
+    description: "Philips PET private group for SUV quantification"
+    group: "7053"
+    offsets: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+  "GEMS_ACQU_01":
+    description: "GE Medical Systems acquisition parameters"
+    group: "0019"
+    offsets: [15, 17, 30, 31, 35, 36]
+
+  "SIEMENS MR HEADER":
+    description: "Siemens MR sequence timing and gradient parameters"
+    group: "0029"
+    offsets: [16, 32]
+
+  "SIEMENS CSA HEADER":
+    description: "Siemens CSA non-identifying acquisition and diffusion parameters"
+    group: "0029"
+    offsets: [16, 32]

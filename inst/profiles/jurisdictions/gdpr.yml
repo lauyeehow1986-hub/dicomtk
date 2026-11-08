@@ -1,0 +1,14 @@
+id: gdpr
+name: "EU General Data Protection Regulation (Regulation (EU) 2016/679)"
+disclaimer: "Technical template only; not legal advice."
+date_policy: shift_per_patient
+age_cap_years: ~
+zip_prefix_digits: ~
+regex_scrubbers:
+  - "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b"
+  - "\\b(?:[A-Z]{2}[0-9]{2}[A-Z0-9]{4}[0-9]{7}(?:[A-Z0-9]?){0,16})\\b"
+tag_overrides:
+  "(0010,0010)": "X"
+  "(0010,0020)": "Z"
+  "(0010,0030)": "Z"
+  "(0010,1040)": "X"
