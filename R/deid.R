@@ -186,7 +186,8 @@ dicom_deid <- function(path,
   for (i in seq_along(in_files)) {
     res_i <- raw_results[[i]]
     if (inherits(res_i, "errorValue") || inherits(res_i, "miraiError")) {
-      cli::cli_abort("De-identification failed for {in_files[i]}: {conditionMessage(res_i)}")
+      err_msg <- if (inherits(res_i, "condition")) conditionMessage(res_i) else as.character(res_i)
+      cli::cli_abort("De-identification failed for {in_files[i]}: {err_msg}")
     }
 
     if (isTRUE(res_i$skipped_wsi_label)) {
@@ -222,7 +223,14 @@ dicom_deid <- function(path,
       unlink(final_dest)
     }
 
-    file.rename(tmp_outs[i], final_dest)
+    ok <- file.rename(tmp_outs[i], final_dest)
+    if (!ok) {
+      ok <- file.copy(tmp_outs[i], final_dest, overwrite = TRUE)
+      if (!ok) {
+        cli::cli_abort("Failed to move de-identified file to destination: {final_dest}")
+      }
+      unlink(tmp_outs[i])
+    }
     res_i$out_file <- final_dest
     written_files <- c(written_files, final_dest)
     raw_results[[i]] <- res_i
@@ -266,6 +274,8 @@ dicom_deid <- function(path,
       }
 
       audit_rec <- list(
+        "prov:wasGeneratedBy" = "dicomtk::dicom_deid",
+        "prov:used" = rel_paths[i],
         input_file = rel_paths[i],
         output_file = out_rel,
         status = r$status,
@@ -296,7 +306,18 @@ dicom_deid <- function(path,
         stringsAsFactors = FALSE
       )
     })
-    cw_df <- unique(do.call(rbind, cw_rows))
+    cw_rows <- Filter(Negate(is.null), cw_rows)
+    cw_df <- if (length(cw_rows) > 0L) unique(do.call(rbind, cw_rows)) else NULL
+    if (is.null(cw_df) || nrow(cw_df) == 0L) {
+      cw_df <- data.frame(
+        orig_patient_id = character(0),
+        pseudo_patient_id = character(0),
+        orig_study_uid = character(0),
+        pseudo_study_uid = character(0),
+        shift_days = integer(0),
+        stringsAsFactors = FALSE
+      )
+    }
     cw_json <- jsonlite::toJSON(cw_df, dataframe = "rows", auto_unbox = TRUE)
     enc_bytes <- cpp_aead_encrypt(
       key = aead_key,
@@ -368,7 +389,20 @@ dicom_crosswalk_read <- function(path, key) {
   }
   json_str <- rawToChar(pt_bytes)
   parsed <- jsonlite::fromJSON(json_str)
-  tibble::as_tibble(parsed)
+  res <- tibble::as_tibble(parsed)
+  expected_cols <- c("orig_patient_id", "pseudo_patient_id", "orig_study_uid", "pseudo_study_uid", "shift_days")
+  if (!all(expected_cols %in% names(res))) {
+    if (nrow(res) == 0L) {
+      res <- tibble::tibble(
+        orig_patient_id = character(0),
+        pseudo_patient_id = character(0),
+        orig_study_uid = character(0),
+        pseudo_study_uid = character(0),
+        shift_days = integer(0)
+      )
+    }
+  }
+  res
 }
 
 #' Print DICOM De-Identification Result

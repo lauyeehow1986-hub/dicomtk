@@ -124,6 +124,10 @@ test_that("Cohort dicom_deid() preserves longitudinal relationships, UIDs, and c
   for (line in audit_lines) {
     record <- jsonlite::fromJSON(line)
     expect_true(all(c("in_sha256", "out_sha256", "profile", "actions") %in% names(record)))
+    # W3C PROV assertions
+    expect_equal(record[["prov:wasGeneratedBy"]], "dicomtk::dicom_deid")
+    expect_true("prov:used" %in% names(record))
+    expect_equal(record[["prov:used"]], record$input_file)
     # Original PHI strings must NEVER appear in audit log
     expect_false(grepl("John^Doe", line, fixed = TRUE))
     expect_false(grepl("Smith^Bob", line, fixed = TRUE))
@@ -263,4 +267,46 @@ test_that("dicom_anonymize() emits lifecycle soft-deprecation warning and mainta
       class = "lifecycle_warning_deprecated"
     )
   )
+})
+
+test_that("Empty cohort or skipped WSI produces correctly typed empty crosswalk schema", {
+  in_dir <- tempfile(pattern = "empty_cohort_")
+  out_dir <- tempfile(pattern = "empty_out_")
+  cw_file <- tempfile(pattern = "empty_cw_", fileext = ".enc")
+  dir.create(in_dir, recursive = TRUE)
+  on.exit(unlink(c(in_dir, out_dir, cw_file), recursive = TRUE), add = TRUE)
+
+  # Synthesize a WSI LABEL file that gets skipped when drop_wsi_labels = TRUE
+  wsi_file <- file.path(in_dir, "wsi_label.dcm")
+  dicomtk:::cpp_write_dicom_matrix(
+    matrix(1:4, 2, 2),
+    out_path = wsi_file,
+    meta_tags = c("Modality", "SOPClassUID", "ImageType", "PatientID", "StudyInstanceUID", "SOPInstanceUID"),
+    meta_values = c("SM", "1.2.840.10008.5.1.4.1.1.77.1.6", "ORIGINAL\\PRIMARY\\LABEL", "PAT_WSI", "1.2.3.4", "1.2.3.4.1")
+  )
+
+  kp <- dicom_key_provider(passphrase = "empty-cohort-secret", salt = "salt-empty")
+  res <- dicom_deid(
+    path = in_dir,
+    out_dir = out_dir,
+    key = kp,
+    drop_wsi_labels = TRUE,
+    crosswalk_path = cw_file
+  )
+  expect_equal(length(res$files), 0L)
+  expect_equal(res$skipped_wsi_labels, 1L)
+  expect_true(file.exists(cw_file))
+
+  cw <- dicom_crosswalk_read(cw_file, kp)
+  expect_s3_class(cw, "tbl_df")
+  expect_equal(nrow(cw), 0L)
+  expect_equal(
+    names(cw),
+    c("orig_patient_id", "pseudo_patient_id", "orig_study_uid", "pseudo_study_uid", "shift_days")
+  )
+  expect_type(cw$orig_patient_id, "character")
+  expect_type(cw$pseudo_patient_id, "character")
+  expect_type(cw$orig_study_uid, "character")
+  expect_type(cw$pseudo_study_uid, "character")
+  expect_type(cw$shift_days, "integer")
 })
