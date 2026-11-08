@@ -256,6 +256,54 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// cpp_detect_burned_boxes
+Rcpp::DataFrame cpp_detect_burned_boxes(const Rcpp::NumericVector& pixels, const Rcpp::IntegerVector& dims, double margin_frac);
+RcppExport SEXP _dicomtk_cpp_detect_burned_boxes(SEXP pixelsSEXP, SEXP dimsSEXP, SEXP margin_fracSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type pixels(pixelsSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type dims(dimsSEXP);
+    Rcpp::traits::input_parameter< double >::type margin_frac(margin_fracSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_detect_burned_boxes(pixels, dims, margin_frac));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_apply_pixel_mask
+Rcpp::List cpp_apply_pixel_mask(Rcpp::RawVector raw_pixel_data, int rows, int cols, int frames, int bits_allocated, int pixel_representation, int samples_per_pixel, Rcpp::IntegerMatrix boxes, std::string method, int radius);
+RcppExport SEXP _dicomtk_cpp_apply_pixel_mask(SEXP raw_pixel_dataSEXP, SEXP rowsSEXP, SEXP colsSEXP, SEXP framesSEXP, SEXP bits_allocatedSEXP, SEXP pixel_representationSEXP, SEXP samples_per_pixelSEXP, SEXP boxesSEXP, SEXP methodSEXP, SEXP radiusSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type raw_pixel_data(raw_pixel_dataSEXP);
+    Rcpp::traits::input_parameter< int >::type rows(rowsSEXP);
+    Rcpp::traits::input_parameter< int >::type cols(colsSEXP);
+    Rcpp::traits::input_parameter< int >::type frames(framesSEXP);
+    Rcpp::traits::input_parameter< int >::type bits_allocated(bits_allocatedSEXP);
+    Rcpp::traits::input_parameter< int >::type pixel_representation(pixel_representationSEXP);
+    Rcpp::traits::input_parameter< int >::type samples_per_pixel(samples_per_pixelSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerMatrix >::type boxes(boxesSEXP);
+    Rcpp::traits::input_parameter< std::string >::type method(methodSEXP);
+    Rcpp::traits::input_parameter< int >::type radius(radiusSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_apply_pixel_mask(raw_pixel_data, rows, cols, frames, bits_allocated, pixel_representation, samples_per_pixel, boxes, method, radius));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_clean_pixels_file
+Rcpp::List cpp_clean_pixels_file(const std::string& in_path, const std::string& out_path, const Rcpp::IntegerMatrix& boxes, const std::string& method, int radius);
+RcppExport SEXP _dicomtk_cpp_clean_pixels_file(SEXP in_pathSEXP, SEXP out_pathSEXP, SEXP boxesSEXP, SEXP methodSEXP, SEXP radiusSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type in_path(in_pathSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type out_path(out_pathSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerMatrix& >::type boxes(boxesSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type method(methodSEXP);
+    Rcpp::traits::input_parameter< int >::type radius(radiusSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_clean_pixels_file(in_path, out_path, boxes, method, radius));
+    return rcpp_result_gen;
+END_RCPP
+}
 // cpp_is_dicom
 bool cpp_is_dicom(const std::string& path);
 RcppExport SEXP _dicomtk_cpp_is_dicom(SEXP pathSEXP) {
@@ -390,6 +438,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_dicomtk_cpp_dict_lookup", (DL_FUNC) &_dicomtk_cpp_dict_lookup, 1},
     {"_dicomtk_cpp_dicom_echo", (DL_FUNC) &_dicomtk_cpp_dicom_echo, 5},
     {"_dicomtk_cpp_dicom_echo_loopback_test", (DL_FUNC) &_dicomtk_cpp_dicom_echo_loopback_test, 2},
+    {"_dicomtk_cpp_detect_burned_boxes", (DL_FUNC) &_dicomtk_cpp_detect_burned_boxes, 3},
+    {"_dicomtk_cpp_apply_pixel_mask", (DL_FUNC) &_dicomtk_cpp_apply_pixel_mask, 10},
+    {"_dicomtk_cpp_clean_pixels_file", (DL_FUNC) &_dicomtk_cpp_clean_pixels_file, 5},
     {"_dicomtk_cpp_is_dicom", (DL_FUNC) &_dicomtk_cpp_is_dicom, 1},
     {"_dicomtk_cpp_read_dicom_header", (DL_FUNC) &_dicomtk_cpp_read_dicom_header, 3},
     {"_dicomtk_cpp_get_tag_values", (DL_FUNC) &_dicomtk_cpp_get_tag_values, 2},

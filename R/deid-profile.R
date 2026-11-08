@@ -228,6 +228,8 @@ compile_deid_profile <- function(profile = "ps3.15",
 
   # Validate options
   options <- unique(as.character(options))
+  options[options == "clean_pixel"] <- "clean_pixel_data"
+  options[options == "deface"] <- "clean_recognizable_visual_features"
   invalid_opts <- setdiff(options, valid_options)
   if (length(invalid_opts) > 0L) {
     cli::cli_abort("Unknown de-identification option(s): {.val {invalid_opts}}. Valid options: {.val {valid_options}}")

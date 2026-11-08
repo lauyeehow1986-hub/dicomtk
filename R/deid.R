@@ -27,6 +27,11 @@
 #' @param override_tags Optional named list of tag-action overrides.
 #' @param drop_wsi_labels Logical. Whether whole slide microscopy (WSI) label and
 #'   overview instances should be skipped. Default is \code{TRUE}.
+#' @param pixel_method Character string specifying pixel de-identification method:
+#'   \code{"none"} (default), \code{"blackout"}, or \code{"inpaint"}. If \code{options}
+#'   contains \code{"clean_pixel"} and \code{pixel_method == "none"}, defaults to \code{"blackout"}.
+#' @param pixel_boxes Optional data frame or matrix with candidate pixel bounding boxes
+#'   \code{(ymin, xmin, ymax, xmax)}.
 #' @param overwrite Logical. Whether existing output files should be overwritten. Default is \code{FALSE}.
 #'
 #' @return An object of class \code{"dicom_deid_result"} containing:
@@ -59,8 +64,17 @@ dicom_deid <- function(path,
                        crosswalk_path = NULL,
                        override_tags = list(),
                        drop_wsi_labels = TRUE,
+                       pixel_method = c("none", "blackout", "inpaint"),
+                       pixel_boxes = NULL,
                        overwrite = FALSE) {
   layout <- match.arg(layout)
+
+  if (any(c("clean_pixel", "clean_pixel_data") %in% options) &&
+      (identical(pixel_method, c("none", "blackout", "inpaint")) || pixel_method[1L] == "none")) {
+    pixel_method <- "blackout"
+  } else {
+    pixel_method <- match.arg(pixel_method)
+  }
 
   # Resolve input files
   in_files <- resolve_dicom_paths(path, recursive = TRUE)
@@ -201,6 +215,29 @@ dicom_deid <- function(path,
       total_actions <- total_actions + res_i$actions_applied
     }
 
+    # Pixel de-identification (blackout or inpaint) if requested
+    if (pixel_method %in% c("blackout", "inpaint")) {
+      bxs <- pixel_boxes
+      if (is.null(bxs)) {
+        bxs <- dicom_detect_burned_phi(tmp_outs[i])
+      }
+      if (!is.null(bxs) && nrow(bxs) > 0L) {
+        dicom_clean_pixels(
+          path = tmp_outs[i],
+          out_path = tmp_outs[i],
+          pixel_method = pixel_method,
+          boxes = bxs,
+          mask_sidecar = (pixel_method == "inpaint")
+        )
+        if (pixel_method == "inpaint") {
+          hdr_tmp <- read_dicom(tmp_outs[i], wide = TRUE)
+          if (!is.null(hdr_tmp$SOPInstanceUID) && nzchar(hdr_tmp$SOPInstanceUID)) {
+            res_i$pseudo_sop_uid <- hdr_tmp$SOPInstanceUID
+          }
+        }
+      }
+    }
+
     # Determine final output destination
     if (layout == "preserve") {
       final_dest <- file.path(out_dir, rel_paths[i])
@@ -231,6 +268,25 @@ dicom_deid <- function(path,
       }
       unlink(tmp_outs[i])
     }
+
+    # Relocate inpaint mask sidecar if generated
+    if (pixel_method == "inpaint") {
+      tmp_stem <- sub("\\.[^.]+$", "", tmp_outs[i])
+      tmp_sidecar <- paste0(tmp_stem, "_inpaint_mask.rds")
+      if (file.exists(tmp_sidecar)) {
+        final_stem <- sub("\\.[^.]+$", "", final_dest)
+        final_sidecar <- paste0(final_stem, "_inpaint_mask.rds")
+        if (!file.rename(tmp_sidecar, final_sidecar)) {
+          file.copy(tmp_sidecar, final_sidecar, overwrite = TRUE)
+        }
+        unlink(tmp_sidecar)
+      }
+    }
+
+    if (pixel_method %in% c("blackout", "inpaint") && file.exists(final_dest)) {
+      res_i$out_sha256 <- cpp_sha256_file(final_dest)
+    }
+
     res_i$out_file <- final_dest
     written_files <- c(written_files, final_dest)
     raw_results[[i]] <- res_i

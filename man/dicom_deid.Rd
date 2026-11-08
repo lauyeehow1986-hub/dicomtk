@@ -17,6 +17,8 @@ dicom_deid(
   crosswalk_path = NULL,
   override_tags = list(),
   drop_wsi_labels = TRUE,
+  pixel_method = c("none", "blackout", "inpaint"),
+  pixel_boxes = NULL,
   overwrite = FALSE
 )
 }
@@ -53,6 +55,13 @@ the \code{mirai} package is available, files are processed concurrently.}
 
 \item{drop_wsi_labels}{Logical. Whether whole slide microscopy (WSI) label and
 overview instances should be skipped. Default is \code{TRUE}.}
+
+\item{pixel_method}{Character string specifying pixel de-identification method:
+\code{"none"} (default), \code{"blackout"}, or \code{"inpaint"}. If \code{options}
+contains \code{"clean_pixel"} and \code{pixel_method == "none"}, defaults to \code{"blackout"}.}
+
+\item{pixel_boxes}{Optional data frame or matrix with candidate pixel bounding boxes
+\code{(ymin, xmin, ymax, xmax)}.}
 
 \item{overwrite}{Logical. Whether existing output files should be overwritten. Default is \code{FALSE}.}
 }

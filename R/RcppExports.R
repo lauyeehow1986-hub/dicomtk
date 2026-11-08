@@ -81,6 +81,18 @@ cpp_dicom_echo_loopback_test <- function(called_ae = "ORTHANC", calling_ae = "DI
     .Call(`_dicomtk_cpp_dicom_echo_loopback_test`, called_ae, calling_ae)
 }
 
+cpp_detect_burned_boxes <- function(pixels, dims, margin_frac = 0.18) {
+    .Call(`_dicomtk_cpp_detect_burned_boxes`, pixels, dims, margin_frac)
+}
+
+cpp_apply_pixel_mask <- function(raw_pixel_data, rows, cols, frames, bits_allocated, pixel_representation, samples_per_pixel, boxes, method = "blackout", radius = 5L) {
+    .Call(`_dicomtk_cpp_apply_pixel_mask`, raw_pixel_data, rows, cols, frames, bits_allocated, pixel_representation, samples_per_pixel, boxes, method, radius)
+}
+
+cpp_clean_pixels_file <- function(in_path, out_path, boxes, method = "blackout", radius = 5L) {
+    .Call(`_dicomtk_cpp_clean_pixels_file`, in_path, out_path, boxes, method, radius)
+}
+
 cpp_is_dicom <- function(path) {
     .Call(`_dicomtk_cpp_is_dicom`, path)
 }
