@@ -49,6 +49,10 @@ cpp_sha256_file <- function(path) {
     .Call(`_dicomtk_cpp_sha256_file`, path)
 }
 
+cpp_deid_file <- function(in_path, out_path, profile_spec, uid_key, pid_key, date_key, drop_wsi_labels = TRUE) {
+    .Call(`_dicomtk_cpp_deid_file`, in_path, out_path, profile_spec, uid_key, pid_key, date_key, drop_wsi_labels)
+}
+
 cpp_read_dicom_pixels <- function(path, frame = 0L, rescale = TRUE) {
     .Call(`_dicomtk_cpp_read_dicom_pixels`, path, frame, rescale)
 }

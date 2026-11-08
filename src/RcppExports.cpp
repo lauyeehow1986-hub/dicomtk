@@ -160,6 +160,23 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// cpp_deid_file
+Rcpp::List cpp_deid_file(const std::string& in_path, const std::string& out_path, const Rcpp::List& profile_spec, const Rcpp::RawVector& uid_key, const Rcpp::RawVector& pid_key, const Rcpp::RawVector& date_key, bool drop_wsi_labels);
+RcppExport SEXP _dicomtk_cpp_deid_file(SEXP in_pathSEXP, SEXP out_pathSEXP, SEXP profile_specSEXP, SEXP uid_keySEXP, SEXP pid_keySEXP, SEXP date_keySEXP, SEXP drop_wsi_labelsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type in_path(in_pathSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type out_path(out_pathSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type profile_spec(profile_specSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::RawVector& >::type uid_key(uid_keySEXP);
+    Rcpp::traits::input_parameter< const Rcpp::RawVector& >::type pid_key(pid_keySEXP);
+    Rcpp::traits::input_parameter< const Rcpp::RawVector& >::type date_key(date_keySEXP);
+    Rcpp::traits::input_parameter< bool >::type drop_wsi_labels(drop_wsi_labelsSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_deid_file(in_path, out_path, profile_spec, uid_key, pid_key, date_key, drop_wsi_labels));
+    return rcpp_result_gen;
+END_RCPP
+}
 // cpp_read_dicom_pixels
 Rcpp::NumericVector cpp_read_dicom_pixels(const std::string& path, int frame, bool rescale);
 RcppExport SEXP _dicomtk_cpp_read_dicom_pixels(SEXP pathSEXP, SEXP frameSEXP, SEXP rescaleSEXP) {
@@ -365,6 +382,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_dicomtk_cpp_hmac_uid", (DL_FUNC) &_dicomtk_cpp_hmac_uid, 2},
     {"_dicomtk_cpp_hmac_shift_days", (DL_FUNC) &_dicomtk_cpp_hmac_shift_days, 4},
     {"_dicomtk_cpp_sha256_file", (DL_FUNC) &_dicomtk_cpp_sha256_file, 1},
+    {"_dicomtk_cpp_deid_file", (DL_FUNC) &_dicomtk_cpp_deid_file, 7},
     {"_dicomtk_cpp_read_dicom_pixels", (DL_FUNC) &_dicomtk_cpp_read_dicom_pixels, 3},
     {"_dicomtk_cpp_dcmtk_init", (DL_FUNC) &_dicomtk_cpp_dcmtk_init, 0},
     {"_dicomtk_cpp_dcmtk_cleanup", (DL_FUNC) &_dicomtk_cpp_dcmtk_cleanup, 0},

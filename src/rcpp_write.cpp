@@ -21,7 +21,7 @@ static bool is_long_vr_write(const std::string& vr) {
           vr == "UV");
 }
 
-static bool is_string_vr_write(const std::string& vr) {
+bool is_string_vr_write(const std::string& vr) {
   return (vr == "AE" || vr == "AS" || vr == "CS" || vr == "DA" ||
           vr == "DS" || vr == "DT" || vr == "IS" || vr == "LO" ||
           vr == "LT" || vr == "PN" || vr == "SH" || vr == "ST" ||
@@ -29,7 +29,7 @@ static bool is_string_vr_write(const std::string& vr) {
           vr == "UT");
 }
 
-static std::string normalize_explicit_vr(const std::string& vr_in) {
+std::string normalize_explicit_vr(const std::string& vr_in) {
   if (vr_in == "xs") return "US";
   if (vr_in == "ox") return "OW";
   if (vr_in == "up") return "UL";
@@ -325,10 +325,10 @@ bool write_dicom_file(const DcmParsedFile& dcm, const std::string& out_path) {
   return ofs.good();
 }
 
-static bool resolve_tag_or_keyword(const std::string& query,
-                                   uint16_t& group,
-                                   uint16_t& element,
-                                   const DcmDictEntry*& dict_out) {
+bool resolve_tag_or_keyword(const std::string& query,
+                           uint16_t& group,
+                           uint16_t& element,
+                           const DcmDictEntry*& dict_out) {
   if (parse_tag_string(query, group, element)) {
     dict_out = lookup_dict_tag(group, element);
     return true;
@@ -342,10 +342,10 @@ static bool resolve_tag_or_keyword(const std::string& query,
   return false;
 }
 
-static void upsert_tag(DcmParsedFile& dcm,
-                       uint16_t group,
-                       uint16_t element,
-                       const std::string& val_str) {
+void upsert_tag(DcmParsedFile& dcm,
+                uint16_t group,
+                uint16_t element,
+                const std::string& val_str) {
   const DcmDictEntry* dict = lookup_dict_tag(group, element);
   std::string vr = normalize_explicit_vr(dict ? dict->vr : "LO");
 
@@ -369,10 +369,10 @@ static void upsert_tag(DcmParsedFile& dcm,
   dcm.elements.push_back(std::move(rec));
 }
 
-static void upsert_sq_tag(DcmParsedFile& dcm,
-                          uint16_t group,
-                          uint16_t element,
-                          std::vector<std::vector<DcmElementRecord>>&& sq_items) {
+void upsert_sq_tag(DcmParsedFile& dcm,
+                   uint16_t group,
+                   uint16_t element,
+                   std::vector<std::vector<DcmElementRecord>>&& sq_items) {
   const DcmDictEntry* dict = lookup_dict_tag(group, element);
   for (auto& el : dcm.elements) {
     if (el.depth == 0 && el.group == group && el.element == element) {
@@ -397,8 +397,8 @@ static void upsert_sq_tag(DcmParsedFile& dcm,
   dcm.elements.push_back(std::move(rec));
 }
 
-static std::vector<std::vector<DcmElementRecord>> r_list_to_sq_items(const Rcpp::List& seq_list,
-                                                                     int depth = 1) {
+std::vector<std::vector<DcmElementRecord>> r_list_to_sq_items(const Rcpp::List& seq_list,
+                                                             int depth) {
   if (depth > 32) {
     Rcpp::stop("Sequence nesting in R list exceeds maximum depth (32).");
   }
