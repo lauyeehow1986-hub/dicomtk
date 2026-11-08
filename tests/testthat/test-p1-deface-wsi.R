@@ -124,6 +124,28 @@ test_that("3D coordinate-aware head CT/MR defacing masks facial features while p
   # Check CID 7050 code 113102 in DeidentificationMethodCodeSequence (0012,0064)
   code_val <- subset(hdr, tag == "(0008,0100)")$value
   expect_true("113102" %in% code_val)
+
+  # Verify written DICOM slice adheres to strict LPS space even when input is RAS
+  out_ras_dir <- tempfile("test_deface_ras_out_")
+  on.exit(unlink(out_ras_dir, recursive = TRUE), add = TRUE)
+  written_ras <- dicom_deface(to_ras(head_vol), out_dir = out_ras_dir)
+  ras_files <- list.files(out_ras_dir, pattern = "\\.dcm$", full.names = TRUE)
+  expect_gt(length(ras_files), 0L)
+  hdr_ras <- read_dicom(ras_files[[1L]], include_sequences = FALSE)
+
+  ipp_val <- subset(hdr_ras, tag == "(0020,0032)")$value
+  expect_equal(ipp_val, "-93\\-125\\-60")
+
+  iop_val <- subset(hdr_ras, tag == "(0020,0037)")$value
+  expect_equal(iop_val, "0\\1\\0\\1\\0\\0")
+
+  # 4D volume export with out_dir throws clear error
+  vol_4d <- head_vol
+  vol_4d$voxels <- array(rep(head_vol$voxels, 2), dim = c(dims, 2L))
+  expect_error(
+    dicom_deface(vol_4d, out_dir = out_dir),
+    "Exporting 4D volumes with `out_dir` is not supported"
+  )
 })
 
 test_that("dicom_deid drops WSI label and macro images while stripping group 2200 tags", {

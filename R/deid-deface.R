@@ -185,6 +185,9 @@ dicom_deface <- function(x,
 
   # 8. Write DICOM slice files if out_dir is provided
   if (!is.null(out_dir)) {
+    if (length(dim(vol$voxels)) > 3L) {
+      cli::cli_abort("Exporting 4D volumes with {.arg out_dir} is not supported.")
+    }
     dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 
     nslices <- dims[3L]
@@ -222,10 +225,12 @@ dicom_deface <- function(x,
           "(7FE0,0010)"
         )
         sub_hdr <- subset(hdr_raw, !tag %in% skip_tags & depth == 0L)
+        sub_vals <- sub_hdr$value
+        sub_vals[is.na(sub_vals)] <- ""
 
         orig_img_type <- subset(hdr_raw, tag == "(0008,0008)")$value
         new_img_type <- "DERIVED\\SECONDARY"
-        if (length(orig_img_type) > 0L && nzchar(orig_img_type[1L])) {
+        if (length(orig_img_type) > 0L && !is.na(orig_img_type[1L]) && nzchar(orig_img_type[1L])) {
           parts <- strsplit(orig_img_type[1L], "\\\\")[[1L]]
           if (length(parts) > 2L) {
             new_img_type <- paste(c("DERIVED", "SECONDARY", parts[3:length(parts)]), collapse = "\\")
@@ -238,21 +243,20 @@ dicom_deface <- function(x,
           "(0028,0302)", "(0008,0008)", "(0012,0062)", "(0012,0063)"
         )
         meta_vals <- c(
-          sub_hdr$value,
+          sub_vals,
           new_sop_uid, new_sop_uid, new_series_uid,
           "NO", new_img_type, "YES", "DEFACE"
         )
       } else {
-        ipp_s <- aff_ras[1:3, 4L] + aff_ras[1:3, 3L] * (s - 1L)
-        if (identical(vol$coord_system, "LPS")) {
-          ipp_s <- c(-ipp_s[1L], -ipp_s[2L], ipp_s[3L])
-        }
+        vol_lps <- to_lps(vol)
+        ipp_s <- vol_lps$affine[1:3, 4L] + vol_lps$affine[1:3, 3L] * (s - 1L)
+        iop_lps <- paste(round(c(vol_lps$direction$d_row, vol_lps$direction$d_col), 6L), collapse = "\\")
 
         meta_tags <- c(
           "Modality", "ImageType", "RecognizableVisualFeatures",
           "SOPInstanceUID", "MediaStorageSOPInstanceUID", "SeriesInstanceUID",
           "PatientIdentityRemoved", "DeidentificationMethod",
-          "ImagePositionPatient", "PixelSpacing"
+          "ImagePositionPatient", "ImageOrientationPatient", "PixelSpacing"
         )
         meta_vals <- c(
           modality,
@@ -261,6 +265,7 @@ dicom_deface <- function(x,
           new_sop_uid, new_sop_uid, new_series_uid,
           "YES", "DEFACE",
           paste(round(ipp_s, 4L), collapse = "\\"),
+          iop_lps,
           paste(round(vol$spacing[1:2], 4L), collapse = "\\")
         )
       }
