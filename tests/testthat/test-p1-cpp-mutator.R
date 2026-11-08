@@ -419,3 +419,174 @@ test_that("WSI Label/Overview Detection skips label images without writing outpu
   expect_false(res_vol$skipped_wsi_label)
   expect_true(file.exists(out_vol_dcm))
 })
+
+test_that("Repeating group wildcards (50XX,XXXX) and (60XX,XXXX) purge (5000,0010) and (6000,3000)", {
+  in_dcm <- tempfile(pattern = "wildcard_in_", fileext = ".dcm")
+  out_dcm <- tempfile(pattern = "wildcard_out_", fileext = ".dcm")
+  on.exit(unlink(c(in_dcm, out_dcm)), add = TRUE)
+
+  px <- matrix(seq_len(16), 4, 4)
+  ok <- dicomtk:::cpp_write_dicom_matrix(
+    pixels = px,
+    out_path = in_dcm,
+    meta_tags = c(
+      "Modality", "SOPClassUID",
+      "(5000,0010)", "(6000,3000)"
+    ),
+    meta_values = c(
+      "OT", "1.2.840.10008.5.1.4.1.1.7",
+      "128", "0"
+    )
+  )
+  expect_true(ok)
+
+  kp <- dicom_key_provider(passphrase = "test-secret-phase1", salt = "dicomtk-p1-salt")
+  uid_key <- dicomtk:::deid_get_subkey(kp, "uid")
+  pid_key <- dicomtk:::deid_get_subkey(kp, "pid")
+  date_key <- dicomtk:::deid_get_subkey(kp, "date")
+
+  prof <- dicom_deid_profile()
+  # ps3.15 base profile has action 'X' for (50XX,XXXX) and (60XX,XXXX)
+  res <- dicomtk:::cpp_deid_file(
+    in_path = in_dcm,
+    out_path = out_dcm,
+    profile_spec = prof,
+    uid_key = uid_key,
+    pid_key = pid_key,
+    date_key = date_key
+  )
+  expect_equal(res$status, "ok")
+
+  hdr <- read_dicom(out_dcm)
+  expect_false("(5000,0010)" %in% hdr$tag)
+  expect_false("(6000,3000)" %in% hdr$tag)
+  expect_false(any(grepl("^\\(50[0-9A-Fa-f]{2},", hdr$tag)))
+  expect_false(any(grepl("^\\(60[0-9A-Fa-f]{2},", hdr$tag)))
+})
+
+test_that("Action K priority preserves StudyInstanceUID and StudyDate under dummy and shift_per_patient policies", {
+  in_dcm <- tempfile(pattern = "act_k_in_", fileext = ".dcm")
+  out_dummy_dcm <- tempfile(pattern = "act_k_dummy_", fileext = ".dcm")
+  out_shift_dcm <- tempfile(pattern = "act_k_shift_", fileext = ".dcm")
+  on.exit(unlink(c(in_dcm, out_dummy_dcm, out_shift_dcm)), add = TRUE)
+
+  orig_study_uid <- "1.2.840.113619.2.55.3.123456789.987"
+  orig_study_date <- "20230615"
+  orig_patient_id <- "PATIENT_EXACT_123   "
+
+  px <- matrix(seq_len(16), 4, 4)
+  ok <- dicomtk:::cpp_write_dicom_matrix(
+    pixels = px,
+    out_path = in_dcm,
+    meta_tags = c(
+      "Modality", "SOPClassUID",
+      "StudyInstanceUID", "StudyDate", "PatientID"
+    ),
+    meta_values = c(
+      "CT", "1.2.840.10008.5.1.4.1.1.2",
+      orig_study_uid, orig_study_date, orig_patient_id
+    )
+  )
+  expect_true(ok)
+
+  kp <- dicom_key_provider(passphrase = "test-secret-phase1", salt = "dicomtk-p1-salt")
+  uid_key <- dicomtk:::deid_get_subkey(kp, "uid")
+  pid_key <- dicomtk:::deid_get_subkey(kp, "pid")
+  date_key <- dicomtk:::deid_get_subkey(kp, "date")
+
+  # 1. date_policy = "dummy", but override StudyInstanceUID (0020,000D) and StudyDate (0008,0020) with "K"
+  prof_dummy <- dicom_deid_profile(
+    override_tags = list(
+      "(0020,000D)" = "K",
+      "(0008,0020)" = "K"
+    )
+  )
+  expect_equal(prof_dummy$date_policy, "dummy")
+
+  res_dummy <- dicomtk:::cpp_deid_file(
+    in_path = in_dcm,
+    out_path = out_dummy_dcm,
+    profile_spec = prof_dummy,
+    uid_key = uid_key,
+    pid_key = pid_key,
+    date_key = date_key
+  )
+  expect_equal(res_dummy$status, "ok")
+  expect_equal(res_dummy$orig_patient_id, "PATIENT_EXACT_123")
+  expect_equal(res_dummy$pseudo_study_uid, orig_study_uid)
+
+  hdr_dummy <- read_dicom(out_dummy_dcm)
+  study_uid_dummy <- hdr_dummy[hdr_dummy$keyword == "StudyInstanceUID", ]$value
+  study_date_dummy <- hdr_dummy[hdr_dummy$keyword == "StudyDate", ]$value
+  expect_equal(study_uid_dummy, orig_study_uid)
+  expect_equal(study_date_dummy, orig_study_date)
+
+  # 2. date_policy = "shift_per_patient", but override StudyInstanceUID and StudyDate with "K"
+  prof_shift <- dicom_deid_profile(
+    options = "retain_longitudinal_modified_dates",
+    override_tags = list(
+      "(0020,000D)" = "K",
+      "(0008,0020)" = "K"
+    )
+  )
+  expect_equal(prof_shift$date_policy, "shift_per_patient")
+
+  res_shift <- dicomtk:::cpp_deid_file(
+    in_path = in_dcm,
+    out_path = out_shift_dcm,
+    profile_spec = prof_shift,
+    uid_key = uid_key,
+    pid_key = pid_key,
+    date_key = date_key
+  )
+  expect_equal(res_shift$status, "ok")
+  expect_equal(res_shift$pseudo_study_uid, orig_study_uid)
+
+  hdr_shift <- read_dicom(out_shift_dcm)
+  study_uid_shift <- hdr_shift[hdr_shift$keyword == "StudyInstanceUID", ]$value
+  study_date_shift <- hdr_shift[hdr_shift$keyword == "StudyDate", ]$value
+  expect_equal(study_uid_shift, orig_study_uid)
+  expect_equal(study_date_shift, orig_study_date)
+})
+
+test_that("Safe-private group scoping purges matching creator in wrong group", {
+  in_dcm <- tempfile(pattern = "priv_grp_in_", fileext = ".dcm")
+  out_dcm <- tempfile(pattern = "priv_grp_out_", fileext = ".dcm")
+  on.exit(unlink(c(in_dcm, out_dcm)), add = TRUE)
+
+  px <- matrix(seq_len(16), 4, 4)
+  # Creator "Philips Imaging DD 001" is allowlisted for group 2005, but placed here in group 2007
+  ok <- dicomtk:::cpp_write_dicom_matrix(
+    pixels = px,
+    out_path = in_dcm,
+    meta_tags = c(
+      "Modality", "SOPClassUID",
+      "(2007,0010)", "(2007,100D)"
+    ),
+    meta_values = c(
+      "MR", "1.2.840.10008.5.1.4.1.1.4",
+      "Philips Imaging DD 001", "0.0"
+    )
+  )
+  expect_true(ok)
+
+  kp <- dicom_key_provider(passphrase = "test-secret-phase1", salt = "dicomtk-p1-salt")
+  uid_key <- dicomtk:::deid_get_subkey(kp, "uid")
+  pid_key <- dicomtk:::deid_get_subkey(kp, "pid")
+  date_key <- dicomtk:::deid_get_subkey(kp, "date")
+
+  prof <- dicom_deid_profile(options = "retain_safe_private")
+  res <- dicomtk:::cpp_deid_file(
+    in_path = in_dcm,
+    out_path = out_dcm,
+    profile_spec = prof,
+    uid_key = uid_key,
+    pid_key = pid_key,
+    date_key = date_key
+  )
+  expect_equal(res$status, "ok")
+
+  hdr <- read_dicom(out_dcm)
+  priv_survived <- hdr[grepl("^\\(2007,", hdr$tag), , drop = FALSE]
+  expect_equal(nrow(priv_survived), 0L)
+})

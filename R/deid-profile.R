@@ -342,6 +342,30 @@ compile_deid_profile <- function(profile = "ps3.15",
     }
   }
 
+  # Ensure safe_private list entries pass group or creator+group for C++ group scoping
+  if (length(safe_private) > 0L) {
+    for (nm in names(safe_private)) {
+      item <- safe_private[[nm]]
+      if (is.list(item)) {
+        if (is.null(item$group)) {
+          grp_match <- regexec("^\\(?([0-9A-Fa-f]{4})[,:]", nm)
+          m <- regmatches(nm, grp_match)[[1]]
+          if (length(m) >= 2L) {
+            item$group <- m[2]
+          } else {
+            item$group <- "0000"
+          }
+        }
+        safe_private[[nm]] <- item
+      } else if (is.numeric(item)) {
+        safe_private[[nm]] <- list(
+          group = "0000",
+          offsets = item
+        )
+      }
+    }
+  }
+
   # Parse base tags
   raw_tags <- if (!is.null(raw_prof$tags)) raw_prof$tags else list()
   compiled_tags <- list()

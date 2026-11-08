@@ -133,6 +133,23 @@ static std::string normalize_creator_str(const std::string& str) {
   return s;
 }
 
+static std::string trim_trailing_spaces_and_nuls(const std::string& str) {
+  size_t end = str.size();
+  while (end > 0 && (std::isspace(static_cast<unsigned char>(str[end - 1])) || str[end - 1] == '\0')) {
+    end--;
+  }
+  return str.substr(0, end);
+}
+
+static uint16_t parse_group_hex(const std::string& grp_str) {
+  if (grp_str.empty()) return 0;
+  try {
+    return static_cast<uint16_t>(std::stoul(grp_str, nullptr, 16));
+  } catch (...) {
+    return 0;
+  }
+}
+
 static std::string lookup_cid7050_meaning(const std::string& code) {
   if (code == "113100") return "Basic Application Confidentiality Profile";
   if (code == "113101") return "Clean Pixel Data Option";
@@ -152,7 +169,7 @@ static std::string lookup_cid7050_meaning(const std::string& code) {
 
 struct DeidContext {
   std::map<std::string, char> tag_actions;
-  std::map<std::string, std::set<uint8_t>> safe_private_map;
+  std::map<std::pair<uint16_t, std::string>, std::set<uint8_t>> safe_private_map;
   bool retain_safe_private = false;
   std::string date_policy = "dummy";
   std::string dob_policy = "";
@@ -244,10 +261,13 @@ static void mutate_element_list(std::vector<DcmElementRecord>& elements,
           continue; // Missing creator tag
         }
         const std::string& creator = it->second;
-        auto sp_it = ctx.safe_private_map.find(creator);
+        auto sp_it = ctx.safe_private_map.find({el.group, creator});
+        if (sp_it == ctx.safe_private_map.end()) {
+          sp_it = ctx.safe_private_map.find({0, creator});
+        }
         if (sp_it == ctx.safe_private_map.end()) {
           ctx.action_counts['X']++;
-          continue; // Creator not allowlisted
+          continue; // Creator not allowlisted for this group
         }
         if (sp_it->second.find(offset) == sp_it->second.end()) {
           ctx.action_counts['X']++;
@@ -256,6 +276,11 @@ static void mutate_element_list(std::vector<DcmElementRecord>& elements,
         // Survives allowlist check!
         surviving_counts[key]++;
         ctx.action_counts['K']++;
+        if (el.vr == "SQ" || !el.items.empty()) {
+          for (auto& item : el.items) {
+            mutate_element_list(item, ctx, depth + 1);
+          }
+        }
         new_elements.push_back(std::move(el));
         continue;
       }
@@ -264,7 +289,35 @@ static void mutate_element_list(std::vector<DcmElementRecord>& elements,
       continue;
     }
 
-    // 2. Sequences (SQ)
+    // 2. Wildcard repeating groups (50xx and 60xx)
+    if ((el.group & 0xFF00) == 0x5000 || (el.group & 0xFF00) == 0x6000) {
+      std::string tag_str = format_tag(el.group, el.element);
+      char r_act = 'K';
+      auto act_it = ctx.tag_actions.find(tag_str);
+      if (act_it != ctx.tag_actions.end()) {
+        r_act = act_it->second;
+      } else {
+        std::string wc = ((el.group & 0xFF00) == 0x5000) ? "(50XX,XXXX)" : "(60XX,XXXX)";
+        auto w_it = ctx.tag_actions.find(wc);
+        if (w_it != ctx.tag_actions.end()) {
+          r_act = w_it->second;
+        }
+      }
+      if (r_act == 'X') {
+        ctx.action_counts['X']++;
+        continue;
+      }
+      if (r_act == 'Z') {
+        el.value_str = "";
+        el.raw_bytes.clear();
+        el.items.clear();
+        ctx.action_counts['Z']++;
+        new_elements.push_back(std::move(el));
+        continue;
+      }
+    }
+
+    // 3. Sequences (SQ)
     if (el.vr == "SQ" || !el.items.empty()) {
       for (auto& item : el.items) {
         mutate_element_list(item, ctx, depth + 1);
@@ -273,7 +326,7 @@ static void mutate_element_list(std::vector<DcmElementRecord>& elements,
       continue;
     }
 
-    // 3. Standard Tag Action Lookup
+    // 4. Standard Tag Action Lookup
     std::string tag_str = format_tag(el.group, el.element);
     char action = 'K';
     auto act_it = ctx.tag_actions.find(tag_str);
@@ -286,17 +339,19 @@ static void mutate_element_list(std::vector<DcmElementRecord>& elements,
       action = 'K';
     }
 
-    // PatientID (0010,0020) replacement with pseudonymous ID
+    // PatientID (0010,0020) replacement with pseudonymous ID if action != 'K'
     if (ctx.patient_deid && el.group == 0x0010 && el.element == 0x0020) {
-      el.value_str = ctx.pseudo_patient_id;
-      el.raw_bytes.clear();
-      ctx.action_counts['D']++;
-      new_elements.push_back(std::move(el));
-      continue;
+      if (action != 'K') {
+        el.value_str = ctx.pseudo_patient_id;
+        el.raw_bytes.clear();
+        ctx.action_counts['D']++;
+        new_elements.push_back(std::move(el));
+        continue;
+      }
     }
 
     // PatientAge (0010,1010) under statutory age cap (e.g. HIPAA Safe Harbor)
-    if (el.group == 0x0010 && el.element == 0x1010 && ctx.age_cap_years >= 0) {
+    if (el.group == 0x0010 && el.element == 0x1010 && ctx.age_cap_years >= 0 && action != 'K') {
       apply_age_cap(el.value_str, ctx.age_cap_years);
       el.raw_bytes.clear();
       ctx.action_counts['C']++;
@@ -304,12 +359,13 @@ static void mutate_element_list(std::vector<DcmElementRecord>& elements,
       continue;
     }
 
-    // Apply action
+    // Action X: drop tag
     if (action == 'X') {
       ctx.action_counts['X']++;
       continue;
     }
 
+    // Action Z: zero tag
     if (action == 'Z') {
       el.value_str = "";
       el.raw_bytes.clear();
@@ -318,7 +374,8 @@ static void mutate_element_list(std::vector<DcmElementRecord>& elements,
       continue;
     }
 
-    if (action == 'U' || el.vr == "UI") {
+    // UIDs: only apply hmac_dicom_uid if action != 'K'
+    if (action != 'K' && (action == 'U' || el.vr == "UI")) {
       if (action == 'U' || el.group == 0x0008 || el.group == 0x0020) {
         el.value_str = ctx.map_uid_multi(el.value_str);
         el.raw_bytes.clear();
@@ -362,34 +419,36 @@ static void mutate_element_list(std::vector<DcmElementRecord>& elements,
       }
     }
 
-    // Date/Time handling
-    if (el.vr == "DA") {
-      if (el.group == 0x0010 && el.element == 0x0030 && !ctx.dob_policy.empty()) {
-        std::string new_da = apply_dob_policy(el.value_str, ctx.dob_policy, ctx.shift_days);
-        if (new_da != el.value_str) { el.value_str = new_da; mutated = true; }
-      } else if (action == 'C' || ctx.date_policy != "keep") {
-        if (ctx.date_policy == "shift_per_patient") {
-          std::string new_da = shift_da(el.value_str, ctx.shift_days);
+    // Date/Time handling: only shift or dummy if action != 'K'
+    if (action != 'K') {
+      if (el.vr == "DA") {
+        if (el.group == 0x0010 && el.element == 0x0030 && !ctx.dob_policy.empty()) {
+          std::string new_da = apply_dob_policy(el.value_str, ctx.dob_policy, ctx.shift_days);
           if (new_da != el.value_str) { el.value_str = new_da; mutated = true; }
-        } else if (ctx.date_policy == "year_only") {
-          el.value_str = year_only_da(el.value_str); mutated = true;
-        } else if (ctx.date_policy == "year_month") {
-          el.value_str = year_month_da(el.value_str); mutated = true;
-        } else if (ctx.date_policy == "dummy") {
-          el.value_str = "19000101"; mutated = true;
+        } else if (action == 'C' || ctx.date_policy != "keep") {
+          if (ctx.date_policy == "shift_per_patient") {
+            std::string new_da = shift_da(el.value_str, ctx.shift_days);
+            if (new_da != el.value_str) { el.value_str = new_da; mutated = true; }
+          } else if (ctx.date_policy == "year_only") {
+            el.value_str = year_only_da(el.value_str); mutated = true;
+          } else if (ctx.date_policy == "year_month") {
+            el.value_str = year_month_da(el.value_str); mutated = true;
+          } else if (ctx.date_policy == "dummy") {
+            el.value_str = "19000101"; mutated = true;
+          }
         }
-      }
-    } else if (el.vr == "DT") {
-      if (action == 'C' || ctx.date_policy != "keep") {
-        if (ctx.date_policy == "shift_per_patient") {
-          std::string new_dt = shift_dt(el.value_str, ctx.shift_days);
-          if (new_dt != el.value_str) { el.value_str = new_dt; mutated = true; }
-        } else if (ctx.date_policy == "year_only") {
-          el.value_str = year_only_dt(el.value_str); mutated = true;
-        } else if (ctx.date_policy == "year_month") {
-          el.value_str = year_month_dt(el.value_str); mutated = true;
-        } else if (ctx.date_policy == "dummy") {
-          el.value_str = "19000101000000"; mutated = true;
+      } else if (el.vr == "DT") {
+        if (action == 'C' || ctx.date_policy != "keep") {
+          if (ctx.date_policy == "shift_per_patient") {
+            std::string new_dt = shift_dt(el.value_str, ctx.shift_days);
+            if (new_dt != el.value_str) { el.value_str = new_dt; mutated = true; }
+          } else if (ctx.date_policy == "year_only") {
+            el.value_str = year_only_dt(el.value_str); mutated = true;
+          } else if (ctx.date_policy == "year_month") {
+            el.value_str = year_month_dt(el.value_str); mutated = true;
+          } else if (ctx.date_policy == "dummy") {
+            el.value_str = "19000101000000"; mutated = true;
+          }
         }
       }
     }
@@ -473,6 +532,7 @@ Rcpp::List cpp_deid_file(const std::string& in_path,
       else if (el.group == 0x0008 && el.element == 0x0008) orig_image_type = el.value_str;
     }
   }
+  orig_patient_id = dicomtk::trim_trailing_spaces_and_nuls(orig_patient_id);
   if (orig_sop_instance_uid.empty()) {
     for (const auto& el : dcm.elements) {
       if (el.depth == 0 && el.group == 0x0002 && el.element == 0x0003) {
@@ -563,19 +623,29 @@ Rcpp::List cpp_deid_file(const std::string& in_path,
         Rcpp::CharacterVector sp_names = sp_list.names();
         for (R_xlen_t i = 0; i < sp_list.size(); ++i) {
           std::string creator = dicomtk::normalize_creator_str(Rcpp::as<std::string>(sp_names[i]));
+          uint16_t grp = 0;
           SEXP val = sp_list[i];
           if (TYPEOF(val) == VECSXP) {
             Rcpp::List val_list(val);
+            if (val_list.containsElementNamed("group")) {
+              SEXP g_sexp = val_list["group"];
+              if (TYPEOF(g_sexp) == STRSXP && LENGTH(g_sexp) > 0) {
+                std::string g_str = Rcpp::as<std::string>(g_sexp);
+                grp = dicomtk::parse_group_hex(g_str);
+              } else if (TYPEOF(g_sexp) == INTSXP || TYPEOF(g_sexp) == REALSXP) {
+                grp = static_cast<uint16_t>(Rcpp::as<int>(g_sexp));
+              }
+            }
             if (val_list.containsElementNamed("offsets")) {
               Rcpp::IntegerVector offs = val_list["offsets"];
               for (int off : offs) {
-                ctx.safe_private_map[creator].insert(static_cast<uint8_t>(off & 0xFF));
+                ctx.safe_private_map[{grp, creator}].insert(static_cast<uint8_t>(off & 0xFF));
               }
             }
           } else if (TYPEOF(val) == INTSXP || TYPEOF(val) == REALSXP) {
             Rcpp::IntegerVector offs(val);
             for (int off : offs) {
-              ctx.safe_private_map[creator].insert(static_cast<uint8_t>(off & 0xFF));
+              ctx.safe_private_map[{grp, creator}].insert(static_cast<uint8_t>(off & 0xFF));
             }
           }
         }
@@ -731,16 +801,29 @@ Rcpp::List cpp_deid_file(const std::string& in_path,
   std::string in_hash = dicomtk::crypto::sha256_file_hex(in_path);
   std::string out_hash = dicomtk::crypto::sha256_file_hex(out_path);
 
-  // Mapped primary UIDs
-  std::string pseudo_sop_uid = ctx.map_uid_single(orig_sop_instance_uid);
-  std::string pseudo_study_uid = ctx.map_uid_single(orig_study_uid);
-  std::string pseudo_series_uid = ctx.map_uid_single(orig_series_uid);
+  // Primary UIDs and PatientID extraction from final dataset
+  std::string pseudo_sop_uid = orig_sop_instance_uid;
+  std::string pseudo_study_uid = orig_study_uid;
+  std::string pseudo_series_uid = orig_series_uid;
+  std::string final_pseudo_patient_id = ctx.pseudo_patient_id;
+
+  for (const auto& el : dcm.elements) {
+    if (el.depth == 0) {
+      if (el.group == 0x0008 && el.element == 0x0018) pseudo_sop_uid = el.value_str;
+      else if (el.group == 0x0020 && el.element == 0x000D) pseudo_study_uid = el.value_str;
+      else if (el.group == 0x0020 && el.element == 0x000E) pseudo_series_uid = el.value_str;
+      else if (el.group == 0x0010 && el.element == 0x0020) final_pseudo_patient_id = el.value_str;
+    }
+  }
+  if (pseudo_sop_uid.empty() && !orig_sop_instance_uid.empty()) {
+    pseudo_sop_uid = ctx.map_uid_single(orig_sop_instance_uid);
+  }
 
   return Rcpp::List::create(
     Rcpp::Named("status") = "ok",
     Rcpp::Named("skipped_wsi_label") = false,
     Rcpp::Named("orig_patient_id") = orig_patient_id,
-    Rcpp::Named("pseudo_patient_id") = ctx.pseudo_patient_id,
+    Rcpp::Named("pseudo_patient_id") = final_pseudo_patient_id,
     Rcpp::Named("orig_study_uid") = orig_study_uid,
     Rcpp::Named("pseudo_study_uid") = pseudo_study_uid,
     Rcpp::Named("orig_series_uid") = orig_series_uid,
