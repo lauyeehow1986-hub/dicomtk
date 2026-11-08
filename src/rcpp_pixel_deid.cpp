@@ -173,9 +173,22 @@ static void run_telea_inpaint_frame(std::vector<double>& img,
 Rcpp::DataFrame cpp_detect_burned_boxes(const Rcpp::NumericVector& pixels,
                                        const Rcpp::IntegerVector& dims,
                                        double margin_frac = 0.18) {
+  if (dims.size() < 2) {
+    Rcpp::stop("Image dims must contain at least 2 elements (rows, cols).");
+  }
+
   int rows = dims[0];
   int cols = dims[1];
   int frames = (dims.size() >= 3) ? dims[2] : 1;
+
+  if (rows <= 0 || cols <= 0 || frames <= 0) {
+    Rcpp::stop("Image dimensions rows, cols, and frames must be strictly positive.");
+  }
+
+  std::size_t required_pixels = static_cast<std::size_t>(rows) * static_cast<std::size_t>(cols) * static_cast<std::size_t>(frames);
+  if (static_cast<std::size_t>(pixels.size()) < required_pixels) {
+    Rcpp::stop("pixels buffer size is smaller than rows * cols * frames.");
+  }
 
   std::vector<int> out_ymin;
   std::vector<int> out_xmin;
@@ -183,17 +196,6 @@ Rcpp::DataFrame cpp_detect_burned_boxes(const Rcpp::NumericVector& pixels,
   std::vector<int> out_xmax;
   std::vector<std::string> out_type;
   std::vector<double> out_score;
-
-  if (rows <= 0 || cols <= 0 || frames <= 0) {
-    return Rcpp::DataFrame::create(
-      Rcpp::Named("ymin") = out_ymin,
-      Rcpp::Named("xmin") = out_xmin,
-      Rcpp::Named("ymax") = out_ymax,
-      Rcpp::Named("xmax") = out_xmax,
-      Rcpp::Named("region_type") = out_type,
-      Rcpp::Named("score") = out_score
-    );
-  }
 
   // 1. Cine Static-Overlay Detector (frames >= 3)
   if (frames >= 3) {
@@ -270,7 +272,7 @@ Rcpp::DataFrame cpp_detect_burned_boxes(const Rcpp::NumericVector& pixels,
   }
 
   // 2. Border Stroke Detector
-  int margin_rows = std::max(2, static_cast<int>(std::round(rows * margin_frac)));
+  int margin_rows = std::min(rows, std::max(2, static_cast<int>(std::round(rows * margin_frac))));
 
   int top_min_r = rows, top_max_r = -1, top_min_c = cols, top_max_c = -1;
   int top_count = 0;
@@ -327,6 +329,14 @@ Rcpp::List cpp_apply_pixel_mask(Rcpp::RawVector raw_pixel_data,
     Rcpp::stop("Invalid image dimensions in cpp_apply_pixel_mask.");
   }
 
+  if (bits_allocated > 16) {
+    Rcpp::stop("Pixel cleaning currently supports BitsAllocated <= 16 (got %d).", bits_allocated);
+  }
+
+  if (boxes.nrow() > 0 && boxes.ncol() < 4) {
+    Rcpp::stop("boxes matrix must have at least 4 columns (ymin, xmin, ymax, xmax).");
+  }
+
   int bytes_per_sample = (bits_allocated <= 8) ? 1 : 2;
   std::size_t expected_size = static_cast<std::size_t>(rows) * cols * frames * samples_per_pixel * bytes_per_sample;
   if (static_cast<std::size_t>(raw_pixel_data.size()) < expected_size) {
@@ -340,6 +350,13 @@ Rcpp::List cpp_apply_pixel_mask(Rcpp::RawVector raw_pixel_data,
 
   int nboxes = boxes.nrow();
   for (int i = 0; i < nboxes; ++i) {
+    if (Rcpp::IntegerMatrix::is_na(boxes(i, 0)) ||
+        Rcpp::IntegerMatrix::is_na(boxes(i, 1)) ||
+        Rcpp::IntegerMatrix::is_na(boxes(i, 2)) ||
+        Rcpp::IntegerMatrix::is_na(boxes(i, 3))) {
+      continue;
+    }
+
     int ymin = boxes(i, 0);
     int xmin = boxes(i, 1);
     int ymax = boxes(i, 2);
@@ -526,8 +543,7 @@ Rcpp::List cpp_clean_pixels_file(const std::string& in_path,
     dicomtk::upsert_tag(dcm, 0x0008, 0x0018, new_sop);
     dicomtk::upsert_tag(dcm, 0x0002, 0x0003, new_sop);
 
-    // Guardrail 3: DeidentificationMethodCodeSequence (0012,0064) records "113101"
-    // and "INPAINT_TELEA" in (0012,0063)
+    // Guardrail 3: DeidentificationMethod (0012,0063) records "INPAINT_TELEA"
     std::string new_method_str = orig_deid_method;
     if (new_method_str.empty()) {
       new_method_str = "INPAINT_TELEA";
@@ -535,29 +551,6 @@ Rcpp::List cpp_clean_pixels_file(const std::string& in_path,
       new_method_str += "\\INPAINT_TELEA";
     }
     dicomtk::upsert_tag(dcm, 0x0012, 0x0063, new_method_str);
-
-    std::vector<dicomtk::DcmElementRecord> item_elems;
-    dicomtk::DcmElementRecord r_code;
-    r_code.group = 0x0008; r_code.element = 0x0100; r_code.vr = "SH";
-    r_code.name = "Code Value"; r_code.keyword = "CodeValue"; r_code.vm = "1";
-    r_code.value_str = "113101"; r_code.depth = 1;
-    item_elems.push_back(std::move(r_code));
-
-    dicomtk::DcmElementRecord r_sch;
-    r_sch.group = 0x0008; r_sch.element = 0x0102; r_sch.vr = "SH";
-    r_sch.name = "Coding Scheme Designator"; r_sch.keyword = "CodingSchemeDesignator"; r_sch.vm = "1";
-    r_sch.value_str = "DCM"; r_sch.depth = 1;
-    item_elems.push_back(std::move(r_sch));
-
-    dicomtk::DcmElementRecord r_mean;
-    r_mean.group = 0x0008; r_mean.element = 0x0104; r_mean.vr = "LO";
-    r_mean.name = "Code Meaning"; r_mean.keyword = "CodeMeaning"; r_mean.vm = "1";
-    r_mean.value_str = "Clean Pixel Data Option"; r_mean.depth = 1;
-    item_elems.push_back(std::move(r_mean));
-
-    std::vector<std::vector<dicomtk::DcmElementRecord>> code_items;
-    code_items.push_back(std::move(item_elems));
-    dicomtk::upsert_sq_tag(dcm, 0x0012, 0x0064, std::move(code_items));
   } else if (method == "blackout") {
     std::string new_method_str = orig_deid_method;
     if (new_method_str.empty()) {
@@ -566,26 +559,53 @@ Rcpp::List cpp_clean_pixels_file(const std::string& in_path,
       new_method_str += "\\PIXEL_BLACKOUT";
     }
     dicomtk::upsert_tag(dcm, 0x0012, 0x0063, new_method_str);
+  } else {
+    Rcpp::stop("Unknown pixel cleaning method: " + method);
+  }
 
-    std::vector<dicomtk::DcmElementRecord> item_elems;
-    dicomtk::DcmElementRecord r_code;
-    r_code.group = 0x0008; r_code.element = 0x0100; r_code.vr = "SH";
-    r_code.name = "Code Value"; r_code.keyword = "CodeValue"; r_code.vm = "1";
-    r_code.value_str = "113101"; r_code.depth = 1;
-    item_elems.push_back(std::move(r_code));
+  // DeidentificationMethodCodeSequence (0012,0064) records code "113101"
+  // Preserve existing codes in (0012,0064) if present
+  std::vector<dicomtk::DcmElementRecord> item_elems;
+  dicomtk::DcmElementRecord r_code;
+  r_code.group = 0x0008; r_code.element = 0x0100; r_code.vr = "SH";
+  r_code.name = "Code Value"; r_code.keyword = "CodeValue"; r_code.vm = "1";
+  r_code.value_str = "113101"; r_code.depth = 1;
+  item_elems.push_back(std::move(r_code));
 
-    dicomtk::DcmElementRecord r_sch;
-    r_sch.group = 0x0008; r_sch.element = 0x0102; r_sch.vr = "SH";
-    r_sch.name = "Coding Scheme Designator"; r_sch.keyword = "CodingSchemeDesignator"; r_sch.vm = "1";
-    r_sch.value_str = "DCM"; r_sch.depth = 1;
-    item_elems.push_back(std::move(r_sch));
+  dicomtk::DcmElementRecord r_sch;
+  r_sch.group = 0x0008; r_sch.element = 0x0102; r_sch.vr = "SH";
+  r_sch.name = "Coding Scheme Designator"; r_sch.keyword = "CodingSchemeDesignator"; r_sch.vm = "1";
+  r_sch.value_str = "DCM"; r_sch.depth = 1;
+  item_elems.push_back(std::move(r_sch));
 
-    dicomtk::DcmElementRecord r_mean;
-    r_mean.group = 0x0008; r_mean.element = 0x0104; r_mean.vr = "LO";
-    r_mean.name = "Code Meaning"; r_mean.keyword = "CodeMeaning"; r_mean.vm = "1";
-    r_mean.value_str = "Clean Pixel Data Option"; r_mean.depth = 1;
-    item_elems.push_back(std::move(r_mean));
+  dicomtk::DcmElementRecord r_mean;
+  r_mean.group = 0x0008; r_mean.element = 0x0104; r_mean.vr = "LO";
+  r_mean.name = "Code Meaning"; r_mean.keyword = "CodeMeaning"; r_mean.vm = "1";
+  r_mean.value_str = "Clean Pixel Data Option"; r_mean.depth = 1;
+  item_elems.push_back(std::move(r_mean));
 
+  bool found_0012_0064 = false;
+  for (auto& el : dcm.elements) {
+    if (el.depth == 0 && el.group == 0x0012 && el.element == 0x0064) {
+      found_0012_0064 = true;
+      bool already_has_113101 = false;
+      for (const auto& it : el.items) {
+        for (const auto& sub_el : it) {
+          if (sub_el.group == 0x0008 && sub_el.element == 0x0100 && sub_el.value_str == "113101") {
+            already_has_113101 = true;
+            break;
+          }
+        }
+        if (already_has_113101) break;
+      }
+      if (!already_has_113101) {
+        el.items.push_back(std::move(item_elems));
+      }
+      break;
+    }
+  }
+
+  if (!found_0012_0064) {
     std::vector<std::vector<dicomtk::DcmElementRecord>> code_items;
     code_items.push_back(std::move(item_elems));
     dicomtk::upsert_sq_tag(dcm, 0x0012, 0x0064, std::move(code_items));

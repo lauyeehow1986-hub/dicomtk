@@ -271,10 +271,10 @@ dicom_deid <- function(path,
 
     # Relocate inpaint mask sidecar if generated
     if (pixel_method == "inpaint") {
-      tmp_stem <- sub("\\.[^.]+$", "", tmp_outs[i])
+      tmp_stem <- tools::file_path_sans_ext(tmp_outs[i])
       tmp_sidecar <- paste0(tmp_stem, "_inpaint_mask.rds")
       if (file.exists(tmp_sidecar)) {
-        final_stem <- sub("\\.[^.]+$", "", final_dest)
+        final_stem <- tools::file_path_sans_ext(final_dest)
         final_sidecar <- paste0(final_stem, "_inpaint_mask.rds")
         if (!file.rename(tmp_sidecar, final_sidecar)) {
           file.copy(tmp_sidecar, final_sidecar, overwrite = TRUE)

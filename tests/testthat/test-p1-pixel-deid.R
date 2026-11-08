@@ -57,6 +57,11 @@ test_that("Ultrasound (0018,6011) region detection and blackout cleaning", {
   expect_equal(top_banner$ymin, 1L)
   expect_equal(top_banner$ymax, 12L)
 
+  bot_banner <- boxes[boxes$ymin == 61L & boxes$ymax == 64L, ]
+  expect_equal(nrow(bot_banner), 1L)
+  expect_equal(bot_banner$ymin, 61L)
+  expect_equal(bot_banner$ymax, 64L)
+
   # dicom_clean_pixels(..., pixel_method = "blackout") zeros banner pixels
   # while leaving acoustic region [13:60, 5:60] untouched and sets BurnedInAnnotation = "NO"
   out_cleaned <- file.path(tmp_dir, "us_cleaned.dcm")
@@ -66,6 +71,8 @@ test_that("Ultrasound (0018,6011) region detection and blackout cleaning", {
   cleaned_px <- read_dicom_pixels(out_cleaned, rescale = FALSE)
   # Rows 1:12 should be zeroed
   expect_true(all(cleaned_px[1:12, ] == 0))
+  # Rows 61:64 should be zeroed
+  expect_true(all(cleaned_px[61:64, ] == 0))
   # Acoustic window [13:60, 5:60] must be 100% identical to original px
   expect_equal(cleaned_px[13:60, 5:60], px[13:60, 5:60])
 
@@ -276,4 +283,195 @@ test_that("Integration of pixel cleaning with dicom_deid()", {
 
   hdr <- read_dicom(out_files[1L], wide = TRUE)
   expect_equal(hdr$BurnedInAnnotation, "NO")
+})
+
+test_that("C++ bounds checks, NA boxes, and BitsAllocated > 16 guards", {
+  # 1. cpp_detect_burned_boxes guards
+  expect_error(
+    dicomtk:::cpp_detect_burned_boxes(numeric(10), c(10L)),
+    "at least 2 elements"
+  )
+  expect_error(
+    dicomtk:::cpp_detect_burned_boxes(numeric(10), c(-5L, 2L)),
+    "strictly positive"
+  )
+  expect_error(
+    dicomtk:::cpp_detect_burned_boxes(numeric(10), c(10L, 10L)),
+    "smaller than rows"
+  )
+
+  # 2. cpp_apply_pixel_mask bits_allocated > 16 guard
+  expect_error(
+    dicomtk:::cpp_apply_pixel_mask(
+      raw_pixel_data = as.raw(rep(0, 100)),
+      rows = 5L,
+      cols = 5L,
+      frames = 1L,
+      bits_allocated = 32L,
+      pixel_representation = 0L,
+      samples_per_pixel = 1L,
+      boxes = matrix(c(1L, 1L, 2L, 2L), nrow = 1L)
+    ),
+    "BitsAllocated <= 16"
+  )
+
+  # 3. cpp_apply_pixel_mask box ncol < 4 guard
+  bad_box <- matrix(c(1L, 2L), nrow = 1L, ncol = 2L)
+  expect_error(
+    dicomtk:::cpp_apply_pixel_mask(
+      raw_pixel_data = as.raw(rep(0, 100)),
+      rows = 5L,
+      cols = 5L,
+      frames = 1L,
+      bits_allocated = 8L,
+      pixel_representation = 0L,
+      samples_per_pixel = 1L,
+      boxes = bad_box
+    ),
+    "at least 4 columns"
+  )
+
+  # 4. NA rows in boxes matrix are gracefully skipped
+  na_box <- matrix(c(1L, 1L, 2L, 2L, NA_integer_, 1L, 2L, 2L), nrow = 2L, byrow = TRUE)
+  res_na <- dicomtk:::cpp_apply_pixel_mask(
+    raw_pixel_data = as.raw(rep(255, 25)),
+    rows = 5L,
+    cols = 5L,
+    frames = 1L,
+    bits_allocated = 8L,
+    pixel_representation = 0L,
+    samples_per_pixel = 1L,
+    boxes = na_box,
+    method = "blackout"
+  )
+  expect_type(res_na$pixels, "raw")
+})
+
+test_that("Preservation of existing (0012,0064) codes in cpp_clean_pixels_file", {
+  tmp_dir <- tempfile(pattern = "sq_preserve_")
+  dir.create(tmp_dir, recursive = TRUE)
+  on.exit(unlink(tmp_dir, recursive = TRUE), add = TRUE)
+
+  dcm_file <- file.path(tmp_dir, "test_sq.dcm")
+  # Write file with pre-existing (0012,0064) containing 113100
+  dicomtk:::cpp_write_dicom_multiframe(
+    pixels = as.numeric(matrix(100, 16, 16)),
+    dims = c(16L, 16L, 1L),
+    out_path = dcm_file,
+    meta_tags = c(
+      "Modality", "SOPClassUID", "PatientName", "PatientID",
+      "StudyInstanceUID", "SeriesInstanceUID", "SOPInstanceUID",
+      "BurnedInAnnotation"
+    ),
+    meta_values = c(
+      "CT", "1.2.840.10008.5.1.4.1.1.2", "EXIST^SQ", "PAT_SQ_01",
+      "1.3.6.1.4.1.9999.6001", "1.3.6.1.4.1.9999.6001.1", "1.3.6.1.4.1.9999.6001.1.1",
+      "YES"
+    ),
+    extra_sequences = list(
+      DeidentificationMethodCodeSequence = list(
+        list(
+          CodeValue = "113100",
+          CodingSchemeDesignator = "DCM",
+          CodeMeaning = "Basic Application Confidentiality Profile"
+        )
+      )
+    )
+  )
+
+  out_clean <- file.path(tmp_dir, "test_sq_clean.dcm")
+  dicom_clean_pixels(
+    dcm_file,
+    out_path = out_clean,
+    pixel_method = "blackout",
+    boxes = matrix(c(1L, 1L, 4L, 4L), nrow = 1L)
+  )
+
+  # Check that BOTH 113100 AND 113101 exist in (0012,0064)
+  hdr <- read_dicom(out_clean, include_sequences = TRUE)
+  code_values <- hdr$value[hdr$keyword == "CodeValue"]
+  expect_true("113100" %in% code_values)
+  expect_true("113101" %in% code_values)
+})
+
+test_that("Safe file path extension stripping preserves dotted directories", {
+  tmp_dir <- tempfile(pattern = "dots_dir_")
+  dir.create(tmp_dir, recursive = TRUE)
+  on.exit(unlink(tmp_dir, recursive = TRUE), add = TRUE)
+
+  # Directory name containing dots
+  dot_subdir <- file.path(tmp_dir, "cohort.v1.0")
+  dir.create(dot_subdir, recursive = TRUE)
+
+  dcm_file <- file.path(tmp_dir, "in.dcm")
+  dicomtk:::cpp_write_dicom_multiframe(
+    pixels = as.numeric(matrix(50, 16, 16)),
+    dims = c(16L, 16L, 1L),
+    out_path = dcm_file,
+    meta_tags = c(
+      "Modality", "SOPClassUID", "PatientName", "PatientID",
+      "StudyInstanceUID", "SeriesInstanceUID", "SOPInstanceUID",
+      "BurnedInAnnotation"
+    ),
+    meta_values = c(
+      "CT", "1.2.840.10008.5.1.4.1.1.2", "DOT^DIR", "PAT_DOT",
+      "1.3.6.1.4.1.9999.7001", "1.3.6.1.4.1.9999.7001.1", "1.3.6.1.4.1.9999.7001.1.1",
+      "YES"
+    )
+  )
+
+  out_file <- file.path(dot_subdir, "sample.dcm")
+  dicom_clean_pixels(
+    dcm_file,
+    out_path = out_file,
+    pixel_method = "inpaint",
+    boxes = matrix(c(1L, 1L, 2L, 2L), nrow = 1L),
+    mask_sidecar = TRUE
+  )
+
+  # The sidecar must be inside dot_subdir: cohort.v1.0/sample_inpaint_mask.rds
+  expected_sidecar <- file.path(dot_subdir, "sample_inpaint_mask.rds")
+  expect_true(file.exists(expected_sidecar))
+})
+
+test_that("4D RGB pixel array slicing in dicom_detect_burned_phi", {
+  tmp_dir <- tempfile(pattern = "rgb_4d_")
+  dir.create(tmp_dir, recursive = TRUE)
+  on.exit(unlink(tmp_dir, recursive = TRUE), add = TRUE)
+
+  # 16x16 RGB cine 3 frames -> 4D array (16, 16, 3, 3)
+  rows <- 16L
+  cols <- 16L
+  samples <- 3L
+  frames <- 3L
+  px_4d <- array(sample(50:200, rows * cols * samples * frames, replace = TRUE),
+                 dim = c(rows, cols, samples, frames))
+  # Burn static text overlay into top-left corner
+  px_4d[1:4, 1:8, , ] <- 255
+
+  rgb_file <- file.path(tmp_dir, "cine_rgb.dcm")
+  dicomtk:::cpp_write_dicom_multiframe(
+    pixels = as.numeric(matrix(100, rows, cols)),
+    dims = c(rows, cols, 1L),
+    out_path = rgb_file,
+    meta_tags = c(
+      "Modality", "SOPClassUID", "PatientName", "PatientID",
+      "StudyInstanceUID", "SeriesInstanceUID", "SOPInstanceUID",
+      "BurnedInAnnotation"
+    ),
+    meta_values = c(
+      "US", "1.2.840.10008.5.1.4.1.1.6.1", "CINE^RGB", "PAT_RGB",
+      "1.3.6.1.4.1.9999.8001", "1.3.6.1.4.1.9999.8001.1", "1.3.6.1.4.1.9999.8001.1.1",
+      "YES"
+    )
+  )
+
+  # dicom_detect_burned_phi handles 4D array without error when read_dicom_pixels returns 4D
+  testthat::with_mocked_bindings(
+    {
+      boxes <- dicom_detect_burned_phi(rgb_file)
+      expect_s3_class(boxes, "data.frame")
+    },
+    read_dicom_pixels = function(...) px_4d
+  )
 })

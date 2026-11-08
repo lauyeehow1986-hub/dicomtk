@@ -74,6 +74,18 @@ dicom_detect_burned_phi <- function(x, ocr = FALSE, detector_fn = NULL) {
             score = 1.0
           )
         }
+
+        # Bottom margin outside acoustic window: rows (y1 + 2) .. rows (1-based R)
+        if (y1 < rows - 2L) {
+          detected_list[[length(detected_list) + 1L]] <- tibble::tibble(
+            ymin = as.integer(y1 + 2L),
+            xmin = 1L,
+            ymax = as.integer(rows),
+            xmax = as.integer(cols),
+            region_type = "ultrasound_complement",
+            score = 1.0
+          )
+        }
       }
     }
   }
@@ -82,7 +94,14 @@ dicom_detect_burned_phi <- function(x, ocr = FALSE, detector_fn = NULL) {
   px <- tryCatch(read_dicom_pixels(norm_path, rescale = FALSE), error = function(e) NULL)
   if (!is.null(px) && length(px) > 0L) {
     px_dims <- dim(px)
-    if (length(px_dims) < 2L) px_dims <- c(rows, cols, 1L)
+    if (length(px_dims) == 4L) {
+      # 4D RGB multi-frame: c(rows, cols, samples, frames) -> slice first channel to c(rows, cols, frames)
+      px <- px[, , 1L, , drop = FALSE]
+      px_dims <- c(px_dims[1L], px_dims[2L], px_dims[4L])
+      dim(px) <- px_dims
+    } else if (length(px_dims) < 2L) {
+      px_dims <- c(rows, cols, 1L)
+    }
     cpp_boxes <- cpp_detect_burned_boxes(as.numeric(px), as.integer(px_dims))
     if (nrow(cpp_boxes) > 0L) {
       detected_list[[length(detected_list) + 1L]] <- tibble::as_tibble(cpp_boxes)
@@ -222,7 +241,7 @@ dicom_clean_pixels <- function(path,
   )
 
   if (pixel_method == "inpaint" && isTRUE(mask_sidecar)) {
-    out_stem <- sub("\\.[^.]+$", "", out_path)
+    out_stem <- tools::file_path_sans_ext(out_path)
     sidecar_path <- paste0(out_stem, "_inpaint_mask.rds")
     mask_arr <- res$mask
     dim(mask_arr) <- c(res$rows, res$cols)
