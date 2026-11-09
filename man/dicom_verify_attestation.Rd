@@ -4,7 +4,13 @@
 \alias{dicom_verify_attestation}
 \title{Verify Cryptographic Attestation Manifest}
 \usage{
-dicom_verify_attestation(path, attest_path, key = NULL, cert = NULL)
+dicom_verify_attestation(
+  path,
+  attest_path,
+  key = NULL,
+  cert = NULL,
+  rsa_pubkey = cert
+)
 }
 \arguments{
 \item{path}{Directory path containing the de-identified DICOM files.}
@@ -14,6 +20,8 @@ dicom_verify_attestation(path, attest_path, key = NULL, cert = NULL)
 \item{key}{Optional \code{dicom_key_provider} or raw key used to verify HMAC-SHA256 signatures.}
 
 \item{cert}{Optional public certificate, RSA/ECDSA public key, or raw cert for PKI verification.}
+
+\item{rsa_pubkey}{Optional alias for \code{cert}.}
 }
 \value{
 Logical scalar. \code{TRUE} if all file hashes and the cryptographic signature match; \code{FALSE} otherwise.

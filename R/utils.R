@@ -17,6 +17,11 @@ is_dicom <- function(path) {
   }, logical(1), USE.NAMES = FALSE)
 }
 
+# Null-coalescing operator
+`%||%` <- function(x, y) {
+  if (is.null(x)) y else x
+}
+
 # Internal helper to resolve files from a path or directory
 resolve_dicom_paths <- function(path, recursive = TRUE) {
   if (missing(path) || length(path) == 0) {

@@ -15,6 +15,7 @@
 #' @param key Optional \code{dicom_key_provider} or 32-byte raw key used for HMAC-SHA256 attestation signing.
 #' @param cert Optional public certificate or public key object for PKI verification.
 #' @param private_key Optional private key object (e.g. from \code{openssl::rsa_keygen}) for PKI signing.
+#' @param allowed_private_tags Optional list or character vector of allowlisted private tags or creators.
 #'
 #' @return An S3 object of class \code{"dicom_deid_report"} containing:
 #'   \item{passed}{Logical scalar. \code{TRUE} if zero findings were detected, \code{FALSE} otherwise.}
@@ -40,7 +41,8 @@ dicom_deid_verify <- function(path,
                               attest_path = NULL,
                               key = NULL,
                               cert = NULL,
-                              private_key = NULL) {
+                              private_key = NULL,
+                              allowed_private_tags = NULL) {
   files <- resolve_dicom_paths(path, recursive = TRUE)
   if (length(files) == 0L) {
     cli::cli_abort("No valid DICOM files found in `path`.")
@@ -70,12 +72,26 @@ dicom_deid_verify <- function(path,
   }
 
   retain_uids <- any(c("retain_uids", "retain_uid") %in% options)
-  retain_safe_priv <- any(c("retain_safe_private") %in% options)
+  retain_safe_priv <- any(c("retain_safe_private") %in% options) || !is.null(allowed_private_tags)
+
+  # Safe private creators and explicit tags allowlist
+  safe_creators <- list()
+  if (is.list(prof$safe_private)) {
+    safe_creators <- prof$safe_private
+  }
+  if (is.list(allowed_private_tags)) {
+    safe_creators <- c(safe_creators, allowed_private_tags)
+  }
+  explicit_allowed_tags <- if (is.character(allowed_private_tags)) {
+    toupper(gsub("[ \t]", "", allowed_private_tags))
+  } else {
+    character(0)
+  }
 
   # Tag policies from profile
   x_tags <- prof$tags$tag[prof$tags$action == "X"]
   # (0010,0020) PatientID is replaced with deterministic pseudonym in de-identification
-  z_tags <- setdiff(prof$tags$tag[prof$tags$action == "Z"], c("(0010,0020)", "(0010,0010)"))
+  z_tags <- setdiff(prof$tags$tag[prof$tags$action == "Z"], "(0010,0020)")
   age_cap <- prof$age_cap_years
 
   # Compile PII regex scrubbers and canaries
@@ -84,7 +100,9 @@ dicom_deid_verify <- function(path,
     "US SSN" = "\\b[0-9]{3}-[0-9]{2}-[0-9]{4}\\b",
     "SG NRIC/FIN" = "[STFGM][0-9]{7}[A-Z]",
     "MY MyKad" = "\\b[0-9]{6}-[0-9]{2}-[0-9]{4}\\b",
-    "UK NHS" = "\\b[0-9]{3}[ -]?[0-9]{3}[ -]?[0-9]{4}\\b"
+    "UK NHS" = "\\b[0-9]{3}[ -]?[0-9]{3}[ -]?[0-9]{4}\\b",
+    "Phone" = "\\b(?:\\+?[0-9]{1,3}[ -]?)?\\(?[0-9]{3}\\)?[ -]?[0-9]{3}[ -]?[0-9]{4}\\b",
+    "Date" = "\\b(?:19|20)[0-9]{2}[-/](?:0[1-9]|1[0-2])[-/](?:0[1-9]|[12][0-9]|3[01])\\b"
   )
 
   custom_patterns <- prof$regex_scrubbers
@@ -122,6 +140,14 @@ dicom_deid_verify <- function(path,
     z_hits <- hdr[hdr$tag %in% z_tags & !is.na(hdr$value) & nzchar(hdr$value), , drop = FALSE]
     if (nrow(z_hits) > 0L) {
       for (r in seq_len(nrow(z_hits))) {
+        # For (0010,0010) PatientName, allow empty string "" or permitted dummy values
+        if (z_hits$tag[r] == "(0010,0010)") {
+          raw_pn <- toupper(trimws(z_hits$value[r]))
+          clean_pn <- toupper(trimws(gsub("[\\^ ]+", " ", z_hits$value[r])))
+          if (raw_pn %in% c("", "ANONYMOUS", "NO NAME") || clean_pn %in% c("", "ANONYMOUS", "NO NAME")) {
+            next
+          }
+        }
         findings_list[[length(findings_list) + 1L]] <- tibble::tibble(
           file = rel_f,
           surface = "tag_policy",
@@ -192,11 +218,81 @@ dicom_deid_verify <- function(path,
     priv_hits <- priv_rows[is_odd, , drop = FALSE]
 
     if (nrow(priv_hits) > 0L) {
+      # Build mapping of creator reservation tags within the dataset scope
+      # Reservation tags are in element range 0x0010..0x00FF
+      all_grp_ints <- suppressWarnings(strtoi(hdr$group, 16L))
+      all_elem_ints <- suppressWarnings(strtoi(hdr$element, 16L))
+      is_res <- !is.na(all_grp_ints) & (all_grp_ints %% 2L == 1L) & (all_grp_ints > 7L) &
+                !is.na(all_elem_ints) & (all_elem_ints >= 0x0010 & all_elem_ints <= 0x00FF)
+      res_rows <- hdr[is_res, , drop = FALSE]
+
+      creator_map <- list()
+      if (nrow(res_rows) > 0L) {
+        for (idx in seq_len(nrow(res_rows))) {
+          rg <- toupper(trimws(res_rows$group[idx]))
+          re <- suppressWarnings(strtoi(res_rows$element[idx], 16L))
+          rc <- toupper(trimws(res_rows$value[idx]))
+          depth_val <- if (!is.null(res_rows$depth)) res_rows$depth[idx] else 0L
+          seq_path_val <- if (!is.null(res_rows$sequence_path)) res_rows$sequence_path[idx] else ""
+          scope_id <- paste(depth_val, seq_path_val, rg, sprintf("%02X", re), sep = "::")
+          creator_map[[scope_id]] <- rc
+          glob_id <- paste(rg, sprintf("%02X", re), sep = "::")
+          if (is.null(creator_map[[glob_id]])) {
+            creator_map[[glob_id]] <- rc
+          }
+        }
+      }
+
       for (r in seq_len(nrow(priv_hits))) {
         is_safe <- FALSE
-        if (retain_safe_priv && length(prof$safe_private) > 0L) {
-          is_safe <- FALSE
+        p_tag <- toupper(gsub("[ \t]", "", priv_hits$tag[r]))
+        p_grp <- toupper(trimws(priv_hits$group[r]))
+        p_elem_int <- suppressWarnings(strtoi(priv_hits$element[r], 16L))
+
+        if (p_tag %in% explicit_allowed_tags) {
+          is_safe <- TRUE
+        } else if (retain_safe_priv && length(safe_creators) > 0L && !is.na(p_elem_int)) {
+          # Case 1: Creator reservation tag (0x0010..0x00FF)
+          if (p_elem_int >= 0x0010 && p_elem_int <= 0x00FF) {
+            c_val <- toupper(trimws(priv_hits$value[r]))
+            for (c_name in names(safe_creators)) {
+              if (toupper(trimws(c_name)) == c_val) {
+                entry <- safe_creators[[c_name]]
+                e_grp <- if (is.list(entry) && !is.null(entry$group)) toupper(trimws(entry$group)) else "0000"
+                if (e_grp %in% c("0000", p_grp)) {
+                  is_safe <- TRUE
+                  break
+                }
+              }
+            }
+          } else if (p_elem_int >= 0x1000) {
+            # Case 2: Private data element (0x1000..0xFFFF)
+            p_blk <- bitwShiftR(p_elem_int, 8L)
+            p_off <- bitwAnd(p_elem_int, 0xFFL)
+
+            depth_val <- if (!is.null(priv_hits$depth)) priv_hits$depth[r] else 0L
+            seq_path_val <- if (!is.null(priv_hits$sequence_path)) priv_hits$sequence_path[r] else ""
+            scope_id <- paste(depth_val, seq_path_val, p_grp, sprintf("%02X", p_blk), sep = "::")
+            glob_id <- paste(p_grp, sprintf("%02X", p_blk), sep = "::")
+
+            creator_found <- creator_map[[scope_id]] %||% creator_map[[glob_id]] %||% toupper(trimws(priv_hits$keyword[r]))
+
+            if (nzchar(creator_found)) {
+              for (c_name in names(safe_creators)) {
+                if (toupper(trimws(c_name)) == creator_found) {
+                  entry <- safe_creators[[c_name]]
+                  e_grp <- if (is.list(entry) && !is.null(entry$group)) toupper(trimws(entry$group)) else "0000"
+                  e_offsets <- if (is.list(entry) && !is.null(entry$offsets)) as.integer(entry$offsets) else integer(0)
+                  if (e_grp %in% c("0000", p_grp) && (p_off %in% e_offsets)) {
+                    is_safe <- TRUE
+                    break
+                  }
+                }
+              }
+            }
+          }
         }
+
         if (!is_safe) {
           findings_list[[length(findings_list) + 1L]] <- tibble::tibble(
             file = rel_f,
@@ -221,8 +317,21 @@ dicom_deid_verify <- function(path,
     if (nrow(all_str_rows) > 0L && length(active_canaries) > 0L) {
       for (r in seq_len(nrow(all_str_rows))) {
         val <- all_str_rows$value[r]
+        val_upper <- toupper(val)
+        val_norm_space <- toupper(gsub("[\\^\\s]+", " ", val, perl = TRUE))
+        val_norm_clean <- toupper(gsub("[\\^\\s_]+", "", val, perl = TRUE))
+
         for (canary in active_canaries) {
-          if (grepl(canary, val, fixed = TRUE)) {
+          canary_upper <- toupper(canary)
+          canary_norm_space <- toupper(trimws(gsub("[\\^\\s]+", " ", canary, perl = TRUE)))
+          canary_norm_clean <- toupper(trimws(gsub("[\\^\\s_]+", "", canary, perl = TRUE)))
+
+          matched <- grepl(canary, val, fixed = TRUE) ||
+                     grepl(canary_upper, val_upper, fixed = TRUE) ||
+                     grepl(canary_norm_space, val_norm_space, fixed = TRUE) ||
+                     (nzchar(canary_norm_clean) && grepl(canary_norm_clean, val_norm_clean, fixed = TRUE))
+
+          if (matched) {
             findings_list[[length(findings_list) + 1L]] <- tibble::tibble(
               file = rel_f,
               surface = "free_text_pii",
@@ -435,6 +544,7 @@ print.dicom_deid_report <- function(x, ...) {
 #' @param attest_path File path to the JSON attestation manifest.
 #' @param key Optional \code{dicom_key_provider} or raw key used to verify HMAC-SHA256 signatures.
 #' @param cert Optional public certificate, RSA/ECDSA public key, or raw cert for PKI verification.
+#' @param rsa_pubkey Optional alias for \code{cert}.
 #'
 #' @return Logical scalar. \code{TRUE} if all file hashes and the cryptographic signature match; \code{FALSE} otherwise.
 #' @export
@@ -445,10 +555,12 @@ print.dicom_deid_report <- function(x, ...) {
 #' ok <- dicom_verify_attestation("path/to/clean", "attest.json", key = kp)
 #' print(ok)
 #' }
-dicom_verify_attestation <- function(path, attest_path, key = NULL, cert = NULL) {
+dicom_verify_attestation <- function(path, attest_path, key = NULL, cert = NULL, rsa_pubkey = cert) {
   if (!file.exists(attest_path)) {
     return(FALSE)
   }
+
+  pubkey <- cert %||% rsa_pubkey
 
   doc <- tryCatch(
     jsonlite::fromJSON(attest_path, simplifyVector = FALSE),
@@ -486,6 +598,25 @@ dicom_verify_attestation <- function(path, attest_path, key = NULL, cert = NULL)
   sig_type <- doc$signature_type
   sig <- doc$signature
 
+  # Strict signature type checking to prevent downgrade/bypass attacks:
+  # 1. If key is provided, sig_type MUST be "hmac_sha256", otherwise FALSE.
+  # 2. If rsa_pubkey/cert is provided, sig_type MUST be "openssl_pki", otherwise FALSE.
+  # 3. If neither key nor pubkey is provided, sig_type MUST be "none", otherwise FALSE.
+  # Never allow sig_type == "none" to pass if the caller supplied a key or rsa_pubkey!
+  if (!is.null(key)) {
+    if (!identical(sig_type, "hmac_sha256")) {
+      return(FALSE)
+    }
+  } else if (!is.null(pubkey)) {
+    if (!identical(sig_type, "openssl_pki")) {
+      return(FALSE)
+    }
+  } else {
+    if (!identical(sig_type, "none")) {
+      return(FALSE)
+    }
+  }
+
   if (identical(sig_type, "hmac_sha256")) {
     if (is.null(key)) return(FALSE)
     attest_k <- if (is_dicom_key_provider(key)) {
@@ -500,7 +631,7 @@ dicom_verify_attestation <- function(path, attest_path, key = NULL, cert = NULL)
       return(FALSE)
     }
   } else if (identical(sig_type, "openssl_pki")) {
-    if (is.null(cert) || !requireNamespace("openssl", quietly = TRUE)) {
+    if (is.null(pubkey) || !requireNamespace("openssl", quietly = TRUE)) {
       return(FALSE)
     }
     sig_raw <- tryCatch(openssl::base64_decode(sig), error = function(e) NULL)
@@ -511,12 +642,15 @@ dicom_verify_attestation <- function(path, attest_path, key = NULL, cert = NULL)
         charToRaw(canonical_json),
         sig_raw,
         hash = openssl::sha256,
-        pubkey = cert
+        pubkey = pubkey
       ),
       error = function(e) FALSE
     )
     if (!isTRUE(ok)) return(FALSE)
   } else if (identical(sig_type, "none")) {
+    if (!is.null(key) || !is.null(pubkey)) {
+      return(FALSE)
+    }
     return(TRUE)
   } else {
     return(FALSE)

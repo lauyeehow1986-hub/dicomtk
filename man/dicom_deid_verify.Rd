@@ -13,7 +13,8 @@ dicom_deid_verify(
   attest_path = NULL,
   key = NULL,
   cert = NULL,
-  private_key = NULL
+  private_key = NULL,
+  allowed_private_tags = NULL
 )
 }
 \arguments{
@@ -35,6 +36,8 @@ dicom_deid_verify(
 \item{cert}{Optional public certificate or public key object for PKI verification.}
 
 \item{private_key}{Optional private key object (e.g. from \code{openssl::rsa_keygen}) for PKI signing.}
+
+\item{allowed_private_tags}{Optional list or character vector of allowlisted private tags or creators.}
 }
 \value{
 An S3 object of class \code{"dicom_deid_report"} containing:

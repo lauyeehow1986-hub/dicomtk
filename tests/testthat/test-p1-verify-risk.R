@@ -115,6 +115,18 @@ test_that("Signed Cryptographic Attestation Verification detects tampering", {
   # Verification now fails due to digest mismatch
   expect_false(dicom_verify_attestation(clean_dir, att_file, key = kp))
 
+  # Restore target file
+  orig_res <- dicom_deid(in_dir, clean_dir, key = kp, overwrite = TRUE)
+
+  # Tamper signature_type to "none" (downgrade / signature bypass attack)
+  doc_tamper <- jsonlite::fromJSON(att_file, simplifyVector = FALSE)
+  doc_tamper$signature_type <- "none"
+  doc_tamper$signature <- ""
+  writeLines(jsonlite::toJSON(doc_tamper, auto_unbox = TRUE), att_file)
+
+  # When key is provided, signature_type "none" MUST return FALSE
+  expect_false(dicom_verify_attestation(clean_dir, att_file, key = kp))
+
   # Test optional openssl PKI signature if openssl is available
   if (requireNamespace("openssl", quietly = TRUE)) {
     att_pki <- tempfile(pattern = "attest_pki_", fileext = ".json")
@@ -126,15 +138,17 @@ test_that("Signed Cryptographic Attestation Verification detects tampering", {
       attest_path = att_pki,
       private_key = rsa_key
     )
-    # Target file is tampered, but we restore it first
-    orig_res <- dicom_deid(in_dir, clean_dir, key = kp, overwrite = TRUE)
-    v_pki <- dicom_deid_verify(
-      clean_dir,
-      attest_path = att_pki,
-      private_key = rsa_key
-    )
     expect_true(v_pki$passed)
     expect_true(dicom_verify_attestation(clean_dir, att_pki, cert = pub_key))
+    expect_true(dicom_verify_attestation(clean_dir, att_pki, rsa_pubkey = pub_key))
+
+    # Tampering PKI attestation to "none" must also fail when cert / rsa_pubkey is provided
+    doc_pki_tamper <- jsonlite::fromJSON(att_pki, simplifyVector = FALSE)
+    doc_pki_tamper$signature_type <- "none"
+    doc_pki_tamper$signature <- ""
+    writeLines(jsonlite::toJSON(doc_pki_tamper, auto_unbox = TRUE), att_pki)
+    expect_false(dicom_verify_attestation(clean_dir, att_pki, cert = pub_key))
+    expect_false(dicom_verify_attestation(clean_dir, att_pki, rsa_pubkey = pub_key))
 
     # Wrong public key fails
     wrong_rsa <- openssl::rsa_keygen(bits = 2048L)
@@ -142,6 +156,126 @@ test_that("Signed Cryptographic Attestation Verification detects tampering", {
     expect_false(dicom_verify_attestation(clean_dir, att_pki, cert = wrong_pub))
     unlink(att_pki)
   }
+})
+
+test_that("dicom_deid_verify() evaluates safe private tags with options = 'retain_safe_private'", {
+  priv_dir <- tempfile(pattern = "safe_priv_verify_")
+  dir.create(priv_dir, recursive = TRUE)
+  on.exit(unlink(priv_dir, recursive = TRUE), add = TRUE)
+
+  px <- as.numeric(matrix(1:16, 4, 4))
+  dcm_file <- file.path(priv_dir, "mr_safe.dcm")
+
+  # Synthesize MR image with Philips safe private tags (0x0D, 0x0E) under (2005,0010)
+  ok <- dicomtk:::cpp_write_dicom_multiframe(
+    pixels = px,
+    dims = c(4L, 4L, 1L),
+    out_path = dcm_file,
+    meta_tags = c(
+      "Modality", "SOPClassUID", "PatientName", "PatientID",
+      "StudyInstanceUID", "SeriesInstanceUID", "SOPInstanceUID",
+      "(2005,0010)", "(2005,100D)", "(2005,100E)"
+    ),
+    meta_values = c(
+      "MR", "1.2.840.10008.5.1.4.1.1.4", "ANONYMOUS", "PID123",
+      "2.25.1001", "2.25.1002", "2.25.1003",
+      "Philips Imaging DD 001", "0.0", "2.5"
+    )
+  )
+  expect_true(ok)
+
+  # With retain_safe_private enabled: 2005 0x0D and 0x0E pass without private_tags leak finding
+  v_safe <- dicom_deid_verify(priv_dir, options = "retain_safe_private")
+  expect_true(v_safe$passed)
+  expect_equal(nrow(v_safe$findings), 0L)
+
+  # Without retain_safe_private: odd group 2005 tags are flagged as unallowlisted
+  v_unsafe <- dicom_deid_verify(priv_dir, options = character(0))
+  expect_false(v_safe_passed <- v_unsafe$passed)
+  expect_true("private_tags" %in% v_unsafe$findings$surface)
+
+  # Explicit allowed_private_tags parameter also passes
+  v_explicit <- dicom_deid_verify(priv_dir, allowed_private_tags = c("(2005,0010)", "(2005,100D)", "(2005,100E)"))
+  expect_true(v_explicit$passed)
+})
+
+test_that("dicom_deid_verify() inspects PatientName (0010,0010) and handles dummy vs non-anonymized names", {
+  pn_dir <- tempfile(pattern = "pn_verify_")
+  dir.create(pn_dir, recursive = TRUE)
+  on.exit(unlink(pn_dir, recursive = TRUE), add = TRUE)
+
+  px <- as.numeric(matrix(1:16, 4, 4))
+  dcm_dummy <- file.path(pn_dir, "dummy_pn.dcm")
+  dcm_raw <- file.path(pn_dir, "raw_pn.dcm")
+
+  # 1. Permitted dummy value "ANONYMOUS" passes
+  dicomtk:::cpp_write_dicom_multiframe(
+    pixels = px, dims = c(4L, 4L, 1L), out_path = dcm_dummy,
+    meta_tags = c("Modality", "SOPClassUID", "PatientName", "PatientID", "StudyInstanceUID", "SeriesInstanceUID", "SOPInstanceUID"),
+    meta_values = c("CT", "1.2.840.10008.5.1.4.1.1.2", "ANONYMOUS", "PID001", "2.25.1", "2.25.2", "2.25.3")
+  )
+  v_dummy <- dicom_deid_verify(dcm_dummy)
+  expect_true(v_dummy$passed)
+
+  # Permitted dummy value "NO NAME" passes
+  dicomtk:::cpp_write_dicom_multiframe(
+    pixels = px, dims = c(4L, 4L, 1L), out_path = dcm_dummy,
+    meta_tags = c("Modality", "SOPClassUID", "PatientName", "PatientID", "StudyInstanceUID", "SeriesInstanceUID", "SOPInstanceUID"),
+    meta_values = c("CT", "1.2.840.10008.5.1.4.1.1.2", "NO NAME", "PID001", "2.25.1", "2.25.2", "2.25.3")
+  )
+  v_noname <- dicom_deid_verify(dcm_dummy)
+  expect_true(v_noname$passed)
+
+  # 2. Surviving identifying PatientName "DOE^JOHN" is flagged as non-empty Z tag violation
+  dicomtk:::cpp_write_dicom_multiframe(
+    pixels = px, dims = c(4L, 4L, 1L), out_path = dcm_raw,
+    meta_tags = c("Modality", "SOPClassUID", "PatientName", "PatientID", "StudyInstanceUID", "SeriesInstanceUID", "SOPInstanceUID"),
+    meta_values = c("CT", "1.2.840.10008.5.1.4.1.1.2", "DOE^JOHN", "PID001", "2.25.1", "2.25.2", "2.25.3")
+  )
+  v_raw <- dicom_deid_verify(dcm_raw)
+  expect_false(v_raw$passed)
+  expect_true(any(v_raw$findings$tag == "(0010,0010)"))
+})
+
+test_that("dicom_deid_verify() detects phone, date patterns and normalized canaries", {
+  free_dir <- tempfile(pattern = "free_pii_")
+  dir.create(free_dir, recursive = TRUE)
+  on.exit(unlink(free_dir, recursive = TRUE), add = TRUE)
+
+  px <- as.numeric(matrix(1:16, 4, 4))
+  f_phone <- file.path(free_dir, "phone.dcm")
+  f_date <- file.path(free_dir, "date.dcm")
+  f_canary <- file.path(free_dir, "canary.dcm")
+
+  # Phone pattern in ImageComments
+  dicomtk:::cpp_write_dicom_multiframe(
+    pixels = px, dims = c(4L, 4L, 1L), out_path = f_phone,
+    meta_tags = c("Modality", "SOPClassUID", "PatientName", "PatientID", "StudyInstanceUID", "SeriesInstanceUID", "SOPInstanceUID", "ImageComments"),
+    meta_values = c("CT", "1.2.840.10008.5.1.4.1.1.2", "", "PID01", "2.25.1", "2.25.2", "2.25.3", "Call Dr. at +1-650-555-1234 for follow-up")
+  )
+  v_phone <- dicom_deid_verify(f_phone)
+  expect_false(v_phone$passed)
+  expect_true(any(grepl("Phone", v_phone$findings$rule)))
+
+  # Date pattern in ImageComments
+  dicomtk:::cpp_write_dicom_multiframe(
+    pixels = px, dims = c(4L, 4L, 1L), out_path = f_date,
+    meta_tags = c("Modality", "SOPClassUID", "PatientName", "PatientID", "StudyInstanceUID", "SeriesInstanceUID", "SOPInstanceUID", "ImageComments"),
+    meta_values = c("CT", "1.2.840.10008.5.1.4.1.1.2", "", "PID01", "2.25.1", "2.25.2", "2.25.3", "Study conducted on 2023-05-18")
+  )
+  v_date <- dicom_deid_verify(f_date)
+  expect_false(v_date$passed)
+  expect_true(any(grepl("Date", v_date$findings$rule)))
+
+  # Canary normalization: "Tan Ah Kow" catches "TAN^AH^KOW"
+  dicomtk:::cpp_write_dicom_multiframe(
+    pixels = px, dims = c(4L, 4L, 1L), out_path = f_canary,
+    meta_tags = c("Modality", "SOPClassUID", "PatientName", "PatientID", "StudyInstanceUID", "SeriesInstanceUID", "SOPInstanceUID", "StudyDescription"),
+    meta_values = c("CT", "1.2.840.10008.5.1.4.1.1.2", "", "PID01", "2.25.1", "2.25.2", "2.25.3", "Protocol for TAN^AH^KOW")
+  )
+  v_canary <- dicom_deid_verify(f_canary, canaries = "Tan Ah Kow")
+  expect_false(v_canary$passed)
+  expect_true(any(grepl("PII canary detected", v_canary$findings$rule)))
 })
 
 test_that("Re-Identification Risk Scoring (dicom_deid_risk()) computes k-anonymity, l-diversity, and risks", {
