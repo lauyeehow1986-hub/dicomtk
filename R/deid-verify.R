@@ -107,7 +107,9 @@ dicom_deid_verify <- function(path,
     "MY MyKad" = "\\b[0-9]{6}-[0-9]{2}-[0-9]{4}\\b",
     "UK NHS" = "\\b[0-9]{3}[ -]?[0-9]{3}[ -]?[0-9]{4}\\b",
     "Phone" = "\\b(?:\\+?[0-9]{1,3}[ -]?)?\\(?[0-9]{3}\\)?[ -]?[0-9]{3}[ -]?[0-9]{4}\\b",
-    "Date" = "\\b(?:19|20)[0-9]{2}[-/](?:0[1-9]|1[0-2])[-/](?:0[1-9]|[12][0-9]|3[01])\\b"
+    "Date" = "\\b(?:19|20)[0-9]{2}[-/](?:0[1-9]|1[0-2])[-/](?:0[1-9]|[12][0-9]|3[01])\\b",
+    "URL" = "https?://[^\\s]+",
+    "IPv4" = "\\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b"
   )
 
   custom_patterns <- prof$regex_scrubbers
@@ -201,16 +203,18 @@ dicom_deid_verify <- function(path,
       if (nrow(age_rows) > 0L) {
         for (r in seq_len(nrow(age_rows))) {
           raw_age <- age_rows$value[r]
-          num_age <- suppressWarnings(as.integer(sub("[^0-9].*$", "", raw_age)))
-          if (!is.na(num_age) && num_age > (as.integer(age_cap) + 1L)) {
-            findings_list[[length(findings_list) + 1L]] <- tibble::tibble(
-              file = rel_f,
-              surface = "tag_policy",
-              tag = age_rows$tag[r],
-              keyword = age_rows$keyword[r],
-              value = raw_age,
-              rule = paste0("PatientAge exceeds statutory cap of ", age_cap, " years")
-            )
+          if (grepl("Y$", raw_age, ignore.case = TRUE)) {
+            num_age <- suppressWarnings(as.integer(sub("[^0-9].*$", "", raw_age)))
+            if (!is.na(num_age) && num_age > (as.integer(age_cap) + 1L)) {
+              findings_list[[length(findings_list) + 1L]] <- tibble::tibble(
+                file = rel_f,
+                surface = "tag_policy",
+                tag = age_rows$tag[r],
+                keyword = age_rows$keyword[r],
+                value = raw_age,
+                rule = paste0("PatientAge exceeds statutory cap of ", age_cap, " years")
+              )
+            }
           }
         }
       }

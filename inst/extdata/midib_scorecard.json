@@ -1,7 +1,7 @@
 {
   "corpus": "MIDI-B Synthetic Ground-Truth Corpus",
   "version": "1.0.0",
-  "timestamp": "2026-11-10T16:54:05Z",
+  "timestamp": "2026-11-10T22:00:04Z",
   "status": "PASSED",
   "recall": 1,
   "precision": 1,
@@ -16,5 +16,5 @@
   "n_cases": 5,
   "modalities": ["CT", "MR", "US", "PT", "MG"],
   "planted_categories": 18,
-  "jurisdictions_evaluated": ["hipaa_safe_harbor", "sg_pdpa_hib", "gdpr"]
+  "jurisdictions_evaluated": ["hipaa_safe_harbor", "sg_pdpa_hib", "my_pdpa_2024"]
 }

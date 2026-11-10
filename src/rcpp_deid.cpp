@@ -242,6 +242,7 @@ static void mutate_element_list(std::vector<DcmElementRecord>& elements,
   // Step B: Filter and mutate elements
   std::vector<DcmElementRecord> new_elements;
   new_elements.reserve(elements.size());
+  static const Rcpp::Function r_gsub("gsub");
 
   for (auto& el : elements) {
     // 1. Private tag handling (odd groups > 0x0007)
@@ -462,7 +463,6 @@ static void mutate_element_list(std::vector<DcmElementRecord>& elements,
     // Regex text scrubbing for free-text string VRs
     if (!ctx.regex_patterns.empty() && !el.value_str.empty() && is_text_vr_scrub(el.vr)) {
       std::string orig = el.value_str;
-      Rcpp::Function r_gsub("gsub");
       for (const auto& pat : ctx.regex_patterns) {
         try {
           Rcpp::CharacterVector res = r_gsub(Rcpp::Named("pattern") = pat,

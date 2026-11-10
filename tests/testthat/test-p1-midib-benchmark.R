@@ -94,6 +94,21 @@ test_that("dicom_synthesize(modality = 'US', phi_profile = 'midi_b') plants burn
   expect_true(any(boxes$ymin == 1L))
 })
 
+test_that("dicom_deid_verify handles pediatric Age String units (D, W, M) without false-positive age cap violations", {
+  tmp_dcm <- tempfile(fileext = ".dcm")
+  on.exit(unlink(tmp_dcm), add = TRUE)
+  px <- matrix(seq_len(16), 4, 4)
+  dicomtk:::cpp_write_dicom_matrix(
+    pixels = px,
+    out_path = tmp_dcm,
+    meta_tags = c("Modality", "SOPClassUID", "PatientAge"),
+    meta_values = c("CT", "1.2.840.10008.5.1.4.1.1.2", "095M")
+  )
+  v <- dicom_deid_verify(tmp_dcm, profile = "ps3.15", jurisdictions = "hipaa_safe_harbor")
+  age_findings <- v$findings[v$findings$keyword == "PatientAge", ]
+  expect_equal(nrow(age_findings), 0L)
+})
+
 test_that("Quantitative benchmark metrics over multi-patient multi-modality synthetic MIDI-B corpus", {
   raw_corpus_dir <- tempfile(pattern = "midib_raw_corpus_")
   clean_corpus_dir <- tempfile(pattern = "midib_clean_corpus_")
@@ -200,7 +215,8 @@ test_that("Quantitative benchmark metrics over multi-patient multi-modality synt
   canaries_to_check <- c(
     "DOE^JOHN^MIDI", "SMITH^ALICE^MIDI", "WONG^WEI^MIDI", "GARCIA^MARIA^MIDI", "KUMAR^PRIYA^MIDI",
     "MIDI_PAT_001", "MIDI_PAT_002", "MIDI_PAT_003", "MIDI_PAT_004", "MIDI_PAT_005",
-    "CANARY SECRET PHI", "S7654321J", "+65 9123 4567", "patient@health.gov.sg", "800101-14-5678", "987-65-4321"
+    "CANARY SECRET PHI", "S7654321J", "+65 9123 4567", "patient@health.gov.sg", "800101-14-5678", "987-65-4321",
+    "https://portal.health.gov.sg/records/12345", "192.168.1.100"
   )
 
   res_deid <- dicom_deid(

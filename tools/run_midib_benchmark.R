@@ -202,7 +202,8 @@ if (!is.null(tcia_dir)) {
   canaries_to_check <- c(
     "DOE^JOHN^MIDI", "SMITH^ALICE^MIDI", "WONG^WEI^MIDI", "GARCIA^MARIA^MIDI", "KUMAR^PRIYA^MIDI",
     "MIDI_PAT_001", "MIDI_PAT_002", "MIDI_PAT_003", "MIDI_PAT_004", "MIDI_PAT_005",
-    "CANARY SECRET PHI", "S7654321J", "+65 9123 4567", "patient@health.gov.sg", "800101-14-5678", "987-65-4321"
+    "CANARY SECRET PHI", "S7654321J", "+65 9123 4567", "patient@health.gov.sg", "800101-14-5678", "987-65-4321",
+    "https://portal.health.gov.sg/records/12345", "192.168.1.100"
   )
 
   t0_deid <- proc.time()
@@ -312,7 +313,7 @@ if (!is.null(tcia_dir)) {
     n_cases = 5L,
     modalities = c("CT", "MR", "US", "PT", "MG"),
     planted_categories = 18L,
-    jurisdictions_evaluated = c("hipaa_safe_harbor", "sg_pdpa_hib", "gdpr")
+    jurisdictions_evaluated = c("hipaa_safe_harbor", "sg_pdpa_hib", "my_pdpa_2024")
   )
 
   dir.create(dirname(out_scorecard), recursive = TRUE, showWarnings = FALSE)
