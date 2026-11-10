@@ -497,6 +497,13 @@ tags:
     vr: SH
     options:
       clean_descriptors: C
+  (0020,4000):
+    action: X
+    name: Image Comments
+    keyword: ImageComments
+    vr: LT
+    options:
+      clean_descriptors: C
   (0032,1040):
     action: X/Z/D
     name: Study Arrival Date

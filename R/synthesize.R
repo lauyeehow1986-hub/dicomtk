@@ -385,6 +385,14 @@ synth_build_voxels <- function(rows,
 #' @param phi Logical. If `TRUE` (default), plants synthetic fictitious PHI tags
 #'   (and burned-in top-row pixels for `"US"` / `"US_CINE"`). If `FALSE`, writes
 #'   clean de-identified tags.
+#' @param inject_phi Optional logical alias for `phi`. If provided, overrides `phi`.
+#' @param phi_profile Character string specifying the synthetic PHI profile:
+#'   \itemize{
+#'     \item `"basic"` (default): Plants core identity tags (name, ID, birthdate, institution).
+#'     \item `"midi_b"`: Plants comprehensive HIPAA Safe Harbor, PS3.15, and SG/MY/EU
+#'       canaries across headers, sequences (`ReferencedSOPSequence`), safe/unsafe private blocks,
+#'       and burned-in pixel annotation banners.
+#'   }
 #' @param pet_params Optional named list configuring quantitative PET (`"PT"`)
 #'   attributes (`patient_weight`, `patient_size`, `patient_sex`, `series_time`,
 #'   `acquisition_time`, `total_dose`, `half_life`, `start_time`, `units`,
@@ -412,6 +420,9 @@ synth_build_voxels <- function(rows,
 #'   - `spacing`: numeric vector `c(dr, dc, dz)`
 #'   - `slice_positions_lps`: `nslices x 3` numeric matrix of canonical slice origins in LPS
 #'   - `planted_phi`: named list of planted synthetic PHI tags (empty `list()` when `phi = FALSE`)
+#'   - `phi_manifest`: tibble of planted PHI canaries with columns `tag`, `keyword`, `sequence_path`,
+#'     `value`, `expected_action`, and `category`
+#'   - `phi_profile`: character string identifying the active PHI profile
 #'   - `uids`: list with `study_uid`, `series_uid`, and `frame_of_reference_uid`
 #' @export
 #' @examples
@@ -441,7 +452,9 @@ dicom_synthesize <- function(out_dir = tempfile("dicom_synth_"),
                              pet_params = list(),
                              voi_params = list(),
                              extra_tags = list(),
-                             seed = 42L) {
+                             seed = 42L,
+                             inject_phi = NULL,
+                             phi_profile = c("basic", "midi_b")) {
   if (!is.character(out_dir) || length(out_dir) != 1L || is.na(out_dir) || !nzchar(out_dir)) {
     cli::cli_abort("{.arg out_dir} must be a single non-empty directory path.")
   }
@@ -489,6 +502,11 @@ dicom_synthesize <- function(out_dir = tempfile("dicom_synth_"),
       cli::cli_abort("{.arg extra_tags} must be a named list of DICOM tags/keywords and values.")
     }
   }
+
+  if (!is.null(inject_phi)) {
+    phi <- isTRUE(inject_phi)
+  }
+  phi_profile <- match.arg(phi_profile)
 
   if (!is.null(seed)) {
     has_old_seed <- exists(".Random.seed", envir = globalenv(), inherits = FALSE)
@@ -565,25 +583,73 @@ dicom_synthesize <- function(out_dir = tempfile("dicom_synth_"),
   series_uid <- synth_next_uid(2L)
   for_uid <- synth_next_uid(3L)
 
+  ref_sop_uid <- ""
+  extra_sq <- list()
+
   if (isTRUE(phi)) {
-    planted_phi <- list(
-      PatientName = "SYNTHETIC^PHANTOM^TEST",
-      PatientID = "SYNTH-PHI-0001",
-      PatientBirthDate = "19750412",
-      InstitutionName = "DICOMTK SYNTHETIC GENERAL HOSPITAL",
-      ReferringPhysicianName = "DR^SYNTHETIC^REFERRING",
-      AccessionNumber = "ACC-SYNTH-987654",
-      DeviceSerialNumber = "SN-DICOMTK-424242"
-    )
-    ident_tags <- c(
-      planted_phi,
-      list(
-        StudyDate = "20240518",
-        SeriesDate = "20240518",
-        AcquisitionDate = "20240518",
-        ContentDate = "20240518"
+    if (phi_profile == "midi_b") {
+      ref_sop_uid <- synth_next_uid(777L)
+      planted_phi <- list(
+        PatientName = "TEST^MIDI_PATIENT^ALPHA",
+        PatientID = "MIDI-PID-99901",
+        "(0010,1000)" = "ALT-ID-88801",
+        PatientBirthDate = "19300512",
+        PatientAge = "094Y",
+        PatientSex = "M",
+        PatientAddress = "123 ORCHARD ROAD, SINGAPORE 238888",
+        "(0010,2160)" = "CHINESE",
+        InstitutionalDepartmentName = "DEPARTMENT OF DIAGNOSTIC RADIOLOGY",
+        InstitutionAddress = "10 HOSPITAL BLVD, SINGAPORE 169608",
+        InstitutionName = "DICOMTK GENERAL HOSPITAL",
+        ReferringPhysicianName = "DR^REFERRING^MIDI",
+        PerformingPhysicianName = "DR^PERFORMING^MIDI",
+        OperatorsName = "TECH^OPERATOR^MIDI",
+        DeviceSerialNumber = "DEV-SN-998877",
+        StationName = "STATION-ALPHA-01",
+        AccessionNumber = "ACC-MIDI-77701",
+        ImageComments = "Subject S7654321J phone +65 9123 4567 email patient@health.gov.sg US SSN 987-65-4321 MY MyKad 800101-14-5678 url https://portal.health.gov.sg/records/12345 ip 192.168.1.100",
+        "(2005,0010)" = "PHILIPS IMAGING DD 001",
+        "(2005,100D)" = "0.0",
+        "(2005,100E)" = "1.5",
+        "(0009,0010)" = "VENDOR PRIVATE",
+        "(0009,1001)" = "CANARY SECRET PHI"
       )
-    )
+      ident_tags <- c(
+        planted_phi,
+        list(
+          StudyDate = "20240315",
+          SeriesDate = "20240315",
+          AcquisitionDate = "20240315",
+          ContentDate = "20240315",
+          AcquisitionDateTime = "20240315103000.000000"
+        )
+      )
+      extra_sq$ReferencedSOPSequence <- list(
+        list(
+          ReferencedSOPClassUID = "1.2.840.10008.5.1.4.1.1.2",
+          ReferencedSOPInstanceUID = ref_sop_uid
+        )
+      )
+    } else {
+      planted_phi <- list(
+        PatientName = "SYNTHETIC^PHANTOM^TEST",
+        PatientID = "SYNTH-PHI-0001",
+        PatientBirthDate = "19750412",
+        InstitutionName = "DICOMTK SYNTHETIC GENERAL HOSPITAL",
+        ReferringPhysicianName = "DR^SYNTHETIC^REFERRING",
+        AccessionNumber = "ACC-SYNTH-987654",
+        DeviceSerialNumber = "SN-DICOMTK-424242"
+      )
+      ident_tags <- c(
+        planted_phi,
+        list(
+          StudyDate = "20240518",
+          SeriesDate = "20240518",
+          AcquisitionDate = "20240518",
+          ContentDate = "20240518"
+        )
+      )
+    }
   } else {
     planted_phi <- list()
     ident_tags <- list(
@@ -618,8 +684,6 @@ dicom_synthesize <- function(out_dir = tempfile("dicom_synth_"),
   if (abs(gantry_tilt_deg) > 0) {
     common_tags$GantryDetectorTilt <- synth_fmt_ds(gantry_tilt_deg)
   }
-
-  extra_sq <- NULL
 
   # Modality-specific tags & sequences
   if (modality == "CT") {
@@ -659,13 +723,11 @@ dicom_synthesize <- function(out_dir = tempfile("dicom_synth_"),
     common_tags$RescaleIntercept <- synth_fmt_ds(intercept)
     common_tags$RescaleSlope <- synth_fmt_ds(slope)
 
-    extra_sq <- list(
-      RadiopharmaceuticalInformationSequence = list(
-        list(
-          RadionuclideTotalDose = synth_fmt_ds(pt_dose),
-          RadionuclideHalfLife = synth_fmt_ds(pt_hl),
-          RadiopharmaceuticalStartTime = pt_start
-        )
+    extra_sq$RadiopharmaceuticalInformationSequence <- list(
+      list(
+        RadionuclideTotalDose = synth_fmt_ds(pt_dose),
+        RadionuclideHalfLife = synth_fmt_ds(pt_hl),
+        RadiopharmaceuticalStartTime = pt_start
       )
     )
   } else if (modality %in% c("MG", "DX", "DBT")) {
@@ -695,17 +757,187 @@ dicom_synthesize <- function(out_dir = tempfile("dicom_synth_"),
     common_tags$ImagerPixelSpacing <- synth_fmt_ds(c(dr, dc))
   } else if (modality %in% c("US", "US_CINE")) {
     common_tags$BurnedInAnnotation <- if (isTRUE(phi)) "YES" else "NO"
+    if (isTRUE(phi) && phi_profile == "midi_b") {
+      us_reg_y0 <- max(4L, min(12L, as.integer(round(rows * 0.15))))
+      us_reg_y1 <- max(us_reg_y0 + 4L, rows - 2L)
+      extra_sq$SequenceOfUltrasoundRegions <- list(
+        list(
+          RegionLocationMinX0 = 2L,
+          RegionLocationMinY0 = us_reg_y0,
+          RegionLocationMaxX1 = cols - 2L,
+          RegionLocationMaxY1 = us_reg_y1,
+          RegionSpatialFormat = 1L,
+          RegionDataType = 1L
+        )
+      )
+      burn_rows <- seq_len(us_reg_y0)
+      for (s in seq_len(nslices)) {
+        raw_voxels[burn_rows, , s] <- 255.0
+      }
+    }
   } else if (modality %in% c("XA", "XA_CINE")) {
     common_tags$ImagerPixelSpacing <- synth_fmt_ds(c(dr, dc))
     common_tags$WindowCenter <- "500"
     common_tags$WindowWidth <- "1000"
   }
 
+  if (isTRUE(phi) && phi_profile == "midi_b" && modality == "SC") {
+    common_tags$BurnedInAnnotation <- "YES"
+    burn_h <- max(1L, min(10L, as.integer(round(rows * 0.15))))
+    for (s in seq_len(nslices)) {
+      raw_voxels[seq_len(burn_h), , s] <- 255.0
+    }
+  }
+
   # Apply user extra_tags overrides if provided
   if (length(extra_tags) > 0L) {
+    if (!is.null(extra_tags$OtherPatientIDs)) {
+      extra_tags[["(0010,1000)"]] <- extra_tags$OtherPatientIDs
+      extra_tags$OtherPatientIDs <- NULL
+    }
+    if (!is.null(extra_tags$EthnicGroup)) {
+      extra_tags[["(0010,2160)"]] <- extra_tags$EthnicGroup
+      extra_tags$EthnicGroup <- NULL
+    }
     for (nm in names(extra_tags)) {
       common_tags[[nm]] <- as.character(extra_tags[[nm]])
     }
+  }
+
+  # Sync planted_phi list with final common_tags
+  for (nm in names(planted_phi)) {
+    if (!is.null(common_tags[[nm]])) {
+      planted_phi[[nm]] <- common_tags[[nm]]
+    }
+  }
+
+  # 3b. Construct ground-truth phi_manifest tibble
+  if (isTRUE(phi)) {
+    if (phi_profile == "midi_b") {
+      m_tag <- c(
+        "(0010,0010)", "(0010,0020)", "(0010,1000)", "(0008,0050)",
+        "(0010,0030)", "(0008,0020)", "(0008,0021)", "(0008,002A)",
+        "(0010,1010)", "(0010,0040)", "(0010,1040)", "(0010,2160)",
+        "(0008,0080)", "(0008,0081)", "(0008,1040)",
+        "(0008,0090)", "(0008,1050)", "(0008,1070)",
+        "(0018,1000)", "(0008,1010)",
+        "(0020,4000)",
+        "(0008,1155)",
+        "(2005,0010)", "(2005,100D)", "(2005,100E)",
+        "(0009,0010)", "(0009,1001)"
+      )
+      m_keyword <- c(
+        "PatientName", "PatientID", "OtherPatientIDs", "AccessionNumber",
+        "PatientBirthDate", "StudyDate", "SeriesDate", "AcquisitionDateTime",
+        "PatientAge", "PatientSex", "PatientAddress", "EthnicGroup",
+        "InstitutionName", "InstitutionAddress", "InstitutionalDepartmentName",
+        "ReferringPhysicianName", "PerformingPhysicianName", "OperatorsName",
+        "DeviceSerialNumber", "StationName",
+        "ImageComments",
+        "ReferencedSOPInstanceUID",
+        "PrivateCreator", "PhilipsRescaleIntercept", "PhilipsRescaleSlope",
+        "PrivateCreator", "PrivateCanaryPHI"
+      )
+      m_path <- c(
+        rep("", 21L),
+        "ReferencedSOPSequence[1]/ReferencedSOPInstanceUID",
+        rep("", 5L)
+      )
+      m_val <- c(
+        synth_or(common_tags$PatientName, ""),
+        synth_or(common_tags$PatientID, ""),
+        synth_or(common_tags[["(0010,1000)"]], synth_or(common_tags$OtherPatientIDs, "")),
+        synth_or(common_tags$AccessionNumber, ""),
+        synth_or(common_tags$PatientBirthDate, ""),
+        synth_or(common_tags$StudyDate, ""),
+        synth_or(common_tags$SeriesDate, ""),
+        synth_or(common_tags$AcquisitionDateTime, ""),
+        synth_or(common_tags$PatientAge, ""),
+        synth_or(common_tags$PatientSex, ""),
+        synth_or(common_tags$PatientAddress, ""),
+        synth_or(common_tags[["(0010,2160)"]], synth_or(common_tags$EthnicGroup, "")),
+        synth_or(common_tags$InstitutionName, ""),
+        synth_or(common_tags$InstitutionAddress, ""),
+        synth_or(common_tags$InstitutionalDepartmentName, ""),
+        synth_or(common_tags$ReferringPhysicianName, ""),
+        synth_or(common_tags$PerformingPhysicianName, ""),
+        synth_or(common_tags$OperatorsName, ""),
+        synth_or(common_tags$DeviceSerialNumber, ""),
+        synth_or(common_tags$StationName, ""),
+        synth_or(common_tags$ImageComments, ""),
+        ref_sop_uid,
+        synth_or(common_tags[["(2005,0010)"]], "PHILIPS IMAGING DD 001"),
+        synth_or(common_tags[["(2005,100D)"]], "0.0"),
+        synth_or(common_tags[["(2005,100E)"]], "1.5"),
+        synth_or(common_tags[["(0009,0010)"]], "VENDOR PRIVATE"),
+        synth_or(common_tags[["(0009,1001)"]], "CANARY SECRET PHI")
+      )
+      m_act <- c(
+        "Z", "Z", "X", "Z",
+        "Z", "Z", "X", "X",
+        "X", "Z", "X", "X",
+        "X", "X", "X",
+        "Z", "X", "X",
+        "X", "X",
+        "C",
+        "U",
+        "K", "K", "K",
+        "X", "X"
+      )
+      m_cat <- c(
+        "names", "identifiers", "identifiers", "identifiers",
+        "dates", "dates", "dates", "dates",
+        "age", "demographics", "demographics", "demographics",
+        "institution", "institution", "institution",
+        "personnel", "personnel", "personnel",
+        "device", "device",
+        "free_text",
+        "nested_uid",
+        "safe_private", "safe_private", "safe_private",
+        "unsafe_private", "unsafe_private"
+      )
+      if (modality %in% c("US", "US_CINE", "SC") || identical(common_tags$BurnedInAnnotation, "YES")) {
+        m_tag <- c(m_tag, "(0028,0301)")
+        m_keyword <- c(m_keyword, "BurnedInAnnotation")
+        m_path <- c(m_path, "")
+        m_val <- c(m_val, "YES")
+        m_act <- c(m_act, "C")
+        m_cat <- c(m_cat, "burned_in_pixel")
+      }
+      phi_manifest <- tibble::tibble(
+        tag = m_tag,
+        keyword = m_keyword,
+        sequence_path = m_path,
+        value = m_val,
+        expected_action = m_act,
+        category = m_cat
+      )
+    } else {
+      # basic profile
+      m_tag <- c("(0010,0010)", "(0010,0020)", "(0010,0030)", "(0008,0080)", "(0008,0090)", "(0008,0050)", "(0018,1000)")
+      m_keyword <- c("PatientName", "PatientID", "PatientBirthDate", "InstitutionName", "ReferringPhysicianName", "AccessionNumber", "DeviceSerialNumber")
+      m_path <- rep("", length(m_tag))
+      m_val <- vapply(m_keyword, function(k) synth_or(common_tags[[k]], ""), character(1L))
+      m_act <- c("Z", "Z", "Z", "X", "Z", "Z", "X")
+      m_cat <- c("names", "identifiers", "dates", "institution", "personnel", "identifiers", "device")
+      phi_manifest <- tibble::tibble(
+        tag = m_tag,
+        keyword = m_keyword,
+        sequence_path = m_path,
+        value = unname(m_val),
+        expected_action = m_act,
+        category = m_cat
+      )
+    }
+  } else {
+    phi_manifest <- tibble::tibble(
+      tag = character(0),
+      keyword = character(0),
+      sequence_path = character(0),
+      value = character(0),
+      expected_action = character(0),
+      category = character(0)
+    )
   }
 
   iop_str <- synth_fmt_ds(c(d_row, d_col))
@@ -750,7 +982,7 @@ dicom_synthesize <- function(out_dir = tempfile("dicom_synth_"),
         out_path = out_file,
         meta_tags = names(slice_tags),
         meta_values = vapply(slice_tags, as.character, character(1L)),
-        extra_sequences = extra_sq
+        extra_sequences = if (length(extra_sq) > 0L) extra_sq else NULL
       )
       if (!isTRUE(ok)) {
         cli::cli_abort("Failed to write synthesized DICOM slice: {.path {out_file}}")
@@ -803,7 +1035,7 @@ dicom_synthesize <- function(out_dir = tempfile("dicom_synth_"),
       meta_values = vapply(mf_tags, as.character, character(1L)),
       shared_fg = shared_fg,
       per_frame_fg = per_frame_fg,
-      extra_sequences = extra_sq
+      extra_sequences = if (length(extra_sq) > 0L) extra_sq else NULL
     )
     if (!isTRUE(ok)) {
       cli::cli_abort("Failed to write synthesized enhanced multi-frame DICOM: {.path {out_file}}")
@@ -834,7 +1066,7 @@ dicom_synthesize <- function(out_dir = tempfile("dicom_synth_"),
       out_path = out_file,
       meta_tags = names(cine_tags),
       meta_values = vapply(cine_tags, as.character, character(1L)),
-      extra_sequences = extra_sq
+      extra_sequences = if (length(extra_sq) > 0L) extra_sq else NULL
     )
     if (!isTRUE(ok)) {
       cli::cli_abort("Failed to write synthesized cine multi-frame DICOM: {.path {out_file}}")
@@ -894,6 +1126,8 @@ dicom_synthesize <- function(out_dir = tempfile("dicom_synth_"),
       spacing = spacing,
       slice_positions_lps = slice_positions_lps,
       planted_phi = planted_phi,
+      phi_manifest = phi_manifest,
+      phi_profile = if (isTRUE(phi)) phi_profile else "none",
       uids = list(
         study_uid = study_uid,
         series_uid = series_uid,
@@ -913,7 +1147,11 @@ dicom_synthesize <- function(out_dir = tempfile("dicom_synth_"),
 print.dicom_phantom <- function(x, ...) {
   d <- dim(x$truth_voxels)
   sp <- x$spacing
-  phi_label <- if (length(x$planted_phi) > 0L) "planted" else "anonymous"
+  phi_label <- if (length(x$planted_phi) > 0L) {
+    if (!is.null(x$phi_profile) && x$phi_profile == "midi_b") "midi_b" else "planted"
+  } else {
+    "anonymous"
+  }
   cat(sprintf(
     "<dicom_phantom [%s] %dx%dx%d | spacing=(%.3g, %.3g, %.3g) mm | orientation=%s | files=%d | phi=%s>\n",
     x$modality, d[1L], d[2L], d[3L],

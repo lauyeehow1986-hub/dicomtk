@@ -4,6 +4,7 @@
 #include <set>
 #include <map>
 #include <sstream>
+#include <fstream>
 #include <algorithm>
 #include <cctype>
 
@@ -121,6 +122,11 @@ static bool apply_age_cap(std::string& age_str, int age_cap_years) {
   return false;
 }
 
+static inline bool is_text_vr_scrub(const std::string& vr) {
+  return (vr == "LT" || vr == "ST" || vr == "UT" || vr == "UC" ||
+          vr == "LO" || vr == "SH" || vr == "PN");
+}
+
 static std::string normalize_creator_str(const std::string& str) {
   size_t start = 0;
   while (start < str.size() && std::isspace(static_cast<unsigned char>(str[start]))) start++;
@@ -175,7 +181,7 @@ struct DeidContext {
   std::string dob_policy = "";
   int shift_days = 0;
   int age_cap_years = -1;
-  std::vector<std::regex> compiled_regexes;
+  std::vector<std::string> regex_patterns;
   bool patient_deid = true;
   std::string pseudo_patient_id;
   std::array<uint8_t, 32> uid_key{};
@@ -453,12 +459,19 @@ static void mutate_element_list(std::vector<DcmElementRecord>& elements,
       }
     }
 
-    // Regex text scrubbing for string VRs
-    if (!ctx.compiled_regexes.empty() && is_string_vr_write(el.vr)) {
+    // Regex text scrubbing for free-text string VRs
+    if (!ctx.regex_patterns.empty() && !el.value_str.empty() && is_text_vr_scrub(el.vr)) {
       std::string orig = el.value_str;
-      for (const auto& re : ctx.compiled_regexes) {
+      Rcpp::Function r_gsub("gsub");
+      for (const auto& pat : ctx.regex_patterns) {
         try {
-          el.value_str = std::regex_replace(el.value_str, re, "[REDACTED]");
+          Rcpp::CharacterVector res = r_gsub(Rcpp::Named("pattern") = pat,
+                                             Rcpp::Named("replacement") = "[REDACTED]",
+                                             Rcpp::Named("x") = el.value_str,
+                                             Rcpp::Named("perl") = true);
+          if (res.size() > 0 && !Rcpp::CharacterVector::is_na(res[0])) {
+            el.value_str = Rcpp::as<std::string>(res[0]);
+          }
         } catch (...) {}
       }
       if (el.value_str != orig) mutated = true;
@@ -681,19 +694,17 @@ Rcpp::List cpp_deid_file(const std::string& in_path,
   }
 
   // Regex patterns
-  std::vector<std::string> regex_strings;
   if (profile_spec.containsElementNamed("regex_patterns")) {
     Rcpp::CharacterVector rp = profile_spec["regex_patterns"];
-    for (R_xlen_t i = 0; i < rp.size(); ++i) regex_strings.push_back(Rcpp::as<std::string>(rp[i]));
+    for (R_xlen_t i = 0; i < rp.size(); ++i) {
+      std::string pat = Rcpp::as<std::string>(rp[i]);
+      if (!pat.empty()) ctx.regex_patterns.push_back(std::move(pat));
+    }
   } else if (profile_spec.containsElementNamed("regex_scrubbers")) {
     Rcpp::CharacterVector rp = profile_spec["regex_scrubbers"];
-    for (R_xlen_t i = 0; i < rp.size(); ++i) regex_strings.push_back(Rcpp::as<std::string>(rp[i]));
-  }
-  for (const auto& pat : regex_strings) {
-    if (!pat.empty()) {
-      try {
-        ctx.compiled_regexes.emplace_back(pat, std::regex::ECMAScript);
-      } catch (...) {}
+    for (R_xlen_t i = 0; i < rp.size(); ++i) {
+      std::string pat = Rcpp::as<std::string>(rp[i]);
+      if (!pat.empty()) ctx.regex_patterns.push_back(std::move(pat));
     }
   }
 

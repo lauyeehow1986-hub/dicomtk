@@ -1,0 +1,20 @@
+{
+  "corpus": "MIDI-B Synthetic Ground-Truth Corpus",
+  "version": "1.0.0",
+  "timestamp": "2026-11-10T16:54:05Z",
+  "status": "PASSED",
+  "recall": 1,
+  "precision": 1,
+  "uid_isomorphism": 1,
+  "date_error": 0,
+  "metrics": {
+    "tag_text_phi_recall": 1,
+    "safe_private_retention_precision": 1,
+    "uid_graph_isomorphism": 1,
+    "longitudinal_date_delta_error": 0
+  },
+  "n_cases": 5,
+  "modalities": ["CT", "MR", "US", "PT", "MG"],
+  "planted_categories": 18,
+  "jurisdictions_evaluated": ["hipaa_safe_harbor", "sg_pdpa_hib", "gdpr"]
+}

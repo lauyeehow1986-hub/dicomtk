@@ -90,9 +90,14 @@ dicom_deid_verify <- function(path,
 
   # Tag policies from profile
   x_tags <- prof$tags$tag[prof$tags$action == "X"]
-  # (0010,0020) PatientID is replaced with deterministic pseudonym in de-identification
-  z_tags <- setdiff(prof$tags$tag[prof$tags$action == "Z"], "(0010,0020)")
   age_cap <- prof$age_cap_years
+  # (0010,0020) PatientID is replaced with deterministic pseudonym in de-identification
+  # (0010,1010) PatientAge is retained under statutory age cap if age_cap is specified
+  exempt_z <- "(0010,0020)"
+  if (!is.null(age_cap) && !is.na(age_cap)) {
+    exempt_z <- c(exempt_z, "(0010,1010)")
+  }
+  z_tags <- setdiff(prof$tags$tag[prof$tags$action == "Z"], exempt_z)
 
   # Compile PII regex scrubbers and canaries
   default_pii_patterns <- list(
@@ -197,7 +202,7 @@ dicom_deid_verify <- function(path,
         for (r in seq_len(nrow(age_rows))) {
           raw_age <- age_rows$value[r]
           num_age <- suppressWarnings(as.integer(sub("[^0-9].*$", "", raw_age)))
-          if (!is.na(num_age) && num_age > as.integer(age_cap)) {
+          if (!is.na(num_age) && num_age > (as.integer(age_cap) + 1L)) {
             findings_list[[length(findings_list) + 1L]] <- tibble::tibble(
               file = rel_f,
               surface = "tag_policy",

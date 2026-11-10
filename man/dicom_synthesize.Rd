@@ -22,7 +22,9 @@ dicom_synthesize(
   pet_params = list(),
   voi_params = list(),
   extra_tags = list(),
-  seed = 42L
+  seed = 42L,
+  inject_phi = NULL,
+  phi_profile = c("basic", "midi_b")
 )
 
 \method{print}{dicom_phantom}(x, ...)
@@ -91,6 +93,16 @@ embed in every written file.}
 \item{seed}{Optional integer seed reserved for deterministic phantom
 extensions without mutating the caller's \code{.Random.seed}. Default is \code{42L}.}
 
+\item{inject_phi}{Optional logical alias for \code{phi}. If provided, overrides \code{phi}.}
+
+\item{phi_profile}{Character string specifying the synthetic PHI profile:
+\itemize{
+\item \code{"basic"} (default): Plants core identity tags (name, ID, birthdate, institution).
+\item \code{"midi_b"}: Plants comprehensive HIPAA Safe Harbor, PS3.15, and SG/MY/EU
+canaries across headers, sequences (\code{ReferencedSOPSequence}), safe/unsafe private blocks,
+and burned-in pixel annotation banners.
+}}
+
 \item{x}{A \code{"dicom_phantom"} object returned by \code{\link[=dicom_synthesize]{dicom_synthesize()}}.}
 
 \item{...}{Additional arguments (unused).}
@@ -110,6 +122,9 @@ Invisibly returns an S3 object of class \code{"dicom_phantom"} containing:
 \item \code{spacing}: numeric vector \code{c(dr, dc, dz)}
 \item \code{slice_positions_lps}: \verb{nslices x 3} numeric matrix of canonical slice origins in LPS
 \item \code{planted_phi}: named list of planted synthetic PHI tags (empty \code{list()} when \code{phi = FALSE})
+\item \code{phi_manifest}: tibble of planted PHI canaries with columns \code{tag}, \code{keyword}, \code{sequence_path},
+\code{value}, \code{expected_action}, and \code{category}
+\item \code{phi_profile}: character string identifying the active PHI profile
 \item \code{uids}: list with \code{study_uid}, \code{series_uid}, and \code{frame_of_reference_uid}
 }
 }
