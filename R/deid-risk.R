@@ -156,6 +156,7 @@ dicom_deid_risk <- function(path,
 #' @param x A \code{dicom_deid_risk} object.
 #' @param ... Additional arguments ignored.
 #' @return Invisibly returns \code{x}.
+#' @keywords internal
 #' @export
 print.dicom_deid_risk <- function(x, ...) {
   cli::cli_h1("DICOM Cohort Re-Identification Risk Assessment")

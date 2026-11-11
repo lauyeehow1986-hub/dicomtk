@@ -17,3 +17,4 @@ The object \code{x}, invisibly.
 \description{
 Formats and prints a human-readable summary of a compiled DICOM de-identification profile.
 }
+\keyword{internal}

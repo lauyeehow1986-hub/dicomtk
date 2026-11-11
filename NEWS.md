@@ -1,3 +1,43 @@
+# dicomtk 0.3.0
+
+### Research-Grade De-Identification & Privacy Engine (Phase 1)
+
+* **Pure C++17 RFC Cryptography & Pluggable Key Provider**:
+  - Implemented standalone C++17 implementations of RFC 6234 SHA-256, RFC 4231 HMAC-SHA256, RFC 2898 PBKDF2-HMAC-SHA256, RFC 5869 HKDF-SHA256, and RFC 8439 ChaCha20-Poly1305 AEAD (`src/rcpp_crypto.h`, `src/rcpp_crypto.cpp`).
+  - Added `dicom_key_provider()` S3 class supporting `local`, `broker`, and `ttp` modes with cryptographic subkey derivation, strict credential redaction (`format()`, `print()`, `str()`), deterministic `2.25.<128-bit>` UID pseudonymization (`deid_map_uid()`), and per-patient pseudo-random date shifting (`derive_patient_shift_days()`, `deid_patient_shift()`). Zero external C/Python crypto runtime dependencies.
+
+* **DICOM PS3.15 Profile Compiler & Composable Jurisdictions**:
+  - Added `dicom_deid_profile()` and `dicom_list_jurisdictions()` compiling declarative YAML profiles (`ps3.15-basic.yml` + 10 PS3.15 options).
+  - Added 8 composable statutory jurisdiction overlays (`hipaa_safe_harbor`, `hipaa_limited_dataset`, `gdpr_eu`, `sg_pdpa_hib`, `my_pdpa_2024`, `au_privacy_act`, `uk_gdpr`, `ca_pipeda`) with strictest-wins monotonic action lattice resolution (`D > Z > X > K`) and safe-private creator allowlisting.
+
+* **Single-Pass Recursive C++17 Dataset & Sequence Mutator**:
+  - Implemented `cpp_deid_file()` executing in-memory DICOM de-identification in a single recursive traversal across all dataset tags and arbitrary-depth Sequence of Items (`VR=SQ`).
+  - Features Howard Hinnant C++ date shifting (`DA`, `DT`), safe-private block retention with orphan private creator pruning, wildcard tag matching (`(50xx,eeee)`, `(60xx,eeee)`), dummy string/integer substitution, and W3C PROV-compliant De-identification Method sequence logging `(0012,0062)` and `(0012,0063)`.
+
+* **Cohort `dicom_deid()` & Encrypted Crosswalk**:
+  - Added `dicom_deid()` supporting file, directory, and vector inputs with progress reporting (`cli`) and optional asynchronous multi-process parallelism via `mirai`.
+  - Generates ChaCha20-Poly1305 AEAD-encrypted crosswalk files (`dicomtk_crosswalk.enc`) decryptable via `dicom_crosswalk_read()` using the original key provider.
+  - Automatically records input/output checksums, timestamps, applied profiles, and patient mapping tables with full W3C PROV audit metadata.
+
+* **Burned-In Pixel PHI Detection & C++17 Fast Telea Inpainting**:
+  - Added `dicom_detect_burned_phi()` and `dicom_clean_pixels()` for identifying and blacking out burned-in text in secondary captures, ultrasound overlays, and scanned radiographs.
+  - Implemented C++17 Fast Marching Method (FMM) Telea inpainting (`cpp_telea_inpaint()`) for smooth edge preservation with aspect-ratio bounding-box guardrails and optional OCR verification (`tesseract`).
+
+* **3D Head CT/MR Defacing & WSI Whole Slide Safeguards**:
+  - Added `dicom_deface()` performing analytical cutting-plane facial stripping on 3D volumetric CT and MR series in LPS/RAS coordinate space.
+  - Added Whole Slide Imaging (WSI) label/macro frame stripping to prevent specimen identifier leakage.
+
+* **Residual-PHI Verifier, Attestations & Re-identification Risk Scorer**:
+  - Added `dicom_deid_verify()` scanning processed DICOM datasets for 18 statutory PHI canaries (MRNs, names, free-text patterns, unshifted dates, age cap violations >89y, unsafe private tags, and orphan creators).
+  - Added HMAC-SHA256 signed tamper-evident compliance certificates (`dicom_verify_attestation()`).
+  - Added `dicom_deid_risk()` computing cohort re-identification risk metrics including equivalence class distribution, $k$-anonymity, $l$-diversity, and prosecutor/markov re-identification probabilities.
+
+* **Synthetic MIDI-B Ground Truth Benchmark Suite**:
+  - Extended `dicom_synthesize()` with `phi_profile = c("basic", "midi_b")` planting 18 HIPAA, PS3.15, and international PHI canary categories across structured tags, nested sequences, and free text.
+  - Added `tools/run_midib_benchmark.R` producing validated audit scorecards (`inst/extdata/midib_scorecard.json`) demonstrating 100.0% sensitivity, 100.0% specificity, zero residual PHI leaks, and exact longitudinal UID isomorphism.
+
+---
+
 # dicomtk 0.2.0
 
 ### 3D/4D Volume Geometry & Foundations (Phase 0)

@@ -224,11 +224,11 @@ dicom_deface <- function(x,
           "(0008,0008)", "(0012,0062)", "(0012,0063)", "(0012,0064)",
           "(7FE0,0010)"
         )
-        sub_hdr <- subset(hdr_raw, !tag %in% skip_tags & depth == 0L)
+        sub_hdr <- hdr_raw[!hdr_raw$tag %in% skip_tags & hdr_raw$depth == 0L, , drop = FALSE]
         sub_vals <- sub_hdr$value
         sub_vals[is.na(sub_vals)] <- ""
 
-        orig_img_type <- subset(hdr_raw, tag == "(0008,0008)")$value
+        orig_img_type <- hdr_raw$value[hdr_raw$tag == "(0008,0008)"]
         new_img_type <- "DERIVED\\SECONDARY"
         if (length(orig_img_type) > 0L && !is.na(orig_img_type[1L]) && nzchar(orig_img_type[1L])) {
           parts <- strsplit(orig_img_type[1L], "\\\\")[[1L]]

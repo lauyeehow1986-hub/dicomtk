@@ -520,6 +520,7 @@ dicom_deid_verify <- function(path,
 #' @param x A \code{dicom_deid_report} object.
 #' @param ... Additional arguments ignored.
 #' @return Invisibly returns \code{x}.
+#' @keywords internal
 #' @export
 print.dicom_deid_report <- function(x, ...) {
   status_icon <- if (isTRUE(x$passed)) cli::col_green("[PASSED]") else cli::col_red("[FAILED]")

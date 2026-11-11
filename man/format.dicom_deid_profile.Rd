@@ -17,3 +17,4 @@ A character vector of formatted lines.
 \description{
 Formats a summary of a compiled DICOM de-identification profile as character lines.
 }
+\keyword{internal}

@@ -149,7 +149,8 @@ dicom_deid <- function(path,
       } else {
         library(dicomtk)
       }
-      dicomtk:::cpp_deid_file(
+      fn <- get("cpp_deid_file", envir = asNamespace("dicomtk"))
+      fn(
         in_path = in_p,
         out_path = out_p,
         profile_spec = p_spec,
@@ -466,6 +467,7 @@ dicom_crosswalk_read <- function(path, key) {
 #' @param x A \code{dicom_deid_result} object.
 #' @param ... Additional arguments passed to methods.
 #' @return Invisibly returns \code{x}.
+#' @keywords internal
 #' @export
 print.dicom_deid_result <- function(x, ...) {
   cat("<dicom_deid_result>\n")

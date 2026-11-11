@@ -17,3 +17,4 @@ Invisibly returns \code{x}.
 \description{
 Print DICOM De-Identification Result
 }
+\keyword{internal}

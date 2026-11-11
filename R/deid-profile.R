@@ -595,6 +595,7 @@ compile_deid_profile <- function(profile = "ps3.15",
 #' @param x An object of class \code{"dicom_deid_profile"}.
 #' @param ... Additional arguments (unused).
 #' @return A character vector of formatted lines.
+#' @keywords internal
 #' @export
 format.dicom_deid_profile <- function(x, ...) {
   lines <- c(
@@ -658,6 +659,7 @@ format.dicom_deid_profile <- function(x, ...) {
 #' @param x An object of class \code{"dicom_deid_profile"}.
 #' @param ... Additional arguments passed to print methods (unused).
 #' @return The object \code{x}, invisibly.
+#' @keywords internal
 #' @export
 print.dicom_deid_profile <- function(x, ...) {
   cat(format(x, ...), sep = "\n")

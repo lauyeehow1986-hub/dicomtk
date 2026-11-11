@@ -324,14 +324,9 @@ test_that("Quantitative benchmark metrics over multi-patient multi-modality synt
 })
 
 test_that("inst/extdata/midib_scorecard.json parses cleanly and meets benchmark schema", {
-  pkg_dir <- tryCatch(
-    rprojroot::find_package_root_file(),
-    error = function(e) "."
-  )
-  scorecard_path <- file.path(pkg_dir, "inst", "extdata", "midib_scorecard.json")
-
-  if (!file.exists(scorecard_path)) {
-    scorecard_path <- system.file("extdata", "midib_scorecard.json", package = "dicomtk")
+  scorecard_path <- system.file("extdata", "midib_scorecard.json", package = "dicomtk")
+  if (!nzchar(scorecard_path) || !file.exists(scorecard_path)) {
+    scorecard_path <- testthat::test_path("..", "..", "inst", "extdata", "midib_scorecard.json")
   }
   expect_true(file.exists(scorecard_path))
 

@@ -15,6 +15,7 @@ reference:
       - dicom_orientation
       - to_ras
       - voxel_to_world
+      - world_to_voxel
 
   - title: "Core DICOM I/O"
     desc: "Read and write DICOM headers, pixel matrices, and 3D multi-slice series."
@@ -48,13 +49,29 @@ reference:
       - dicom_tag_value
       - dicom_modify
       - dicom_tag_lookup
+      - dcmdump_full
       - date_tags
       - datetime_tags
       - removal_tags
 
-  - title: "De-identification & Anonymization"
-    desc: "HIPAA Safe Harbor and DICOM PS3.15 confidentiality profile anonymization."
+  - title: "De-identification & Privacy Engine"
+    desc: "Regulatory-grade PS3.15 de-identification, jurisdiction presets, pixel cleaning, 3D defacing, and risk auditing."
     contents:
+      - dicom_deid
+      - dicom_deid_profile
+      - dicom_list_jurisdictions
+      - dicom_key_provider
+      - is_dicom_key_provider
+      - deid_map_uid
+      - deid_patient_shift
+      - derive_patient_shift_days
+      - dicom_crosswalk_read
+      - dicom_detect_burned_phi
+      - dicom_clean_pixels
+      - dicom_deface
+      - dicom_deid_verify
+      - dicom_verify_attestation
+      - dicom_deid_risk
       - dicom_anonymize
 
   - title: "Visualization (ggplot2, Shiny, and 3D Volume)"
