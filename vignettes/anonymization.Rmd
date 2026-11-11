@@ -153,6 +153,8 @@ cat("  Pseudonyms:       ", paste(cw$pseudo_patient_id, collapse = ", "), "\n")
 cat("  Date Shifts:      ", paste(cw$shift_days, collapse = ", "), "days\n")
 ```
 
+> **Operational Security Note:** Although the crosswalk file (`crosswalk.enc`) is encrypted with authenticated `ChaCha20-Poly1305` AEAD, study investigators and honest brokers must store both the cryptographic key material and the encrypted crosswalk in an air-gapped or role-separated enclave distinct from the public/consortium-facing de-identified DICOM directory.
+
 ---
 
 ## 4. Burned-In Pixel Cleaning & Fast Telea Inpainting
@@ -262,13 +264,14 @@ scorecard_path <- system.file("extdata", "midib_scorecard.json", package = "dico
 if (file.exists(scorecard_path)) {
   sc <- jsonlite::fromJSON(scorecard_path)
   cat("MIDI-B Benchmark Scorecard Summary:\n")
-  cat("  Engine:               ", sc$engine, "\n")
-  cat("  Datasets Evaluated:   ", sc$n_datasets, "\n")
-  cat("  Canaries Evaluated:   ", sc$n_canaries_evaluated, "\n")
-  cat("  PHI Leaks:            ", sc$n_phi_leaks, "\n")
-  cat("  Recall (Sensitivity): ", sprintf("%.1f%%", sc$metrics$recall * 100), "\n")
-  cat("  Precision:            ", sprintf("%.1f%%", sc$metrics$precision * 100), "\n")
-  cat("  UID Isomorphism:      ", sprintf("%.3f", sc$metrics$uid_isomorphism), "\n")
+  cat("  Corpus:               ", sc$corpus, "\n")
+  cat("  Status:               ", sc$status, "\n")
+  cat("  Cases Evaluated:      ", sc$n_cases, "\n")
+  cat("  Canary Categories:    ", sc$planted_categories, "\n")
+  cat("  Recall (Sensitivity): ", sprintf("%.1f%%", sc$recall * 100), "\n")
+  cat("  Precision:            ", sprintf("%.1f%%", sc$precision * 100), "\n")
+  cat("  UID Isomorphism:      ", sprintf("%.3f", sc$uid_isomorphism), "\n")
+  cat("  Date Delta Error:     ", sc$date_error, "days\n")
 }
 ```
 

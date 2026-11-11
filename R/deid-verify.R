@@ -83,7 +83,16 @@ dicom_deid_verify <- function(path,
     safe_creators <- c(safe_creators, allowed_private_tags)
   }
   explicit_allowed_tags <- if (is.character(allowed_private_tags)) {
-    toupper(gsub("[ \t]", "", allowed_private_tags))
+    raw_t <- toupper(gsub("[ \t]", "", allowed_private_tags))
+    ifelse(
+      grepl("^[0-9A-F]{8}$", raw_t),
+      paste0("(", substr(raw_t, 1L, 4L), ",", substr(raw_t, 5L, 8L), ")"),
+      ifelse(
+        grepl("^[0-9A-F]{4},[0-9A-F]{4}$", raw_t),
+        paste0("(", raw_t, ")"),
+        raw_t
+      )
+    )
   } else {
     character(0)
   }

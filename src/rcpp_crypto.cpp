@@ -305,11 +305,6 @@ inline void store32_le(uint8_t* p, uint32_t v) {
   p[3] = static_cast<uint8_t>((v >> 24) & 0xFF);
 }
 
-inline uint64_t load64_le(const uint8_t* p) {
-  return static_cast<uint64_t>(load32_le(p)) |
-         (static_cast<uint64_t>(load32_le(p + 4)) << 32);
-}
-
 inline void store64_le(uint8_t* p, uint64_t v) {
   store32_le(p, static_cast<uint32_t>(v & 0xFFFFFFFF));
   store32_le(p + 4, static_cast<uint32_t>(v >> 32));
@@ -363,94 +358,111 @@ void chacha20_xor(const uint8_t key[32], uint32_t counter, const uint8_t nonce[1
   }
 }
 
-#if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
-#endif
-
-// Poly1305 64-bit / __int128 implementation (RFC 8439)
+// Pure ISO C++17 Poly1305 (RFC 8439) using 5 x 26-bit limbs in uint64_t
 void poly1305_mac(const uint8_t* msg, size_t msg_len, const uint8_t key[32], uint8_t tag[16]) {
-  uint64_t r0 = load64_le(key) & 0x0ffffffc0fffffffULL;
-  uint64_t r1 = load64_le(key + 8) & 0x0ffffffc0ffffffcULL;
-  uint64_t s1 = (r1 >> 2) * 5;
+  uint8_t r_bytes[16];
+  std::memcpy(r_bytes, key, 16);
+  r_bytes[3]  &= 15;
+  r_bytes[7]  &= 15;
+  r_bytes[11] &= 15;
+  r_bytes[15] &= 15;
+  r_bytes[4]  &= 252;
+  r_bytes[8]  &= 252;
+  r_bytes[12] &= 252;
 
-  uint64_t h0 = 0, h1 = 0, h2 = 0;
+  uint32_t rt0 = load32_le(r_bytes + 0);
+  uint32_t rt1 = load32_le(r_bytes + 4);
+  uint32_t rt2 = load32_le(r_bytes + 8);
+  uint32_t rt3 = load32_le(r_bytes + 12);
+
+  uint64_t r0 = rt0 & 0x3ffffffULL;
+  uint64_t r1 = ((rt0 >> 26) | (rt1 << 6)) & 0x3ffffffULL;
+  uint64_t r2 = ((rt1 >> 20) | (rt2 << 12)) & 0x3ffffffULL;
+  uint64_t r3 = ((rt2 >> 14) | (rt3 << 18)) & 0x3ffffffULL;
+  uint64_t r4 = (rt3 >> 8);
+
+  uint64_t s1 = r1 * 5;
+  uint64_t s2 = r2 * 5;
+  uint64_t s3 = r3 * 5;
+  uint64_t s4 = r4 * 5;
+
+  uint64_t h0 = 0, h1 = 0, h2 = 0, h3 = 0, h4 = 0;
 
   size_t offset = 0;
   while (offset < msg_len) {
     size_t block_len = std::min<size_t>(16, msg_len - offset);
     uint8_t block[16] = {0};
     std::memcpy(block, msg + offset, block_len);
-
-    uint64_t m0 = load64_le(block);
-    uint64_t m1 = load64_le(block + 8);
-    uint64_t m2 = (block_len == 16) ? 1ULL : 0ULL;
+    uint64_t hibit = (block_len == 16) ? (1ULL << 24) : 0ULL;
     if (block_len < 16) {
-      // Append 0x01 byte at position block_len
       block[block_len] = 0x01;
-      m0 = load64_le(block);
-      m1 = load64_le(block + 8);
-      m2 = 0;
     }
 
-    // Add block to accumulator h
-    unsigned __int128 th0 = static_cast<unsigned __int128>(h0) + m0;
-    h0 = static_cast<uint64_t>(th0);
-    unsigned __int128 th1 = static_cast<unsigned __int128>(h1) + m1 + static_cast<uint64_t>(th0 >> 64);
-    h1 = static_cast<uint64_t>(th1);
-    h2 += m2 + static_cast<uint64_t>(th1 >> 64);
+    uint32_t t0 = load32_le(block + 0);
+    uint32_t t1 = load32_le(block + 4);
+    uint32_t t2 = load32_le(block + 8);
+    uint32_t t3 = load32_le(block + 12);
 
-    // Multiply by r modulo 2^130 - 5
-    unsigned __int128 d0 = (static_cast<unsigned __int128>(h0) * r0) +
-                           (static_cast<unsigned __int128>(h1) * s1);
-    unsigned __int128 d1 = (static_cast<unsigned __int128>(h0) * r1) +
-                           (static_cast<unsigned __int128>(h1) * r0) +
-                           (static_cast<unsigned __int128>(h2) * s1);
-    unsigned __int128 d2 = static_cast<unsigned __int128>(h2) * r0;
+    h0 += t0 & 0x3ffffffULL;
+    h1 += ((t0 >> 26) | (t1 << 6)) & 0x3ffffffULL;
+    h2 += ((t1 >> 20) | (t2 << 12)) & 0x3ffffffULL;
+    h3 += ((t2 >> 14) | (t3 << 18)) & 0x3ffffffULL;
+    h4 += (t3 >> 8) | hibit;
 
-    d1 += (d0 >> 64);
-    h0 = static_cast<uint64_t>(d0);
-    d2 += (d1 >> 64);
-    h1 = static_cast<uint64_t>(d1);
-    h2 = static_cast<uint64_t>(d2) & 3;
+    uint64_t d0 = h0 * r0 + h1 * s4 + h2 * s3 + h3 * s2 + h4 * s1;
+    uint64_t d1 = h0 * r1 + h1 * r0 + h2 * s4 + h3 * s3 + h4 * s2;
+    uint64_t d2 = h0 * r2 + h1 * r1 + h2 * r0 + h3 * s4 + h4 * s3;
+    uint64_t d3 = h0 * r3 + h1 * r2 + h2 * r1 + h3 * r0 + h4 * s4;
+    uint64_t d4 = h0 * r4 + h1 * r3 + h2 * r2 + h3 * r1 + h4 * r0;
 
-    uint64_t c = (static_cast<uint64_t>(d2) >> 2) * 5;
-    th0 = static_cast<unsigned __int128>(h0) + c;
-    h0 = static_cast<uint64_t>(th0);
-    th1 = static_cast<unsigned __int128>(h1) + static_cast<uint64_t>(th0 >> 64);
-    h1 = static_cast<uint64_t>(th1);
-    h2 += static_cast<uint64_t>(th1 >> 64);
+    uint64_t c = d0 >> 26; h0 = d0 & 0x3ffffffULL;
+    d1 += c;     c = d1 >> 26; h1 = d1 & 0x3ffffffULL;
+    d2 += c;     c = d2 >> 26; h2 = d2 & 0x3ffffffULL;
+    d3 += c;     c = d3 >> 26; h3 = d3 & 0x3ffffffULL;
+    d4 += c;     c = d4 >> 26; h4 = d4 & 0x3ffffffULL;
+    h0 += c * 5; c = h0 >> 26; h0 &= 0x3ffffffULL;
+    h1 += c;
 
     offset += block_len;
   }
 
-  // Full reduction modulo 2^130 - 5
-  // Add 5 to h to see if it carries past 2^130 - 5
-  unsigned __int128 tg0 = static_cast<unsigned __int128>(h0) + 5;
-  uint64_t g0 = static_cast<uint64_t>(tg0);
-  unsigned __int128 tg1 = static_cast<unsigned __int128>(h1) + static_cast<uint64_t>(tg0 >> 64);
-  uint64_t g1 = static_cast<uint64_t>(tg1);
-  uint64_t g2 = h2 + static_cast<uint64_t>(tg1 >> 64);
+  // Final carry propagation and modular reduction mod 2^130 - 5
+  uint64_t c = h1 >> 26; h1 &= 0x3ffffffULL;
+  h2 += c;     c = h2 >> 26; h2 &= 0x3ffffffULL;
+  h3 += c;     c = h3 >> 26; h3 &= 0x3ffffffULL;
+  h4 += c;     c = h4 >> 26; h4 &= 0x3ffffffULL;
+  h0 += c * 5; c = h0 >> 26; h0 &= 0x3ffffffULL;
+  h1 += c;
 
-  // If g2 >= 4 (i.e. bit 2 is set), mask = 0xFFFFFFFF... else 0
-  uint64_t mask = 0ULL - (g2 >> 2);
-  h0 = (h0 & ~mask) | (g0 & mask);
-  h1 = (h1 & ~mask) | (g1 & mask);
+  uint64_t g0 = h0 + 5; c = g0 >> 26; g0 &= 0x3ffffffULL;
+  uint64_t g1 = h1 + c; c = g1 >> 26; g1 &= 0x3ffffffULL;
+  uint64_t g2 = h2 + c; c = g2 >> 26; g2 &= 0x3ffffffULL;
+  uint64_t g3 = h3 + c; c = g3 >> 26; g3 &= 0x3ffffffULL;
+  uint64_t g4 = h4 + c - (1ULL << 26);
 
-  // Add s (key + 16)
-  uint64_t s0 = load64_le(key + 16);
-  uint64_t s_hi = load64_le(key + 24);
+  uint64_t mask = (g4 >> 63) - 1ULL;
+  g0 &= mask; g1 &= mask; g2 &= mask; g3 &= mask; g4 &= mask;
+  mask = ~mask;
+  h0 = (h0 & mask) | g0;
+  h1 = (h1 & mask) | g1;
+  h2 = (h2 & mask) | g2;
+  h3 = (h3 & mask) | g3;
+  h4 = (h4 & mask) | g4;
 
-  unsigned __int128 tf0 = static_cast<unsigned __int128>(h0) + s0;
-  unsigned __int128 tf1 = static_cast<unsigned __int128>(h1) + s_hi + static_cast<uint64_t>(tf0 >> 64);
+  uint64_t w0 = ((h0)       | (h1 << 26)) & 0xffffffffULL;
+  uint64_t w1 = ((h1 >> 6)  | (h2 << 20)) & 0xffffffffULL;
+  uint64_t w2 = ((h2 >> 12) | (h3 << 14)) & 0xffffffffULL;
+  uint64_t w3 = ((h3 >> 18) | (h4 << 8))  & 0xffffffffULL;
 
-  store64_le(tag, static_cast<uint64_t>(tf0));
-  store64_le(tag + 8, static_cast<uint64_t>(tf1));
+  uint64_t f = w0 + load32_le(key + 16);
+  store32_le(tag + 0, static_cast<uint32_t>(f));
+  f = w1 + load32_le(key + 20) + (f >> 32);
+  store32_le(tag + 4, static_cast<uint32_t>(f));
+  f = w2 + load32_le(key + 24) + (f >> 32);
+  store32_le(tag + 8, static_cast<uint32_t>(f));
+  f = w3 + load32_le(key + 28) + (f >> 32);
+  store32_le(tag + 12, static_cast<uint32_t>(f));
 }
-
-#if defined(__GNUC__) || defined(__clang__)
-#pragma GCC diagnostic pop
-#endif
 
 } // namespace
 
