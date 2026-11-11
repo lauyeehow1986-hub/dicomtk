@@ -39,22 +39,27 @@ dicom_seg <- function(mask, ref_volume, segments = NULL) {
     )
   }
 
-  # Build as dicom_volume with class c("dicom_seg", "dicom_volume")
-  res <- structure(
-    list(
-      array = mask,
-      affine = ref_volume$affine,
-      spacing = ref_volume$spacing,
-      origin = ref_volume$origin,
-      direction = ref_volume$direction,
-      header = ref_volume$header,
-      files = ref_volume$files,
-      segments = tibble::as_tibble(segments),
-      source_volume_uid = ref_volume$header$SeriesInstanceUID[[1L]] %||% "1.2.826.0.1.3680043.9.1"
-    ),
-    class = c("dicom_seg", "dicom_volume")
+  # Construct using new_dicom_volume and subclass as dicom_seg
+  vol <- new_dicom_volume(
+    voxels = mask,
+    affine = ref_volume$affine,
+    coord_system = ref_volume$coord_system %||% "LPS",
+    spacing = ref_volume$spacing,
+    direction = ref_volume$direction,
+    frame_meta = ref_volume$frame_meta,
+    uids = ref_volume$uids,
+    modality = "SEG",
+    units = "binary"
   )
-  res
+
+  vol$array <- mask
+  vol$segments <- tibble::as_tibble(segments)
+  vol$source_volume_uid <- ref_volume$uids$series_instance_uid %||%
+                           ref_volume$header$SeriesInstanceUID[[1L]] %||%
+                           "1.2.826.0.1.3680043.9.1"
+
+  class(vol) <- c("dicom_seg", class(vol))
+  vol
 }
 
 #' Write DICOM Segmentation Object (`dcmseg`)
