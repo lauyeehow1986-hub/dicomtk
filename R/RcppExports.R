@@ -93,6 +93,18 @@ cpp_clean_pixels_file <- function(in_path, out_path, boxes, method = "blackout",
     .Call(`_dicomtk_cpp_clean_pixels_file`, in_path, out_path, boxes, method, radius)
 }
 
+cpp_rasterize_polygon_2d <- function(coords, width, height) {
+    .Call(`_dicomtk_cpp_rasterize_polygon_2d`, coords, width, height)
+}
+
+cpp_rasterize_polygons_2d <- function(poly_list, width, height, rule = "evenodd") {
+    .Call(`_dicomtk_cpp_rasterize_polygons_2d`, poly_list, width, height, rule)
+}
+
+cpp_trace_contours_2d <- function(mask) {
+    .Call(`_dicomtk_cpp_trace_contours_2d`, mask)
+}
+
 cpp_is_dicom <- function(path) {
     .Call(`_dicomtk_cpp_is_dicom`, path)
 }

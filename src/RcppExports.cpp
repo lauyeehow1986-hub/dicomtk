@@ -304,6 +304,44 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// cpp_rasterize_polygon_2d
+Rcpp::LogicalMatrix cpp_rasterize_polygon_2d(Rcpp::NumericMatrix coords, int width, int height);
+RcppExport SEXP _dicomtk_cpp_rasterize_polygon_2d(SEXP coordsSEXP, SEXP widthSEXP, SEXP heightSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type coords(coordsSEXP);
+    Rcpp::traits::input_parameter< int >::type width(widthSEXP);
+    Rcpp::traits::input_parameter< int >::type height(heightSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_rasterize_polygon_2d(coords, width, height));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_rasterize_polygons_2d
+Rcpp::LogicalMatrix cpp_rasterize_polygons_2d(Rcpp::List poly_list, int width, int height, std::string rule);
+RcppExport SEXP _dicomtk_cpp_rasterize_polygons_2d(SEXP poly_listSEXP, SEXP widthSEXP, SEXP heightSEXP, SEXP ruleSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::List >::type poly_list(poly_listSEXP);
+    Rcpp::traits::input_parameter< int >::type width(widthSEXP);
+    Rcpp::traits::input_parameter< int >::type height(heightSEXP);
+    Rcpp::traits::input_parameter< std::string >::type rule(ruleSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_rasterize_polygons_2d(poly_list, width, height, rule));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_trace_contours_2d
+Rcpp::List cpp_trace_contours_2d(Rcpp::LogicalMatrix mask);
+RcppExport SEXP _dicomtk_cpp_trace_contours_2d(SEXP maskSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::LogicalMatrix >::type mask(maskSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_trace_contours_2d(mask));
+    return rcpp_result_gen;
+END_RCPP
+}
 // cpp_is_dicom
 bool cpp_is_dicom(const std::string& path);
 RcppExport SEXP _dicomtk_cpp_is_dicom(SEXP pathSEXP) {
@@ -441,6 +479,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_dicomtk_cpp_detect_burned_boxes", (DL_FUNC) &_dicomtk_cpp_detect_burned_boxes, 3},
     {"_dicomtk_cpp_apply_pixel_mask", (DL_FUNC) &_dicomtk_cpp_apply_pixel_mask, 10},
     {"_dicomtk_cpp_clean_pixels_file", (DL_FUNC) &_dicomtk_cpp_clean_pixels_file, 5},
+    {"_dicomtk_cpp_rasterize_polygon_2d", (DL_FUNC) &_dicomtk_cpp_rasterize_polygon_2d, 3},
+    {"_dicomtk_cpp_rasterize_polygons_2d", (DL_FUNC) &_dicomtk_cpp_rasterize_polygons_2d, 4},
+    {"_dicomtk_cpp_trace_contours_2d", (DL_FUNC) &_dicomtk_cpp_trace_contours_2d, 1},
     {"_dicomtk_cpp_is_dicom", (DL_FUNC) &_dicomtk_cpp_is_dicom, 1},
     {"_dicomtk_cpp_read_dicom_header", (DL_FUNC) &_dicomtk_cpp_read_dicom_header, 3},
     {"_dicomtk_cpp_get_tag_values", (DL_FUNC) &_dicomtk_cpp_get_tag_values, 2},
