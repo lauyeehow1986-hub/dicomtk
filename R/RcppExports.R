@@ -117,6 +117,22 @@ cpp_get_tag_values <- function(path, queries) {
     .Call(`_dicomtk_cpp_get_tag_values`, path, queries)
 }
 
+cpp_pack_binary_frame <- function(frame) {
+    .Call(`_dicomtk_cpp_pack_binary_frame`, frame)
+}
+
+cpp_unpack_binary_frame <- function(bytes, width, height) {
+    .Call(`_dicomtk_cpp_unpack_binary_frame`, bytes, width, height)
+}
+
+cpp_write_dicom_raw_pixels <- function(in_dcm_path, out_dcm_path, raw_pixel_bytes, bits_allocated = 1L, bits_stored = 1L, high_bit = 0L, pixel_representation = 0L, samples_per_pixel = 1L, number_of_frames = 1L) {
+    .Call(`_dicomtk_cpp_write_dicom_raw_pixels`, in_dcm_path, out_dcm_path, raw_pixel_bytes, bits_allocated, bits_stored, high_bit, pixel_representation, samples_per_pixel, number_of_frames)
+}
+
+cpp_read_dicom_raw_pixels <- function(path) {
+    .Call(`_dicomtk_cpp_read_dicom_raw_pixels`, path)
+}
+
 cpp_read_dicom_sr <- function(path) {
     .Call(`_dicomtk_cpp_read_dicom_sr`, path)
 }

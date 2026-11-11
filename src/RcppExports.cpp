@@ -378,6 +378,60 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// cpp_pack_binary_frame
+Rcpp::RawVector cpp_pack_binary_frame(Rcpp::IntegerMatrix frame);
+RcppExport SEXP _dicomtk_cpp_pack_binary_frame(SEXP frameSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::IntegerMatrix >::type frame(frameSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_pack_binary_frame(frame));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_unpack_binary_frame
+Rcpp::IntegerMatrix cpp_unpack_binary_frame(Rcpp::RawVector bytes, int width, int height);
+RcppExport SEXP _dicomtk_cpp_unpack_binary_frame(SEXP bytesSEXP, SEXP widthSEXP, SEXP heightSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type bytes(bytesSEXP);
+    Rcpp::traits::input_parameter< int >::type width(widthSEXP);
+    Rcpp::traits::input_parameter< int >::type height(heightSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_unpack_binary_frame(bytes, width, height));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_write_dicom_raw_pixels
+bool cpp_write_dicom_raw_pixels(std::string in_dcm_path, std::string out_dcm_path, Rcpp::RawVector raw_pixel_bytes, int bits_allocated, int bits_stored, int high_bit, int pixel_representation, int samples_per_pixel, int number_of_frames);
+RcppExport SEXP _dicomtk_cpp_write_dicom_raw_pixels(SEXP in_dcm_pathSEXP, SEXP out_dcm_pathSEXP, SEXP raw_pixel_bytesSEXP, SEXP bits_allocatedSEXP, SEXP bits_storedSEXP, SEXP high_bitSEXP, SEXP pixel_representationSEXP, SEXP samples_per_pixelSEXP, SEXP number_of_framesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type in_dcm_path(in_dcm_pathSEXP);
+    Rcpp::traits::input_parameter< std::string >::type out_dcm_path(out_dcm_pathSEXP);
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type raw_pixel_bytes(raw_pixel_bytesSEXP);
+    Rcpp::traits::input_parameter< int >::type bits_allocated(bits_allocatedSEXP);
+    Rcpp::traits::input_parameter< int >::type bits_stored(bits_storedSEXP);
+    Rcpp::traits::input_parameter< int >::type high_bit(high_bitSEXP);
+    Rcpp::traits::input_parameter< int >::type pixel_representation(pixel_representationSEXP);
+    Rcpp::traits::input_parameter< int >::type samples_per_pixel(samples_per_pixelSEXP);
+    Rcpp::traits::input_parameter< int >::type number_of_frames(number_of_framesSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_write_dicom_raw_pixels(in_dcm_path, out_dcm_path, raw_pixel_bytes, bits_allocated, bits_stored, high_bit, pixel_representation, samples_per_pixel, number_of_frames));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_read_dicom_raw_pixels
+Rcpp::RawVector cpp_read_dicom_raw_pixels(std::string path);
+RcppExport SEXP _dicomtk_cpp_read_dicom_raw_pixels(SEXP pathSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type path(pathSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_read_dicom_raw_pixels(path));
+    return rcpp_result_gen;
+END_RCPP
+}
 // cpp_read_dicom_sr
 Rcpp::DataFrame cpp_read_dicom_sr(const std::string& path);
 RcppExport SEXP _dicomtk_cpp_read_dicom_sr(SEXP pathSEXP) {
@@ -485,6 +539,10 @@ static const R_CallMethodDef CallEntries[] = {
     {"_dicomtk_cpp_is_dicom", (DL_FUNC) &_dicomtk_cpp_is_dicom, 1},
     {"_dicomtk_cpp_read_dicom_header", (DL_FUNC) &_dicomtk_cpp_read_dicom_header, 3},
     {"_dicomtk_cpp_get_tag_values", (DL_FUNC) &_dicomtk_cpp_get_tag_values, 2},
+    {"_dicomtk_cpp_pack_binary_frame", (DL_FUNC) &_dicomtk_cpp_pack_binary_frame, 1},
+    {"_dicomtk_cpp_unpack_binary_frame", (DL_FUNC) &_dicomtk_cpp_unpack_binary_frame, 3},
+    {"_dicomtk_cpp_write_dicom_raw_pixels", (DL_FUNC) &_dicomtk_cpp_write_dicom_raw_pixels, 9},
+    {"_dicomtk_cpp_read_dicom_raw_pixels", (DL_FUNC) &_dicomtk_cpp_read_dicom_raw_pixels, 1},
     {"_dicomtk_cpp_read_dicom_sr", (DL_FUNC) &_dicomtk_cpp_read_dicom_sr, 1},
     {"_dicomtk_cpp_create_dicom_sr", (DL_FUNC) &_dicomtk_cpp_create_dicom_sr, 6},
     {"_dicomtk_cpp_modify_dicom", (DL_FUNC) &_dicomtk_cpp_modify_dicom, 7},

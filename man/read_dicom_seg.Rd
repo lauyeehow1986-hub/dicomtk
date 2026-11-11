@@ -4,22 +4,25 @@
 \alias{read_dicom_seg}
 \title{Read DICOM Segmentation Objects (\code{dcmseg})}
 \usage{
-read_dicom_seg(path)
+read_dicom_seg(path, ref_volume = NULL)
 }
 \arguments{
 \item{path}{Path to a DICOM Segmentation file.}
+
+\item{ref_volume}{Optional reference \link{dicom_volume} providing spatial geometry.}
 }
 \value{
-A list of class \code{"dicom_seg"} containing \code{segments} (tibble of
-segment metadata) and \code{mask} (pixel/voxel mask array).
+An object of class \link{dicom_seg} (if \code{ref_volume} is provided or can be
+derived) or a list of class \code{"dicom_seg"}.
 }
 \description{
 Reads a DICOM Segmentation (\code{SEG}) dataset, extracting segment descriptions
 (\code{SegmentSequence (0062,0002)}) and the binary/fractional 3D segmentation
-mask array.
+mask array, optionally constructing a unified \link{dicom_seg} object if a
+reference \link{dicom_volume} is supplied.
 }
 \examples{
 dcm_file <- system.file("extdata", "example.dcm", package = "dicomtk")
 seg <- read_dicom_seg(dcm_file)
-dim(seg$mask)
+seg$modality
 }
