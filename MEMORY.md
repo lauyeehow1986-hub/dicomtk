@@ -62,6 +62,33 @@
 - [x] **Task 9: `v0.2.0` Release Documentation & Vignettes**:
   - Updated `DESCRIPTION` (0.2.0), `NEWS.md`, `_pkgdown.yml`, `vignettes/volume-geometry.Rmd`, and verified full test suite.
 
+### Phase 1 (`v0.3.0` Research-Grade De-Identification Engine) — Completed
+- [x] **Task 1: C++17 RFC Cryptography & Pluggable Key Provider**:
+  - Implemented standalone C++17 implementations of RFC 6234 SHA-256, RFC 4231 HMAC-SHA256, RFC 2898 PBKDF2-HMAC-SHA256, RFC 5869 HKDF-SHA256, and RFC 8439 ChaCha20-Poly1305 AEAD (`src/rcpp_crypto.h`, `src/rcpp_crypto.cpp`).
+  - Added `dicom_key_provider()` S3 class supporting `local`, `broker`, and `ttp` modes, credential redaction, deterministic `2.25.<128-bit>` UID pseudonymization (`deid_map_uid()`), and per-patient pseudo-random date shifting (`derive_patient_shift_days()`, `deid_patient_shift()`).
+- [x] **Task 2: PS3.15 Profile Compiler & Composable Jurisdictions**:
+  - Added `dicom_deid_profile()` and `dicom_list_jurisdictions()` compiling declarative YAML profiles (`ps3.15-basic.yml` + 10 PS3.15 options) with 8 composable statutory jurisdiction overlays (`hipaa_safe_harbor`, `hipaa_limited_dataset`, `gdpr_eu`, `sg_pdpa_hib`, `my_pdpa_2024`, `au_privacy_act`, `uk_gdpr`, `ca_pipeda`) and strictest-wins monotonic action lattice (`D > Z > X > K`).
+- [x] **Task 3: Single-Pass Recursive C++17 Mutator**:
+  - Implemented `cpp_deid_file()` in `src/rcpp_deid.cpp` executing in-memory DICOM mutation across dataset tags and arbitrary nested Sequence of Items (`VR=SQ`) trees with Howard Hinnant date shifting, safe-private retention, orphan creator pruning, and W3C PROV audit logging.
+- [x] **Task 4: Cohort `dicom_deid()` & Encrypted Crosswalk**:
+  - Added `dicom_deid()` supporting file, directory, and vector inputs with progress reporting and optional `mirai` parallelism.
+  - Implemented ChaCha20-Poly1305 AEAD-encrypted crosswalk files (`dicomtk_crosswalk.enc`) decryptable via `dicom_crosswalk_read()` using the original key provider.
+- [x] **Task 5: Burned-In Pixel PHI & C++17 Telea Inpainting**:
+  - Added `dicom_detect_burned_phi()` and `dicom_clean_pixels()` for identifying and blacking out burned-in text in secondary captures and ultrasound overlays.
+  - Implemented C++17 Fast Marching Method Telea inpainting (`cpp_telea_inpaint()`) with aspect-ratio bounding-box guardrails and optional OCR verification (`tesseract`).
+- [x] **Task 6: 3D Head CT/MR Defacing & WSI Safeguards**:
+  - Added `dicom_deface()` performing analytical cutting-plane facial stripping on 3D volumetric CT and MR series in LPS/RAS space.
+  - Added Whole Slide Imaging (WSI) label/macro frame stripping to prevent specimen identifier leakage.
+- [x] **Task 7: Residual-PHI Verifier & Risk Scorer**:
+  - Added `dicom_deid_verify()` scanning processed datasets for 18 statutory PHI canary categories.
+  - Added HMAC-SHA256 signed compliance certificates (`dicom_verify_attestation()`).
+  - Added `dicom_deid_risk()` computing cohort re-identification risk metrics including equivalence class distribution, $k$-anonymity, $l$-diversity, and prosecutor risk.
+- [x] **Task 8: MIDI-B Synthetic Benchmark & Published Scorecard**:
+  - Extended `dicom_synthesize()` with `phi_profile = c("basic", "midi_b")` planting 18 HIPAA, PS3.15, and international canaries across structured tags, nested sequences, and free text.
+  - Added `tools/run_midib_benchmark.R` producing validated audit scorecard (`inst/extdata/midib_scorecard.json`) demonstrating 100.0% sensitivity, 100.0% specificity, zero residual PHI leaks, and exact longitudinal UID isomorphism.
+- [x] **Task 9: `v0.3.0` Release Documentation, Vignette & Six-Sigma Check**:
+  - Updated `DESCRIPTION` (0.3.0), `NEWS.md`, `_pkgdown.yml`, `vignettes/anonymization.Rmd`, and verified full test suite and CRAN checks.
+
 ### Next Phase Roadmap (validated 2026-10-24)
 - Design: `dev/plans/2026-10-24-roadmap-v0.2-v1.0-design.md` (plans live in `dev/` because `docs/` is pkgdown output).
 - Packages: `dicomtk` (CRAN core) + `dicomtk.ai` + `dicomtk.server` + `dicomtk.fl`; test lab in separate repo `dicomtk-lab` (docker-compose profiles: core, ai, ehr, ohdsi, ttp, fl).

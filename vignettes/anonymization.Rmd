@@ -1,8 +1,8 @@
 ---
-title: "DICOM Anonymization & HIPAA De-identification"
+title: "Research-Grade DICOM De-Identification & Privacy Engine"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{DICOM Anonymization & HIPAA De-identification}
+  %\VignetteIndexEntry{Research-Grade DICOM De-Identification & Privacy Engine}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -10,53 +10,273 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5
 )
 ```
 
 ## Overview
 
-`dicomtk` implements HIPAA Safe Harbor and the **DICOM PS3.15 Basic Application Level Confidentiality Profile** via `dicom_anonymize()`. Unlike legacy wrappers that invoke external `dcmodify` subprocesses, `dicomtk` performs de-identification natively in C++17 memory.
+The `dicomtk` package provides a high-throughput, research-grade DICOM de-identification engine implemented natively in C++17 with zero external OS crypto or Python dependencies. It adheres strictly to the **DICOM PS3.15 Basic Application Level Confidentiality Profile** (including all 10 standard PS3.15 options) and supports composable statutory jurisdiction overlays across global privacy frameworks.
 
-```{r anon-workflow}
+Key architectural highlights include:
+
+- **Pure C++17 Cryptography**: RFC 2898 PBKDF2, RFC 5869 HKDF-SHA256, RFC 8439 ChaCha20-Poly1305 AEAD, deterministic `2.25.<128-bit>` UID mapping, and Howard Hinnant C++ date shifting.
+- **Composable Jurisdictions**: 8 statutory overlays (`hipaa_safe_harbor`, `hipaa_limited_dataset`, `gdpr_eu`, `sg_pdpa_hib`, `my_pdpa_2024`, `au_privacy_act`, `uk_gdpr`, `ca_pipeda`) resolved using a strictest-wins monotonic action lattice (`D > Z > X > K`).
+- **Single-Pass Recursive Mutator**: In-memory mutation across dataset tags and arbitrary nested Sequence of Items (`VR=SQ`) trees with safe-private retention and orphan creator pruning.
+- **Encrypted Longitudinal Crosswalk**: ChaCha20-Poly1305 authenticated crosswalk preserving patient-level UID linkages and date offsets without exposing plaintext identities.
+- **Pixel PHI & 3D Defacing**: Ultrasound burned-in text detection with C++17 Fast Marching Method (Telea) inpainting and 3D facial plane cutting for volumetric CT/MR head scans.
+- **Verification & Risk Audit**: 18-canary residual PHI auditing, HMAC-SHA256 signed tamper-evident compliance attestations, and cohort $k$-anonymity re-identification risk scoring.
+
+---
+
+## 1. Cryptographic Key Management & Pluggable Providers
+
+All pseudonymization operations (UID mapping, date shifting, crosswalk encryption, and compliance attestations) are rooted in domain-separated cryptographic keys derived via `dicom_key_provider()`.
+
+Secret key bytes and passphrases are encapsulated in a secure private closure and are redacted automatically in printed representations:
+
+```{r key-provider}
 library(dicomtk)
-library(dplyr)
 
-# Create a synthetic DICOM file containing PHI tags
-mat <- matrix(seq(0, 255), nrow = 16, ncol = 16)
-raw_dcm <- tempfile(fileext = ".dcm")
-write_dicom(
-  mat,
-  raw_dcm,
-  metadata = list(
-    PatientName = "DOE^JOHN",
-    PatientID = "MRN-987654",
-    PatientBirthDate = "19800415",
-    StudyDate = "20251016",
-    InstitutionName = "GENERAL HOSPITAL",
-    Modality = "CT"
-  )
+# Create a local key provider rooted in PBKDF2-HMAC-SHA256
+kp <- dicom_key_provider(
+  mode = "local",
+  passphrase = "clinical-trial-cohort-secret-2026",
+  salt = "site-singapore-nccs-01"
 )
 
-# Inspect original PHI tags
-dicom_tag_value(
-  raw_dcm,
-  c("PatientName", "PatientID", "PatientBirthDate", "StudyDate", "InstitutionName")
+# Inspect key provider: secrets are completely redacted
+print(kp)
+
+# Deterministically map a DICOM Instance UID into standard 2.25 grammar
+orig_uid <- "1.3.6.1.4.1.14519.5.2.1.9999.1001"
+pseudo_uid <- deid_map_uid(orig_uid, kp)
+cat("Original UID:     ", orig_uid, "\n")
+cat("Pseudonymized UID:", pseudo_uid, "\n")
+
+# Standard DICOM transfer syntaxes and SOP classes are strictly preserved
+sop_class <- "1.2.840.10008.5.1.4.1.1.2"
+cat("SOP Class UID:    ", deid_map_uid(sop_class, kp), " (preserved)\n")
+
+# Deterministic patient-specific date shift within [-3650, -30] days
+shift_days <- deid_patient_shift(kp, "PAT001", date_range = c(-3650L, -30L))
+cat("PAT001 Day Shift: ", shift_days, " days\n")
+```
+
+---
+
+## 2. PS3.15 Profile Compiler with Jurisdiction Overlays
+
+Profiles compile declarative YAML specifications into tag action dictionaries. You can compose the standard PS3.15 profile with statutory options and regional jurisdiction rules:
+
+```{r compile-profile}
+# List available statutory jurisdiction overlays
+dicom_list_jurisdictions()
+
+# Compile a profile combining PS3.15 Basic with Singapore HIB and US HIPAA
+prof <- dicom_deid_profile(
+  profile = "ps3.15",
+  options = c("retain_longitudinal_modified_dates", "retain_safe_private"),
+  jurisdictions = c("sg_pdpa_hib", "hipaa_safe_harbor"),
+  date_shift = TRUE
 )
 
-# Anonymize with longitudinal date shifting (-100 days), UID regeneration, and private tag removal
-anon_dcm <- dicom_anonymize(
-  raw_dcm,
-  patient_name = "TRIAL^SUBJECT_001",
-  patient_id = "SUBJ_001",
-  shift_days = -100L,
-  erase_private = TRUE,
-  regenerate_uids = TRUE
+# Inspect profile summary
+print(prof)
+```
+
+---
+
+## 3. Cohort De-Identification (`dicom_deid()`) & Encrypted Crosswalk
+
+We demonstrate `dicom_deid()` using synthetic DICOM files populated with structured PHI, nested sequences, and private attributes:
+
+```{r cohort-deid}
+# Create temporary directories for input and output datasets
+temp_in <- tempfile(pattern = "dicom_raw_")
+temp_out <- tempfile(pattern = "dicom_deid_")
+dir.create(temp_in, recursive = TRUE)
+dir.create(temp_out, recursive = TRUE)
+
+# Generate synthetic DICOM files with PHI canaries
+dicom_synthesize(
+  file.path(temp_in, "ct_pat001"),
+  modality = "CT",
+  dims = c(32L, 32L, 2L),
+  phi_profile = "midi_b",
+  extra_tags = list(PatientID = "PAT001", PatientName = "SIMULATED^JOHN")
 )
 
-# Verify de-identification
-dicom_tag_value(
-  anon_dcm,
-  c("PatientName", "PatientID", "StudyDate", "InstitutionName", "PatientIdentityRemoved")
+dicom_synthesize(
+  file.path(temp_in, "mr_pat002"),
+  modality = "MR",
+  dims = c(32L, 32L, 2L),
+  phi_profile = "midi_b",
+  extra_tags = list(PatientID = "PAT002", PatientName = "SIMULATED^MARY")
 )
+
+# Inspect raw identifiers before de-identification
+raw_files <- list.files(temp_in, pattern = "\\.dcm$", recursive = TRUE, full.names = TRUE)
+cat("Before De-Identification:\n")
+for (f in raw_files) {
+  tags <- dicom_tag_value(f, c("PatientID", "PatientName", "StudyDate"))
+  cat("  File:", basename(f), "| ID:", tags["PatientID"], "| Name:", tags["PatientName"], "| Date:", tags["StudyDate"], "\n")
+}
+
+# Run single-pass C++17 cohort de-identification with encrypted crosswalk
+crosswalk_file <- file.path(temp_out, "crosswalk.enc")
+res <- dicom_deid(
+  temp_in,
+  temp_out,
+  profile = prof,
+  key = kp,
+  crosswalk_path = crosswalk_file
+)
+
+print(res)
+
+# Inspect de-identified tags
+out_files <- list.files(temp_out, pattern = "\\.dcm$", recursive = TRUE, full.names = TRUE)
+cat("\nAfter De-Identification:\n")
+for (f in out_files) {
+  tags <- dicom_tag_value(f, c("PatientID", "PatientName", "StudyDate", "PatientIdentityRemoved"))
+  cat("  File:", basename(f), "| PseudoID:", tags["PatientID"], "| Name:", tags["PatientName"], "| ShiftedDate:", tags["StudyDate"], "| Removed:", tags["PatientIdentityRemoved"], "\n")
+}
+
+# Decrypt and inspect the ChaCha20-Poly1305 crosswalk using the key provider
+cw <- dicom_crosswalk_read(crosswalk_file, kp)
+cat("\nDecrypted Crosswalk Metadata:\n")
+cat("  Original Patients:", paste(cw$orig_patient_id, collapse = ", "), "\n")
+cat("  Pseudonyms:       ", paste(cw$pseudo_patient_id, collapse = ", "), "\n")
+cat("  Date Shifts:      ", paste(cw$shift_days, collapse = ", "), "days\n")
+```
+
+> **Operational Security Note:** Although the crosswalk file (`crosswalk.enc`) is encrypted with authenticated `ChaCha20-Poly1305` AEAD, study investigators and honest brokers must store both the cryptographic key material and the encrypted crosswalk in an air-gapped or role-separated enclave distinct from the public/consortium-facing de-identified DICOM directory.
+
+---
+
+## 4. Burned-In Pixel Cleaning & Fast Telea Inpainting
+
+Ultrasound scans and secondary captures frequently contain burned-in demographic text annotations within the pixel data. `dicom_detect_burned_phi()` detects annotation bounding boxes, and `dicom_clean_pixels()` blacks them out or reconstructs underlying tissue using C++17 Telea Fast Marching Method inpainting:
+
+```{r pixel-cleaning}
+# Synthesize an ultrasound image with burned-in annotation text
+us_dir <- file.path(temp_in, "us_burned")
+dir.create(us_dir, recursive = TRUE)
+dicom_synthesize(
+  us_dir,
+  modality = "US",
+  dims = c(64L, 64L, 1L),
+  phi_profile = "midi_b"
+)
+us_file <- list.files(us_dir, pattern = "\\.dcm$", full.names = TRUE)[1L]
+us_clean_file <- file.path(temp_out, "us_cleaned.dcm")
+
+# Clean pixel PHI using Telea FMM inpainting
+clean_res <- dicom_clean_pixels(
+  us_file,
+  out_path = us_clean_file,
+  pixel_method = "inpaint"
+)
+cat("Pixel Cleaning Completed: written to", clean_res, "\n")
+```
+
+---
+
+## 5. 3D Volumetric Head Defacing (`dicom_deface()`)
+
+To protect research participants from 3D surface-rendering facial recognition attacks, `dicom_deface()` strips anterior facial features from volumetric CT and MR head scans in LPS/RAS coordinates:
+
+```{r defacing}
+# Synthesize a multi-slice CT head series
+head_dir <- file.path(temp_in, "head_ct")
+dir.create(head_dir, recursive = TRUE)
+vol_head <- dicom_synthesize(
+  head_dir,
+  modality = "CT",
+  dims = c(32L, 32L, 6L),
+  orientation = "axial"
+)
+
+# Apply facial defacing plane
+defaced_dir <- file.path(temp_out, "head_ct_defaced")
+deface_res <- dicom_deface(
+  head_dir,
+  out_dir = defaced_dir,
+  fill = "air"
+)
+cat("Defacing Completed: Slices processed and written to", defaced_dir, "\n")
+```
+
+---
+
+## 6. Residual PHI Verification & Cryptographic Attestations
+
+`dicom_deid_verify()` audits processed files against 18 canary categories, verifying that all direct identifiers, unshifted dates, age limits, and unsafe private tags have been scrubbed. When an attestation key is supplied, it issues an HMAC-SHA256 signed compliance certificate:
+
+```{r verification-attestation}
+attest_file <- file.path(temp_out, "compliance_attestation.json")
+
+# Run rigorous post-deid verification audit
+audit_report <- dicom_deid_verify(
+  temp_out,
+  profile = prof,
+  key = kp,
+  attest_path = attest_file
+)
+
+# Print audit report
+print(audit_report)
+
+# Verify tamper-evidence of the generated attestation certificate
+attest_valid <- dicom_verify_attestation(temp_out, attest_file, key = kp)
+cat("Cryptographic Attestation Verification:", if (attest_valid) "AUTHENTIC & UNTAMPERED" else "INVALID", "\n")
+```
+
+---
+
+## 7. Cohort Re-Identification Risk Assessment (`dicom_deid_risk()`)
+
+For clinical datasets released to external consortia or public repositories, `dicom_deid_risk()` computes equivalence class distributions, quasi-identifier combinations, $k$-anonymity, $l$-diversity, and re-identification probability metrics:
+
+```{r risk-audit}
+# Evaluate re-identification risk on de-identified files
+risk_report <- dicom_deid_risk(
+  temp_out,
+  quasi_ids = c("PatientSex", "Modality"),
+  k_threshold = 2L
+)
+
+# Print risk scorecard
+print(risk_report)
+```
+
+---
+
+## 8. Published MIDI-B Benchmark Parity
+
+The de-identification pipeline in `dicomtk` is verified continuously against the Medical Image De-Identification Benchmark (MIDI-B). The synthetic benchmark scorecard published in `inst/extdata/midib_scorecard.json` validates zero residual PHI leakage across all statutory jurisdictions:
+
+```{r midib-scorecard}
+scorecard_path <- system.file("extdata", "midib_scorecard.json", package = "dicomtk")
+if (file.exists(scorecard_path)) {
+  sc <- jsonlite::fromJSON(scorecard_path)
+  cat("MIDI-B Benchmark Scorecard Summary:\n")
+  cat("  Corpus:               ", sc$corpus, "\n")
+  cat("  Status:               ", sc$status, "\n")
+  cat("  Cases Evaluated:      ", sc$n_cases, "\n")
+  cat("  Canary Categories:    ", sc$planted_categories, "\n")
+  cat("  Recall (Sensitivity): ", sprintf("%.1f%%", sc$recall * 100), "\n")
+  cat("  Precision:            ", sprintf("%.1f%%", sc$precision * 100), "\n")
+  cat("  UID Isomorphism:      ", sprintf("%.3f", sc$uid_isomorphism), "\n")
+  cat("  Date Delta Error:     ", sc$date_error, "days\n")
+}
+```
+
+```{r cleanup, include = FALSE}
+# Clean up temporary test datasets
+unlink(temp_in, recursive = TRUE)
+unlink(temp_out, recursive = TRUE)
 ```

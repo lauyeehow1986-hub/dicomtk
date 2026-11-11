@@ -57,6 +57,126 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// cpp_hmac_sha256_hex
+std::string cpp_hmac_sha256_hex(Rcpp::RawVector key, Rcpp::RawVector data);
+RcppExport SEXP _dicomtk_cpp_hmac_sha256_hex(SEXP keySEXP, SEXP dataSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type key(keySEXP);
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type data(dataSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_hmac_sha256_hex(key, data));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_pbkdf2_sha256
+Rcpp::RawVector cpp_pbkdf2_sha256(Rcpp::RawVector password, Rcpp::RawVector salt, int iterations, int dk_len);
+RcppExport SEXP _dicomtk_cpp_pbkdf2_sha256(SEXP passwordSEXP, SEXP saltSEXP, SEXP iterationsSEXP, SEXP dk_lenSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type password(passwordSEXP);
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type salt(saltSEXP);
+    Rcpp::traits::input_parameter< int >::type iterations(iterationsSEXP);
+    Rcpp::traits::input_parameter< int >::type dk_len(dk_lenSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_pbkdf2_sha256(password, salt, iterations, dk_len));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_hkdf_sha256
+Rcpp::RawVector cpp_hkdf_sha256(Rcpp::RawVector ikm, Rcpp::RawVector salt, Rcpp::RawVector info, int length);
+RcppExport SEXP _dicomtk_cpp_hkdf_sha256(SEXP ikmSEXP, SEXP saltSEXP, SEXP infoSEXP, SEXP lengthSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type ikm(ikmSEXP);
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type salt(saltSEXP);
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type info(infoSEXP);
+    Rcpp::traits::input_parameter< int >::type length(lengthSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_hkdf_sha256(ikm, salt, info, length));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_aead_encrypt
+Rcpp::RawVector cpp_aead_encrypt(Rcpp::RawVector key, Rcpp::RawVector plaintext, Rcpp::RawVector aad);
+RcppExport SEXP _dicomtk_cpp_aead_encrypt(SEXP keySEXP, SEXP plaintextSEXP, SEXP aadSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type key(keySEXP);
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type plaintext(plaintextSEXP);
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type aad(aadSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_aead_encrypt(key, plaintext, aad));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_aead_decrypt
+Rcpp::RawVector cpp_aead_decrypt(Rcpp::RawVector key, Rcpp::RawVector ciphertext, Rcpp::RawVector aad);
+RcppExport SEXP _dicomtk_cpp_aead_decrypt(SEXP keySEXP, SEXP ciphertextSEXP, SEXP aadSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type key(keySEXP);
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type ciphertext(ciphertextSEXP);
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type aad(aadSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_aead_decrypt(key, ciphertext, aad));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_hmac_uid
+std::string cpp_hmac_uid(Rcpp::RawVector key, std::string uid);
+RcppExport SEXP _dicomtk_cpp_hmac_uid(SEXP keySEXP, SEXP uidSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type key(keySEXP);
+    Rcpp::traits::input_parameter< std::string >::type uid(uidSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_hmac_uid(key, uid));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_hmac_shift_days
+int cpp_hmac_shift_days(Rcpp::RawVector key, std::string patient_id, int min_days, int max_days);
+RcppExport SEXP _dicomtk_cpp_hmac_shift_days(SEXP keySEXP, SEXP patient_idSEXP, SEXP min_daysSEXP, SEXP max_daysSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type key(keySEXP);
+    Rcpp::traits::input_parameter< std::string >::type patient_id(patient_idSEXP);
+    Rcpp::traits::input_parameter< int >::type min_days(min_daysSEXP);
+    Rcpp::traits::input_parameter< int >::type max_days(max_daysSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_hmac_shift_days(key, patient_id, min_days, max_days));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_sha256_file
+std::string cpp_sha256_file(std::string path);
+RcppExport SEXP _dicomtk_cpp_sha256_file(SEXP pathSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type path(pathSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_sha256_file(path));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_deid_file
+Rcpp::List cpp_deid_file(const std::string& in_path, const std::string& out_path, const Rcpp::List& profile_spec, const Rcpp::RawVector& uid_key, const Rcpp::RawVector& pid_key, const Rcpp::RawVector& date_key, bool drop_wsi_labels);
+RcppExport SEXP _dicomtk_cpp_deid_file(SEXP in_pathSEXP, SEXP out_pathSEXP, SEXP profile_specSEXP, SEXP uid_keySEXP, SEXP pid_keySEXP, SEXP date_keySEXP, SEXP drop_wsi_labelsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type in_path(in_pathSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type out_path(out_pathSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type profile_spec(profile_specSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::RawVector& >::type uid_key(uid_keySEXP);
+    Rcpp::traits::input_parameter< const Rcpp::RawVector& >::type pid_key(pid_keySEXP);
+    Rcpp::traits::input_parameter< const Rcpp::RawVector& >::type date_key(date_keySEXP);
+    Rcpp::traits::input_parameter< bool >::type drop_wsi_labels(drop_wsi_labelsSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_deid_file(in_path, out_path, profile_spec, uid_key, pid_key, date_key, drop_wsi_labels));
+    return rcpp_result_gen;
+END_RCPP
+}
 // cpp_read_dicom_pixels
 Rcpp::NumericVector cpp_read_dicom_pixels(const std::string& path, int frame, bool rescale);
 RcppExport SEXP _dicomtk_cpp_read_dicom_pixels(SEXP pathSEXP, SEXP frameSEXP, SEXP rescaleSEXP) {
@@ -133,6 +253,54 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const std::string& >::type called_ae(called_aeSEXP);
     Rcpp::traits::input_parameter< const std::string& >::type calling_ae(calling_aeSEXP);
     rcpp_result_gen = Rcpp::wrap(cpp_dicom_echo_loopback_test(called_ae, calling_ae));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_detect_burned_boxes
+Rcpp::DataFrame cpp_detect_burned_boxes(const Rcpp::NumericVector& pixels, const Rcpp::IntegerVector& dims, double margin_frac);
+RcppExport SEXP _dicomtk_cpp_detect_burned_boxes(SEXP pixelsSEXP, SEXP dimsSEXP, SEXP margin_fracSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type pixels(pixelsSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type dims(dimsSEXP);
+    Rcpp::traits::input_parameter< double >::type margin_frac(margin_fracSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_detect_burned_boxes(pixels, dims, margin_frac));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_apply_pixel_mask
+Rcpp::List cpp_apply_pixel_mask(Rcpp::RawVector raw_pixel_data, int rows, int cols, int frames, int bits_allocated, int pixel_representation, int samples_per_pixel, Rcpp::IntegerMatrix boxes, std::string method, int radius);
+RcppExport SEXP _dicomtk_cpp_apply_pixel_mask(SEXP raw_pixel_dataSEXP, SEXP rowsSEXP, SEXP colsSEXP, SEXP framesSEXP, SEXP bits_allocatedSEXP, SEXP pixel_representationSEXP, SEXP samples_per_pixelSEXP, SEXP boxesSEXP, SEXP methodSEXP, SEXP radiusSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::RawVector >::type raw_pixel_data(raw_pixel_dataSEXP);
+    Rcpp::traits::input_parameter< int >::type rows(rowsSEXP);
+    Rcpp::traits::input_parameter< int >::type cols(colsSEXP);
+    Rcpp::traits::input_parameter< int >::type frames(framesSEXP);
+    Rcpp::traits::input_parameter< int >::type bits_allocated(bits_allocatedSEXP);
+    Rcpp::traits::input_parameter< int >::type pixel_representation(pixel_representationSEXP);
+    Rcpp::traits::input_parameter< int >::type samples_per_pixel(samples_per_pixelSEXP);
+    Rcpp::traits::input_parameter< Rcpp::IntegerMatrix >::type boxes(boxesSEXP);
+    Rcpp::traits::input_parameter< std::string >::type method(methodSEXP);
+    Rcpp::traits::input_parameter< int >::type radius(radiusSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_apply_pixel_mask(raw_pixel_data, rows, cols, frames, bits_allocated, pixel_representation, samples_per_pixel, boxes, method, radius));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cpp_clean_pixels_file
+Rcpp::List cpp_clean_pixels_file(const std::string& in_path, const std::string& out_path, const Rcpp::IntegerMatrix& boxes, const std::string& method, int radius);
+RcppExport SEXP _dicomtk_cpp_clean_pixels_file(SEXP in_pathSEXP, SEXP out_pathSEXP, SEXP boxesSEXP, SEXP methodSEXP, SEXP radiusSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type in_path(in_pathSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type out_path(out_pathSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerMatrix& >::type boxes(boxesSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type method(methodSEXP);
+    Rcpp::traits::input_parameter< int >::type radius(radiusSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_clean_pixels_file(in_path, out_path, boxes, method, radius));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -254,6 +422,15 @@ static const R_CallMethodDef CallEntries[] = {
     {"_dicomtk_cpp_dcm_to_json", (DL_FUNC) &_dicomtk_cpp_dcm_to_json, 1},
     {"_dicomtk_cpp_dcm_extract_pdf", (DL_FUNC) &_dicomtk_cpp_dcm_extract_pdf, 2},
     {"_dicomtk_cpp_dcm_transcode_rle", (DL_FUNC) &_dicomtk_cpp_dcm_transcode_rle, 3},
+    {"_dicomtk_cpp_hmac_sha256_hex", (DL_FUNC) &_dicomtk_cpp_hmac_sha256_hex, 2},
+    {"_dicomtk_cpp_pbkdf2_sha256", (DL_FUNC) &_dicomtk_cpp_pbkdf2_sha256, 4},
+    {"_dicomtk_cpp_hkdf_sha256", (DL_FUNC) &_dicomtk_cpp_hkdf_sha256, 4},
+    {"_dicomtk_cpp_aead_encrypt", (DL_FUNC) &_dicomtk_cpp_aead_encrypt, 3},
+    {"_dicomtk_cpp_aead_decrypt", (DL_FUNC) &_dicomtk_cpp_aead_decrypt, 3},
+    {"_dicomtk_cpp_hmac_uid", (DL_FUNC) &_dicomtk_cpp_hmac_uid, 2},
+    {"_dicomtk_cpp_hmac_shift_days", (DL_FUNC) &_dicomtk_cpp_hmac_shift_days, 4},
+    {"_dicomtk_cpp_sha256_file", (DL_FUNC) &_dicomtk_cpp_sha256_file, 1},
+    {"_dicomtk_cpp_deid_file", (DL_FUNC) &_dicomtk_cpp_deid_file, 7},
     {"_dicomtk_cpp_read_dicom_pixels", (DL_FUNC) &_dicomtk_cpp_read_dicom_pixels, 3},
     {"_dicomtk_cpp_dcmtk_init", (DL_FUNC) &_dicomtk_cpp_dcmtk_init, 0},
     {"_dicomtk_cpp_dcmtk_cleanup", (DL_FUNC) &_dicomtk_cpp_dcmtk_cleanup, 0},
@@ -261,6 +438,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_dicomtk_cpp_dict_lookup", (DL_FUNC) &_dicomtk_cpp_dict_lookup, 1},
     {"_dicomtk_cpp_dicom_echo", (DL_FUNC) &_dicomtk_cpp_dicom_echo, 5},
     {"_dicomtk_cpp_dicom_echo_loopback_test", (DL_FUNC) &_dicomtk_cpp_dicom_echo_loopback_test, 2},
+    {"_dicomtk_cpp_detect_burned_boxes", (DL_FUNC) &_dicomtk_cpp_detect_burned_boxes, 3},
+    {"_dicomtk_cpp_apply_pixel_mask", (DL_FUNC) &_dicomtk_cpp_apply_pixel_mask, 10},
+    {"_dicomtk_cpp_clean_pixels_file", (DL_FUNC) &_dicomtk_cpp_clean_pixels_file, 5},
     {"_dicomtk_cpp_is_dicom", (DL_FUNC) &_dicomtk_cpp_is_dicom, 1},
     {"_dicomtk_cpp_read_dicom_header", (DL_FUNC) &_dicomtk_cpp_read_dicom_header, 3},
     {"_dicomtk_cpp_get_tag_values", (DL_FUNC) &_dicomtk_cpp_get_tag_values, 2},

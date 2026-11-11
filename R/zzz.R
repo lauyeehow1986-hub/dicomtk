@@ -40,3 +40,10 @@ dicom_info <- function() {
     codecs_registered = info$codecs_registered
   )
 }
+
+if (getRversion() >= "2.15.1") {
+  utils::globalVariables(c(
+    "in_p", "out_p", "p_spec", "u_k", "p_k", "d_k",
+    "drop_wsi", "is_d", "d_dir", "worker_fn"
+  ))
+}

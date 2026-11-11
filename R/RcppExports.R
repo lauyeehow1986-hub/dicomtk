@@ -17,6 +17,42 @@ cpp_dcm_transcode_rle <- function(in_path, out_path, compress = TRUE) {
     .Call(`_dicomtk_cpp_dcm_transcode_rle`, in_path, out_path, compress)
 }
 
+cpp_hmac_sha256_hex <- function(key, data) {
+    .Call(`_dicomtk_cpp_hmac_sha256_hex`, key, data)
+}
+
+cpp_pbkdf2_sha256 <- function(password, salt, iterations, dk_len) {
+    .Call(`_dicomtk_cpp_pbkdf2_sha256`, password, salt, iterations, dk_len)
+}
+
+cpp_hkdf_sha256 <- function(ikm, salt, info, length) {
+    .Call(`_dicomtk_cpp_hkdf_sha256`, ikm, salt, info, length)
+}
+
+cpp_aead_encrypt <- function(key, plaintext, aad) {
+    .Call(`_dicomtk_cpp_aead_encrypt`, key, plaintext, aad)
+}
+
+cpp_aead_decrypt <- function(key, ciphertext, aad) {
+    .Call(`_dicomtk_cpp_aead_decrypt`, key, ciphertext, aad)
+}
+
+cpp_hmac_uid <- function(key, uid) {
+    .Call(`_dicomtk_cpp_hmac_uid`, key, uid)
+}
+
+cpp_hmac_shift_days <- function(key, patient_id, min_days, max_days) {
+    .Call(`_dicomtk_cpp_hmac_shift_days`, key, patient_id, min_days, max_days)
+}
+
+cpp_sha256_file <- function(path) {
+    .Call(`_dicomtk_cpp_sha256_file`, path)
+}
+
+cpp_deid_file <- function(in_path, out_path, profile_spec, uid_key, pid_key, date_key, drop_wsi_labels = TRUE) {
+    .Call(`_dicomtk_cpp_deid_file`, in_path, out_path, profile_spec, uid_key, pid_key, date_key, drop_wsi_labels)
+}
+
 cpp_read_dicom_pixels <- function(path, frame = 0L, rescale = TRUE) {
     .Call(`_dicomtk_cpp_read_dicom_pixels`, path, frame, rescale)
 }
@@ -43,6 +79,18 @@ cpp_dicom_echo <- function(host, port, called_ae = "ANY-SCP", calling_ae = "DICO
 
 cpp_dicom_echo_loopback_test <- function(called_ae = "ORTHANC", calling_ae = "DICOMTK") {
     .Call(`_dicomtk_cpp_dicom_echo_loopback_test`, called_ae, calling_ae)
+}
+
+cpp_detect_burned_boxes <- function(pixels, dims, margin_frac = 0.18) {
+    .Call(`_dicomtk_cpp_detect_burned_boxes`, pixels, dims, margin_frac)
+}
+
+cpp_apply_pixel_mask <- function(raw_pixel_data, rows, cols, frames, bits_allocated, pixel_representation, samples_per_pixel, boxes, method = "blackout", radius = 5L) {
+    .Call(`_dicomtk_cpp_apply_pixel_mask`, raw_pixel_data, rows, cols, frames, bits_allocated, pixel_representation, samples_per_pixel, boxes, method, radius)
+}
+
+cpp_clean_pixels_file <- function(in_path, out_path, boxes, method = "blackout", radius = 5L) {
+    .Call(`_dicomtk_cpp_clean_pixels_file`, in_path, out_path, boxes, method, radius)
 }
 
 cpp_is_dicom <- function(path) {

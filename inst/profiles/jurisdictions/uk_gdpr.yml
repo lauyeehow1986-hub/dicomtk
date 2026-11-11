@@ -1,0 +1,15 @@
+id: uk_gdpr
+name: "UK Data Protection Act 2018 / UK GDPR"
+disclaimer: "Technical template only; not legal advice."
+date_policy: shift_per_patient
+age_cap_years: ~
+zip_prefix_digits: ~
+regex_scrubbers:
+  - "\\b[0-9]{3} [0-9]{3} [0-9]{4}\\b"
+  - "\\b[0-9]{10}\\b"
+  - "\\b[A-CEGHJ-PR-TW-Z]{1}[A-CEGHJ-NPR-TW-Z]{1}[0-9]{6}[A-D]{1}\\b"
+  - "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b"
+tag_overrides:
+  "(0010,0010)": "X"
+  "(0010,0020)": "Z"
+  "(0010,1040)": "X"

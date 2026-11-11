@@ -1,7 +1,7 @@
 Package: dicomtk
 Type: Package
 Title: Comprehensive 'DICOM' Toolkit for Medical Imaging
-Version: 0.2.0
+Version: 0.3.0
 Authors@R: c(
     person("Yee How", "Lau", email = "lauyeehow1986@gmail.com", 
            role = c("aut", "cre")),
@@ -36,6 +36,7 @@ Imports:
     lifecycle (>= 1.0.3),
     httr2 (>= 1.0.0),
     jsonlite (>= 1.8.0),
+    yaml (>= 2.3.0),
     grDevices,
     graphics,
     stats,
@@ -50,7 +51,11 @@ Suggests:
     rmarkdown,
     pkgdown,
     withr,
-    magick
+    magick,
+    openssl,
+    mirai,
+    pkgload,
+    tesseract
 LinkingTo:
     Rcpp
 SystemRequirements: 

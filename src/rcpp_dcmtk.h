@@ -73,6 +73,24 @@ bool check_is_dicom_file(const std::string& path);
 DcmParsedFile parse_dicom_file(const std::string& path, bool stop_at_pixels = false, int max_depth = 8);
 bool write_dicom_file(const DcmParsedFile& dcm, const std::string& out_path);
 
+// Writing & mutation helpers
+std::string normalize_explicit_vr(const std::string& vr_in);
+bool is_string_vr_write(const std::string& vr);
+bool resolve_tag_or_keyword(const std::string& query,
+                            uint16_t& group,
+                            uint16_t& element,
+                            const DcmDictEntry*& dict_out);
+void upsert_tag(DcmParsedFile& dcm,
+                uint16_t group,
+                uint16_t element,
+                const std::string& val_str);
+void upsert_sq_tag(DcmParsedFile& dcm,
+                   uint16_t group,
+                   uint16_t element,
+                   std::vector<std::vector<DcmElementRecord>>&& sq_items);
+std::vector<std::vector<DcmElementRecord>> r_list_to_sq_items(const Rcpp::List& seq_list,
+                                                             int depth = 1);
+
 // RLE codec helpers
 std::vector<uint8_t> decode_rle_segment(const uint8_t* data, std::size_t len, std::size_t expected_size);
 std::vector<uint8_t> decode_rle_frame(const std::vector<uint8_t>& frag, std::size_t num_pixels, int bytes_per_sample, int samples_per_pixel);

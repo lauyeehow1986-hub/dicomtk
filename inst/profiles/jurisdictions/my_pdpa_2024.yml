@@ -1,0 +1,14 @@
+id: my_pdpa_2024
+name: "Malaysia Personal Data Protection Act 2010 (2024 Amendment)"
+disclaimer: "Technical template only; not legal advice."
+date_policy: shift_per_patient
+age_cap_years: ~
+zip_prefix_digits: ~
+regex_scrubbers:
+  - "[0-9]{6}-[0-9]{2}-[0-9]{4}|[0-9]{12}"
+  - "(?:\\+?60)?(?:1[0-46-9]-?[0-9]{7,8}|[3-9]-?[0-9]{6,8})\\b"
+  - "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b"
+tag_overrides:
+  "(0010,0010)": "X"
+  "(0010,0020)": "Z"
+  "(0010,1040)": "X"

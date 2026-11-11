@@ -1,0 +1,1836 @@
+name: ps3.15
+description: DICOM PS3.15 Annex E Table E.1-1 Basic Application Level Confidentiality
+  Profile
+cid7050_codes:
+  '113100': Basic Application Confidentiality Profile
+date_policy: dummy
+options:
+  clean_pixel_data:
+    code: '113101'
+    meaning: Clean Pixel Data Option
+  clean_recognizable_visual_features:
+    code: '113102'
+    meaning: Clean Recognizable Visual Features Option
+  clean_graphics:
+    code: '113103'
+    meaning: Clean Graphics Option
+  clean_structured_content:
+    code: '113104'
+    meaning: Clean Structured Content Option
+  clean_descriptors:
+    code: '113105'
+    meaning: Clean Descriptors Option
+  retain_longitudinal_full_dates:
+    code: '113106'
+    meaning: Retain Longitudinal Temporal Information With Full Dates Option
+    date_policy: keep
+  retain_longitudinal_modified_dates:
+    code: '113107'
+    meaning: Retain Longitudinal Temporal Information With Modified Dates Option
+    date_policy: shift_per_patient
+  retain_patient_characteristics:
+    code: '113108'
+    meaning: Retain Patient Characteristics Option
+  retain_device_identity:
+    code: '113109'
+    meaning: Retain Device Identity Option
+  retain_institution_identity:
+    code: '113110'
+    meaning: Retain Institution Identity Option
+  retain_safe_private:
+    code: '113111'
+    meaning: Retain Safe Private Option
+  retain_uids:
+    code: '113112'
+    meaning: Retain UIDs Option
+tags:
+  (0008,0018):
+    action: X/Z/U*
+    name: SOP Instance UID
+    keyword: SOPInstanceUID
+    vr: UI
+    options:
+      retain_uids: K
+  (0008,0014):
+    action: X/Z/U*
+    name: Instance Creator UID
+    keyword: InstanceCreatorUID
+    vr: UI
+    options:
+      retain_uids: K
+  (0008,0058):
+    action: X/Z/U*
+    name: Failed SOP Instance UID List
+    keyword: FailedSOPInstanceUIDList
+    vr: UI
+    options:
+      retain_uids: K
+  (0008,1155):
+    action: X/Z/U*
+    name: Referenced SOP Instance UID
+    keyword: ReferencedSOPInstanceUID
+    vr: UI
+    options:
+      retain_uids: K
+  (0008,1195):
+    action: X/Z/U*
+    name: Transaction UID
+    keyword: TransactionUID
+    vr: UI
+    options:
+      retain_uids: K
+  (0020,000D):
+    action: X/Z/U*
+    name: Study Instance UID
+    keyword: StudyInstanceUID
+    vr: UI
+    options:
+      retain_uids: K
+  (0020,000E):
+    action: X/Z/U*
+    name: Series Instance UID
+    keyword: SeriesInstanceUID
+    vr: UI
+    options:
+      retain_uids: K
+  (0020,0052):
+    action: X/Z/U*
+    name: Frame of Reference UID
+    keyword: FrameOfReferenceUID
+    vr: UI
+    options:
+      retain_uids: K
+  (0020,0200):
+    action: X/Z/U*
+    name: Synchronization Frame of Reference UID
+    keyword: SynchronizationFrameOfReferenceUID
+    vr: UI
+    options:
+      retain_uids: K
+  (0020,9161):
+    action: X/Z/U*
+    name: Concatenation UID
+    keyword: ConcatenationUID
+    vr: UI
+    options:
+      retain_uids: K
+  (0020,9164):
+    action: X/Z/U*
+    name: Dimension Organization UID
+    keyword: DimensionOrganizationUID
+    vr: UI
+    options:
+      retain_uids: K
+  (0028,1199):
+    action: X/Z/U*
+    name: Palette Color Lookup Table UID
+    keyword: PaletteColorLookupTableUID
+    vr: UI
+    options:
+      retain_uids: K
+  (0040,0555):
+    action: X/Z/U*
+    name: Acquisition Context Sequence
+    keyword: AcquisitionContextSequence
+    vr: SQ
+    options:
+      retain_uids: K
+  (0040,A124):
+    action: X/Z/U*
+    name: UID
+    keyword: UID
+    vr: UI
+    options:
+      retain_uids: K
+  (0040,A402):
+    action: X/Z/U*
+    name: Observation Subject UID (Trial)
+    keyword: RETIRED_ObservationSubjectUIDTrial
+    vr: UI
+    options:
+      retain_uids: K
+  (0088,0140):
+    action: X/Z/U*
+    name: Storage Media File-set UID
+    keyword: StorageMediaFileSetUID
+    vr: UI
+    options:
+      retain_uids: K
+  (3006,0024):
+    action: X/Z/U*
+    name: Referenced Frame of Reference UID
+    keyword: ReferencedFrameOfReferenceUID
+    vr: UI
+    options:
+      retain_uids: K
+  (3006,00C2):
+    action: X/Z/U*
+    name: Related Frame of Reference UID
+    keyword: RETIRED_RelatedFrameOfReferenceUID
+    vr: UI
+    options:
+      retain_uids: K
+  (0004,1511):
+    action: X/Z/U*
+    name: Referenced SOP Instance UID in File
+    keyword: ReferencedSOPInstanceUIDInFile
+    vr: UI
+    options:
+      retain_uids: K
+  (0008,0012):
+    action: X/Z/D
+    name: Instance Creation Date
+    keyword: InstanceCreationDate
+    vr: DA
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0008,0020):
+    action: Z/D
+    name: Study Date
+    keyword: StudyDate
+    vr: DA
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0008,0021):
+    action: Z/D
+    name: Series Date
+    keyword: SeriesDate
+    vr: DA
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0008,0022):
+    action: Z/D
+    name: Acquisition Date
+    keyword: AcquisitionDate
+    vr: DA
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0008,0023):
+    action: Z/D
+    name: Content Date
+    keyword: ContentDate
+    vr: DA
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0008,0024):
+    action: X/Z/D
+    name: Overlay Date
+    keyword: RETIRED_OverlayDate
+    vr: DA
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0008,0025):
+    action: X/Z/D
+    name: Curve Date
+    keyword: RETIRED_CurveDate
+    vr: DA
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0010,0030):
+    action: Z
+    name: Patient's Birth Date
+    keyword: PatientBirthDate
+    vr: DA
+    options:
+      retain_patient_characteristics: K
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0018,1012):
+    action: X/Z/D
+    name: Date of Secondary Capture
+    keyword: DateOfSecondaryCapture
+    vr: DA
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0018,1200):
+    action: X/Z/D
+    name: Date of Last Calibration
+    keyword: DateOfLastCalibration
+    vr: DA
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0018,700C):
+    action: X/D
+    name: Date of Last Detector Calibration
+    keyword: DateOfLastDetectorCalibration
+    vr: DA
+    options:
+      retain_device_identity: K
+  (0040,0244):
+    action: X/Z/D
+    name: Performed Procedure Step Start Date
+    keyword: PerformedProcedureStepStartDate
+    vr: DA
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0070,0082):
+    action: X/Z/D
+    name: Presentation Creation Date
+    keyword: PresentationCreationDate
+    vr: DA
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (2100,0040):
+    action: X/Z/D
+    name: Creation Date
+    keyword: CreationDate
+    vr: DA
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0008,002A):
+    action: X/Z/D
+    name: Acquisition DateTime
+    keyword: AcquisitionDateTime
+    vr: DT
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0018,9074):
+    action: X/Z/D
+    name: Frame Acquisition DateTime
+    keyword: FrameAcquisitionDateTime
+    vr: DT
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0018,9151):
+    action: X/Z/D
+    name: Frame Reference DateTime
+    keyword: FrameReferenceDateTime
+    vr: DT
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0018,A002):
+    action: X/Z/D
+    name: Contribution DateTime
+    keyword: ContributionDateTime
+    vr: DT
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0040,A030):
+    action: X/Z/D
+    name: Verification DateTime
+    keyword: VerificationDateTime
+    vr: DT
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0040,A13A):
+    action: X/Z/D
+    name: Referenced DateTime
+    keyword: ReferencedDateTime
+    vr: DT
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0100,0420):
+    action: X/Z/D
+    name: SOP Authorization DateTime
+    keyword: SOPAuthorizationDateTime
+    vr: DT
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0400,0105):
+    action: X/Z/D
+    name: Digital Signature DateTime
+    keyword: DigitalSignatureDateTime
+    vr: DT
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0008,0013):
+    action: X/Z/D
+    name: Instance Creation Time
+    keyword: InstanceCreationTime
+    vr: TM
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0008,0030):
+    action: Z/D
+    name: Study Time
+    keyword: StudyTime
+    vr: TM
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0008,0031):
+    action: Z/D
+    name: Series Time
+    keyword: SeriesTime
+    vr: TM
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0008,0032):
+    action: Z/D
+    name: Acquisition Time
+    keyword: AcquisitionTime
+    vr: TM
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0008,0033):
+    action: Z/D
+    name: Content Time
+    keyword: ContentTime
+    vr: TM
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0008,0034):
+    action: X/Z/D
+    name: Overlay Time
+    keyword: RETIRED_OverlayTime
+    vr: TM
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0008,0035):
+    action: X/Z/D
+    name: Curve Time
+    keyword: RETIRED_CurveTime
+    vr: TM
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0010,0032):
+    action: Z
+    name: Patient's Birth Time
+    keyword: PatientBirthTime
+    vr: TM
+    options:
+      retain_patient_characteristics: K
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0010,0033):
+    action: X/Z/D
+    name: Patient Birth Date In Alternative Calendar
+    keyword: PatientBirthDateInAlternativeCalendar
+    vr: LO
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0010,0034):
+    action: X/Z/D
+    name: Patient Death Date In Alternative Calendar
+    keyword: PatientDeathDateInAlternativeCalendar
+    vr: LO
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0010,0035):
+    action: X/Z/D
+    name: Patient Alternative Calendar
+    keyword: PatientAlternativeCalendar
+    vr: CS
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0018,1078):
+    action: X/Z/D
+    name: Radio pharmaceutical Start DateTime
+    keyword: RadiopharmaceuticalStartDateTime
+    vr: DT
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0018,1079):
+    action: X/Z/D
+    name: Radio pharmaceutical Stop DateTime
+    keyword: RadiopharmaceuticalStopDateTime
+    vr: DT
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0018,1201):
+    action: X/Z/D
+    name: Time of Last Calibration
+    keyword: TimeOfLastCalibration
+    vr: TM
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0018,1202):
+    action: X/Z/D
+    name: Date Time Of Last Calibration
+    keyword: DateTimeOfLastCalibration
+    vr: DT
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0018,1203):
+    action: X/Z/D
+    name: Calibration Date Time
+    keyword: CalibrationDateTime
+    vr: DT
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0018,A003):
+    action: X/Z/D
+    name: Contribution Description
+    keyword: ContributionDescription
+    vr: ST
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0020,0010):
+    action: Z/D
+    name: Study ID
+    keyword: StudyID
+    vr: SH
+    options:
+      clean_descriptors: C
+  (0020,4000):
+    action: X
+    name: Image Comments
+    keyword: ImageComments
+    vr: LT
+    options:
+      clean_descriptors: C
+  (0032,1040):
+    action: X/Z/D
+    name: Study Arrival Date
+    keyword: RETIRED_StudyArrivalDate
+    vr: DA
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0032,1050):
+    action: X/Z/D
+    name: Study Completion Date
+    keyword: RETIRED_StudyCompletionDate
+    vr: DA
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0038,001A):
+    action: X/Z/D
+    name: Scheduled Admission Date
+    keyword: RETIRED_ScheduledAdmissionDate
+    vr: DA
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0038,001E):
+    action: X/Z/D
+    name: Scheduled Patient Institution Residence
+    keyword: RETIRED_ScheduledPatientInstitutionResidence
+    vr: LO
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0038,0020):
+    action: X/Z/D
+    name: Admitting Date
+    keyword: AdmittingDate
+    vr: DA
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0038,0021):
+    action: X/Z/D
+    name: Admitting Time
+    keyword: AdmittingTime
+    vr: TM
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0040,0002):
+    action: X/Z/D
+    name: Scheduled Procedure Step Start Date
+    keyword: ScheduledProcedureStepStartDate
+    vr: DA
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0040,0003):
+    action: X/Z/D
+    name: Scheduled Procedure Step Start Time
+    keyword: ScheduledProcedureStepStartTime
+    vr: TM
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0040,0004):
+    action: X/Z/D
+    name: Scheduled Procedure Step End Date
+    keyword: ScheduledProcedureStepEndDate
+    vr: DA
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0040,0005):
+    action: X/Z/D
+    name: Scheduled Procedure Step End Time
+    keyword: ScheduledProcedureStepEndTime
+    vr: TM
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0040,0245):
+    action: X/Z/D
+    name: Performed Procedure Step Start Time
+    keyword: PerformedProcedureStepStartTime
+    vr: TM
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0040,0250):
+    action: X/Z/D
+    name: Performed Procedure Step End Date
+    keyword: PerformedProcedureStepEndDate
+    vr: DA
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0040,0251):
+    action: X/Z/D
+    name: Performed Procedure Step End Time
+    keyword: PerformedProcedureStepEndTime
+    vr: TM
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0040,2004):
+    action: X/Z/D
+    name: Issue Date of Imaging Service Request
+    keyword: IssueDateOfImagingServiceRequest
+    vr: DA
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0040,2005):
+    action: X/Z/D
+    name: Issue Time of Imaging Service Request
+    keyword: IssueTimeOfImagingServiceRequest
+    vr: TM
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0040,4005):
+    action: X/Z/D
+    name: Scheduled Procedure Step Start DateTime
+    keyword: ScheduledProcedureStepStartDateTime
+    vr: DT
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0040,4011):
+    action: X/Z/D
+    name: Expected Completion DateTime
+    keyword: ExpectedCompletionDateTime
+    vr: DT
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0040,A120):
+    action: X/Z/D
+    name: Date Time
+    keyword: DateTime
+    vr: DT
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0040,A121):
+    action: X/Z/D
+    name: Date
+    keyword: Date
+    vr: DA
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0040,A122):
+    action: X/Z/D
+    name: Time
+    keyword: Time
+    vr: TM
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0040,A123):
+    action: X/Z/D
+    name: Person Name
+    keyword: PersonName
+    vr: PN
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0040,A130):
+    action: X/Z/D
+    name: Temporal Range Type
+    keyword: TemporalRangeType
+    vr: CS
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0070,0083):
+    action: X/Z/D
+    name: Presentation Creation Time
+    keyword: PresentationCreationTime
+    vr: TM
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (3006,0008):
+    action: X/Z/D
+    name: Structure Set Date
+    keyword: StructureSetDate
+    vr: DA
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (3006,0009):
+    action: X/Z/D
+    name: Structure Set Time
+    keyword: StructureSetTime
+    vr: TM
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (3008,0054):
+    action: X/Z/D
+    name: First Treatment Date
+    keyword: FirstTreatmentDate
+    vr: DA
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (3008,0056):
+    action: X/Z/D
+    name: Most Recent Treatment Date
+    keyword: MostRecentTreatmentDate
+    vr: DA
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (3008,0250):
+    action: X/Z/D
+    name: Treatment Date
+    keyword: TreatmentDate
+    vr: DA
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (3008,0251):
+    action: X/Z/D
+    name: Treatment Time
+    keyword: TreatmentTime
+    vr: TM
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (300A,022E):
+    action: X/Z/D
+    name: Source Strength Reference Time
+    keyword: SourceStrengthReferenceTime
+    vr: TM
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (300E,0004):
+    action: X/Z/D
+    name: Review Date
+    keyword: ReviewDate
+    vr: DA
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (300E,0005):
+    action: X/Z/D
+    name: Review Time
+    keyword: ReviewTime
+    vr: TM
+    options:
+      retain_longitudinal_modified_dates: C
+      retain_longitudinal_full_dates: K
+  (0010,0040):
+    action: Z
+    name: Patient's Sex
+    keyword: PatientSex
+    vr: CS
+    options:
+      retain_patient_characteristics: K
+  (0010,1010):
+    action: Z
+    name: Patient's Age
+    keyword: PatientAge
+    vr: AS
+    options:
+      retain_patient_characteristics: K
+  (0010,1020):
+    action: Z
+    name: Patient's Size
+    keyword: PatientSize
+    vr: DS
+    options:
+      retain_patient_characteristics: K
+  (0010,1030):
+    action: Z
+    name: Patient's Weight
+    keyword: PatientWeight
+    vr: DS
+    options:
+      retain_patient_characteristics: K
+  (0010,2160):
+    action: X
+    name: Ethnic Group
+    keyword: RETIRED_EthnicGroup
+    vr: SH
+    options:
+      retain_patient_characteristics: K
+  (0010,2201):
+    action: X
+    name: Patient Species Description
+    keyword: PatientSpeciesDescription
+    vr: LO
+    options:
+      retain_patient_characteristics: K
+  (0010,2202):
+    action: X
+    name: Patient Species Code Sequence
+    keyword: PatientSpeciesCodeSequence
+    vr: SQ
+    options:
+      retain_patient_characteristics: K
+  (0010,2203):
+    action: X
+    name: Patient's Sex Neutered
+    keyword: PatientSexNeutered
+    vr: CS
+    options:
+      retain_patient_characteristics: K
+  (0010,2292):
+    action: X
+    name: Patient Breed Description
+    keyword: PatientBreedDescription
+    vr: LO
+    options:
+      retain_patient_characteristics: K
+  (0010,2293):
+    action: X
+    name: Patient Breed Code Sequence
+    keyword: PatientBreedCodeSequence
+    vr: SQ
+    options:
+      retain_patient_characteristics: K
+  (0010,2294):
+    action: X
+    name: Breed Registration Sequence
+    keyword: BreedRegistrationSequence
+    vr: SQ
+    options:
+      retain_patient_characteristics: K
+  (0010,2297):
+    action: X
+    name: Responsible Person
+    keyword: ResponsiblePerson
+    vr: PN
+    options:
+      retain_patient_characteristics: K
+  (0010,2298):
+    action: X
+    name: Responsible Person Role
+    keyword: ResponsiblePersonRole
+    vr: CS
+    options:
+      retain_patient_characteristics: K
+  (0010,2299):
+    action: X
+    name: Responsible Organization
+    keyword: ResponsibleOrganization
+    vr: LO
+    options:
+      retain_patient_characteristics: K
+  (0018,1000):
+    action: X/D
+    name: Device Serial Number
+    keyword: DeviceSerialNumber
+    vr: LO
+    options:
+      retain_device_identity: K
+  (0018,1002):
+    action: X/D
+    name: Device UID
+    keyword: DeviceUID
+    vr: UI
+    options:
+      retain_device_identity: K
+  (0018,1004):
+    action: X/D
+    name: Plate ID
+    keyword: PlateID
+    vr: LO
+    options:
+      retain_device_identity: K
+  (0018,1005):
+    action: X/D
+    name: Generator ID
+    keyword: GeneratorID
+    vr: LO
+    options:
+      retain_device_identity: K
+  (0018,1007):
+    action: X/D
+    name: Cassette ID
+    keyword: CassetteID
+    vr: LO
+    options:
+      retain_device_identity: K
+  (0018,1008):
+    action: X/D
+    name: Gantry ID
+    keyword: GantryID
+    vr: LO
+    options:
+      retain_device_identity: K
+  (0018,1016):
+    action: X/D
+    name: Secondary Capture Device Manufacturer
+    keyword: SecondaryCaptureDeviceManufacturer
+    vr: LO
+    options:
+      retain_device_identity: K
+  (0018,1018):
+    action: X/D
+    name: Secondary Capture Device Manufacturer's Model Name
+    keyword: SecondaryCaptureDeviceManufacturerModelName
+    vr: LO
+    options:
+      retain_device_identity: K
+  (0018,1019):
+    action: X/D
+    name: Secondary Capture Device Software Versions
+    keyword: SecondaryCaptureDeviceSoftwareVersions
+    vr: LO
+    options:
+      retain_device_identity: K
+  (0018,1020):
+    action: X/D
+    name: Software Version(s)
+    keyword: SoftwareVersions
+    vr: LO
+    options:
+      retain_device_identity: K
+  (0018,1090):
+    action: X/D
+    name: Cardiac Number of Images
+    keyword: CardiacNumberOfImages
+    vr: IS
+    options:
+      retain_device_identity: K
+  (0018,700A):
+    action: X/D
+    name: Detector ID
+    keyword: DetectorID
+    vr: SH
+    options:
+      retain_device_identity: K
+  (0018,700E):
+    action: X/D
+    name: Time of Last Detector Calibration
+    keyword: TimeOfLastDetectorCalibration
+    vr: TM
+    options:
+      retain_device_identity: K
+  (0018,9516):
+    action: X/D
+    name: Start Acquisition DateTime
+    keyword: StartAcquisitionDateTime
+    vr: DT
+    options:
+      retain_device_identity: K
+  (0018,9517):
+    action: X/D
+    name: End Acquisition DateTime
+    keyword: EndAcquisitionDateTime
+    vr: DT
+    options:
+      retain_device_identity: K
+  (0050,0020):
+    action: X/D
+    name: Device Description
+    keyword: DeviceDescription
+    vr: LO
+    options:
+      retain_device_identity: K
+  (0008,0080):
+    action: X/D
+    name: Institution Name
+    keyword: InstitutionName
+    vr: LO
+    options:
+      retain_institution_identity: K
+  (0008,0081):
+    action: X/D
+    name: Institution Address
+    keyword: InstitutionAddress
+    vr: ST
+    options:
+      retain_institution_identity: K
+  (0008,0082):
+    action: X/D
+    name: Institution Code Sequence
+    keyword: InstitutionCodeSequence
+    vr: SQ
+    options:
+      retain_institution_identity: K
+  (0008,1010):
+    action: X/D
+    name: Station Name
+    keyword: StationName
+    vr: SH
+    options:
+      retain_institution_identity: K
+  (0008,1040):
+    action: X/D
+    name: Institutional Department Name
+    keyword: InstitutionalDepartmentName
+    vr: LO
+    options:
+      retain_institution_identity: K
+  (0008,1041):
+    action: X/D
+    name: Institutional Department Type Code Sequence
+    keyword: InstitutionalDepartmentTypeCodeSequence
+    vr: SQ
+    options:
+      retain_institution_identity: K
+  (0008,1070):
+    action: X/D
+    name: Operators' Name
+    keyword: OperatorsName
+    vr: PN
+    options:
+      retain_institution_identity: K
+  (0008,1072):
+    action: X/D
+    name: Operator Identification Sequence
+    keyword: OperatorIdentificationSequence
+    vr: SQ
+    options:
+      retain_institution_identity: K
+  (0008,1030):
+    action: X
+    name: Study Description
+    keyword: StudyDescription
+    vr: LO
+    options:
+      clean_descriptors: C
+  (0008,103E):
+    action: X
+    name: Series Description
+    keyword: SeriesDescription
+    vr: LO
+    options:
+      clean_descriptors: C
+  (0018,1030):
+    action: X/D
+    name: Protocol Name
+    keyword: ProtocolName
+    vr: LO
+    options:
+      clean_descriptors: C
+  (0008,1080):
+    action: X
+    name: Admitting Diagnoses Description
+    keyword: AdmittingDiagnosesDescription
+    vr: LO
+    options:
+      clean_descriptors: C
+  (0008,1084):
+    action: X
+    name: Admitting Diagnoses Code Sequence
+    keyword: AdmittingDiagnosesCodeSequence
+    vr: SQ
+    options:
+      clean_descriptors: C
+  (0008,2111):
+    action: X
+    name: Derivation Description
+    keyword: DerivationDescription
+    vr: ST
+    options:
+      clean_descriptors: C
+  (0018,0010):
+    action: Z/D
+    name: Contrast/Bolus Agent
+    keyword: ContrastBolusAgent
+    vr: LO
+    options:
+      clean_descriptors: C
+  (0018,0024):
+    action: X/D
+    name: Sequence Name
+    keyword: SequenceName
+    vr: SH
+    options:
+      clean_descriptors: C
+  (0018,103F):
+    action: X
+    name: ''
+    keyword: ''
+    vr: ''
+    options:
+      clean_descriptors: C
+  (0028,1090):
+    action: X
+    name: Recommended Viewing Mode
+    keyword: RecommendedViewingMode
+    vr: CS
+    options:
+      clean_descriptors: C
+  (0040,0006):
+    action: X
+    name: Scheduled Performing Physician's Name
+    keyword: ScheduledPerformingPhysicianName
+    vr: PN
+    options:
+      clean_descriptors: C
+  (0040,0007):
+    action: X
+    name: Scheduled Procedure Step Description
+    keyword: ScheduledProcedureStepDescription
+    vr: LO
+    options:
+      clean_descriptors: C
+  (0040,0008):
+    action: X
+    name: Scheduled Protocol Code Sequence
+    keyword: ScheduledProtocolCodeSequence
+    vr: SQ
+    options:
+      clean_descriptors: C
+  (0040,0009):
+    action: X
+    name: Scheduled Procedure Step ID
+    keyword: ScheduledProcedureStepID
+    vr: SH
+    options:
+      clean_descriptors: C
+  (0040,0010):
+    action: X
+    name: Scheduled Station Name
+    keyword: ScheduledStationName
+    vr: SH
+    options:
+      clean_descriptors: C
+  (0040,0011):
+    action: X
+    name: Scheduled Procedure Step Location
+    keyword: ScheduledProcedureStepLocation
+    vr: SH
+    options:
+      clean_descriptors: C
+  (0040,0012):
+    action: X
+    name: Pre-Medication
+    keyword: PreMedication
+    vr: LO
+    options:
+      clean_descriptors: C
+  (0040,0241):
+    action: X
+    name: Performed Station AE Title
+    keyword: PerformedStationAETitle
+    vr: AE
+    options:
+      clean_descriptors: C
+  (0040,0242):
+    action: X
+    name: Performed Station Name
+    keyword: PerformedStationName
+    vr: SH
+    options:
+      clean_descriptors: C
+  (0040,0243):
+    action: X
+    name: Performed Location
+    keyword: PerformedLocation
+    vr: SH
+    options:
+      clean_descriptors: C
+  (0040,0253):
+    action: X
+    name: Performed Procedure Step ID
+    keyword: PerformedProcedureStepID
+    vr: SH
+    options:
+      clean_descriptors: C
+  (0040,0254):
+    action: X
+    name: Performed Procedure Step Description
+    keyword: PerformedProcedureStepDescription
+    vr: LO
+    options:
+      clean_descriptors: C
+  (0040,0275):
+    action: X
+    name: Request Attributes Sequence
+    keyword: RequestAttributesSequence
+    vr: SQ
+    options:
+      clean_descriptors: C
+  (0040,0280):
+    action: X
+    name: Comments on the Performed Procedure Step
+    keyword: CommentsOnThePerformedProcedureStep
+    vr: ST
+    options:
+      clean_descriptors: C
+  (0040,1001):
+    action: X
+    name: Requested Procedure ID
+    keyword: RequestedProcedureID
+    vr: SH
+    options:
+      clean_descriptors: C
+  (0040,1002):
+    action: X
+    name: Reason for the Requested Procedure
+    keyword: ReasonForTheRequestedProcedure
+    vr: LO
+    options:
+      clean_descriptors: C
+  (0040,1003):
+    action: X
+    name: Requested Procedure Priority
+    keyword: RequestedProcedurePriority
+    vr: SH
+    options:
+      clean_descriptors: C
+  (0040,1004):
+    action: X
+    name: Patient Transport Arrangements
+    keyword: PatientTransportArrangements
+    vr: LO
+    options:
+      clean_descriptors: C
+  (0040,1005):
+    action: X
+    name: Requested Procedure Location
+    keyword: RequestedProcedureLocation
+    vr: LO
+    options:
+      clean_descriptors: C
+  (0040,1010):
+    action: X
+    name: Names of Intended Recipients of Results
+    keyword: NamesOfIntendedRecipientsOfResults
+    vr: PN
+    options:
+      clean_descriptors: C
+  (0040,1400):
+    action: X
+    name: Requested Procedure Comments
+    keyword: RequestedProcedureComments
+    vr: LT
+    options:
+      clean_descriptors: C
+  (0040,2001):
+    action: X
+    name: Reason for the Imaging Service Request
+    keyword: RETIRED_ReasonForTheImagingServiceRequest
+    vr: LO
+    options:
+      clean_descriptors: C
+  (0040,2008):
+    action: X
+    name: Order Entered By
+    keyword: OrderEnteredBy
+    vr: PN
+    options:
+      clean_descriptors: C
+  (0040,2009):
+    action: X
+    name: Order Enterer's Location
+    keyword: OrderEntererLocation
+    vr: SH
+    options:
+      clean_descriptors: C
+  (0040,2010):
+    action: X
+    name: Order Callback Phone Number
+    keyword: OrderCallbackPhoneNumber
+    vr: SH
+    options:
+      clean_descriptors: C
+  (0040,2016):
+    action: X
+    name: Placer Order Number / Imaging Service Request
+    keyword: PlacerOrderNumberImagingServiceRequest
+    vr: LO
+    options:
+      clean_descriptors: C
+  (0040,2017):
+    action: X
+    name: Filler Order Number / Imaging Service Request
+    keyword: FillerOrderNumberImagingServiceRequest
+    vr: LO
+    options:
+      clean_descriptors: C
+  (0040,2400):
+    action: X
+    name: Imaging Service Request Comments
+    keyword: ImagingServiceRequestComments
+    vr: LT
+    options:
+      clean_descriptors: C
+  (0040,3001):
+    action: X
+    name: Confidentiality Constraint on Patient Data Description
+    keyword: ConfidentialityConstraintOnPatientDataDescription
+    vr: LO
+    options:
+      clean_descriptors: C
+  (0040,4025):
+    action: X
+    name: Scheduled Station Name Code Sequence
+    keyword: ScheduledStationNameCodeSequence
+    vr: SQ
+    options:
+      clean_descriptors: C
+  (0040,4027):
+    action: X
+    name: Scheduled Station Geographic Location Code Sequence
+    keyword: ScheduledStationGeographicLocationCodeSequence
+    vr: SQ
+    options:
+      clean_descriptors: C
+  (0040,4028):
+    action: X
+    name: Performed Station Name Code Sequence
+    keyword: PerformedStationNameCodeSequence
+    vr: SQ
+    options:
+      clean_descriptors: C
+  (0040,4030):
+    action: X
+    name: Performed Station Geographic Location Code Sequence
+    keyword: PerformedStationGeographicLocationCodeSequence
+    vr: SQ
+    options:
+      clean_descriptors: C
+  (0040,4034):
+    action: X
+    name: Scheduled Human Performers Sequence
+    keyword: ScheduledHumanPerformersSequence
+    vr: SQ
+    options:
+      clean_descriptors: C
+  (0010,0010):
+    action: Z
+    name: Patient's Name
+    keyword: PatientName
+    vr: PN
+  (0010,0020):
+    action: Z
+    name: Patient ID
+    keyword: PatientID
+    vr: LO
+  (0010,0021):
+    action: X
+    name: Issuer of Patient ID
+    keyword: IssuerOfPatientID
+    vr: LO
+  (0010,0022):
+    action: X
+    name: Type of Patient ID
+    keyword: TypeOfPatientID
+    vr: CS
+  (0010,0050):
+    action: X
+    name: Patient's Insurance Plan Code Sequence
+    keyword: PatientInsurancePlanCodeSequence
+    vr: SQ
+  (0010,0101):
+    action: X
+    name: Patient's Primary Language Code Sequence
+    keyword: PatientPrimaryLanguageCodeSequence
+    vr: SQ
+  (0010,0102):
+    action: X
+    name: Patient's Primary Language Modifier Code Sequence
+    keyword: PatientPrimaryLanguageModifierCodeSequence
+    vr: SQ
+  (0010,1000):
+    action: X
+    name: Other Patient I Ds
+    keyword: RETIRED_OtherPatientIDs
+    vr: LO
+  (0010,1001):
+    action: X
+    name: Other Patient Names
+    keyword: OtherPatientNames
+    vr: PN
+  (0010,1002):
+    action: X
+    name: Other Patient I Ds Sequence
+    keyword: OtherPatientIDsSequence
+    vr: SQ
+  (0010,1005):
+    action: X
+    name: Patient's Birth Name
+    keyword: PatientBirthName
+    vr: PN
+  (0010,1040):
+    action: X
+    name: Patient's Address
+    keyword: PatientAddress
+    vr: LO
+  (0010,1050):
+    action: X
+    name: Insurance Plan Identification
+    keyword: RETIRED_InsurancePlanIdentification
+    vr: LO
+  (0010,1060):
+    action: X
+    name: Patient's Mother's Birth Name
+    keyword: PatientMotherBirthName
+    vr: PN
+  (0010,1080):
+    action: X
+    name: Military Rank
+    keyword: MilitaryRank
+    vr: LO
+  (0010,1081):
+    action: X
+    name: Branch of Service
+    keyword: BranchOfService
+    vr: LO
+  (0010,1090):
+    action: X
+    name: Medical Record Locator
+    keyword: RETIRED_MedicalRecordLocator
+    vr: LO
+  (0010,2150):
+    action: X
+    name: Country of Residence
+    keyword: CountryOfResidence
+    vr: LO
+  (0010,2152):
+    action: X
+    name: Region of Residence
+    keyword: RegionOfResidence
+    vr: LO
+  (0010,2154):
+    action: X
+    name: Patient's Telephone Numbers
+    keyword: PatientTelephoneNumbers
+    vr: SH
+  (0010,2180):
+    action: X
+    name: Occupation
+    keyword: Occupation
+    vr: SH
+  (0010,21B0):
+    action: X
+    name: Additional Patient History
+    keyword: AdditionalPatientHistory
+    vr: LT
+  (0010,21C0):
+    action: X
+    name: Pregnancy Status
+    keyword: PregnancyStatus
+    vr: US
+  (0010,21D0):
+    action: X
+    name: Last Menstrual Date
+    keyword: LastMenstrualDate
+    vr: DA
+  (0010,21F0):
+    action: X
+    name: Patient's Religious Preference
+    keyword: PatientReligiousPreference
+    vr: LO
+  (0010,2295):
+    action: X
+    name: Breed Registration Number
+    keyword: BreedRegistrationNumber
+    vr: LO
+  (0010,2296):
+    action: X
+    name: Breed Registry Code Sequence
+    keyword: BreedRegistryCodeSequence
+    vr: SQ
+  (0008,0090):
+    action: Z
+    name: Referring Physician's Name
+    keyword: ReferringPhysicianName
+    vr: PN
+  (0008,0092):
+    action: X
+    name: Referring Physician's Address
+    keyword: ReferringPhysicianAddress
+    vr: ST
+  (0008,0094):
+    action: X
+    name: Referring Physician's Telephone Numbers
+    keyword: ReferringPhysicianTelephoneNumbers
+    vr: SH
+  (0008,0096):
+    action: X
+    name: Referring Physician Identification Sequence
+    keyword: ReferringPhysicianIdentificationSequence
+    vr: SQ
+  (0008,0116):
+    action: X
+    name: Coding Scheme Responsible Organization
+    keyword: CodingSchemeResponsibleOrganization
+    vr: ST
+  (0008,1048):
+    action: X
+    name: Physician(s) of Record
+    keyword: PhysiciansOfRecord
+    vr: PN
+  (0008,1049):
+    action: X
+    name: Physician(s) of Record Identification Sequence
+    keyword: PhysiciansOfRecordIdentificationSequence
+    vr: SQ
+  (0008,1050):
+    action: X
+    name: Performing Physician's Name
+    keyword: PerformingPhysicianName
+    vr: PN
+  (0008,1052):
+    action: X
+    name: Performing Physician Identification Sequence
+    keyword: PerformingPhysicianIdentificationSequence
+    vr: SQ
+  (0008,1060):
+    action: X
+    name: Name of Physician(s) Reading Study
+    keyword: NameOfPhysiciansReadingStudy
+    vr: PN
+  (0008,1062):
+    action: X
+    name: Physician(s) Reading Study Identification Sequence
+    keyword: PhysiciansReadingStudyIdentificationSequence
+    vr: SQ
+  (0038,0010):
+    action: X
+    name: Admission ID
+    keyword: AdmissionID
+    vr: LO
+  (0038,0011):
+    action: X
+    name: Issuer of Admission ID
+    keyword: RETIRED_IssuerOfAdmissionID
+    vr: LO
+  (0038,0016):
+    action: X
+    name: Route of Admissions
+    keyword: RouteOfAdmissions
+    vr: LO
+  (0038,001B):
+    action: X
+    name: Scheduled Admission Time
+    keyword: RETIRED_ScheduledAdmissionTime
+    vr: TM
+  (0038,001C):
+    action: X
+    name: Scheduled Discharge Date
+    keyword: RETIRED_ScheduledDischargeDate
+    vr: DA
+  (0038,001D):
+    action: X
+    name: Scheduled Discharge Time
+    keyword: RETIRED_ScheduledDischargeTime
+    vr: TM
+  (0038,0030):
+    action: X
+    name: Discharge Date
+    keyword: RETIRED_DischargeDate
+    vr: DA
+  (0038,0032):
+    action: X
+    name: Discharge Time
+    keyword: RETIRED_DischargeTime
+    vr: TM
+  (0038,0040):
+    action: X
+    name: Discharge Diagnosis Description
+    keyword: RETIRED_DischargeDiagnosisDescription
+    vr: LO
+  (0038,0044):
+    action: X
+    name: Discharge Diagnosis Code Sequence
+    keyword: RETIRED_DischargeDiagnosisCodeSequence
+    vr: SQ
+  (0038,0300):
+    action: X
+    name: Current Patient Location
+    keyword: CurrentPatientLocation
+    vr: LO
+  (0038,0400):
+    action: X
+    name: Patient's Institution Residence
+    keyword: PatientInstitutionResidence
+    vr: LO
+  (0038,0500):
+    action: X
+    name: Patient State
+    keyword: PatientState
+    vr: LO
+  (0008,0050):
+    action: Z
+    name: Accession Number
+    keyword: AccessionNumber
+    vr: SH
+  (0032,000A):
+    action: X
+    name: Study Status ID
+    keyword: RETIRED_StudyStatusID
+    vr: CS
+  (0032,000C):
+    action: X
+    name: Study Priority ID
+    keyword: RETIRED_StudyPriorityID
+    vr: CS
+  (0032,0012):
+    action: X
+    name: Study ID Issuer
+    keyword: RETIRED_StudyIDIssuer
+    vr: LO
+  (0032,0032):
+    action: X
+    name: Study Verified Date
+    keyword: RETIRED_StudyVerifiedDate
+    vr: DA
+  (0032,0033):
+    action: X
+    name: Study Verified Time
+    keyword: RETIRED_StudyVerifiedTime
+    vr: TM
+  (0032,0034):
+    action: X
+    name: Study Read Date
+    keyword: RETIRED_StudyReadDate
+    vr: DA
+  (0032,0035):
+    action: X
+    name: Study Read Time
+    keyword: RETIRED_StudyReadTime
+    vr: TM
+  (0032,1000):
+    action: X
+    name: Scheduled Study Start Date
+    keyword: RETIRED_ScheduledStudyStartDate
+    vr: DA
+  (0032,1001):
+    action: X
+    name: Scheduled Study Start Time
+    keyword: RETIRED_ScheduledStudyStartTime
+    vr: TM
+  (0032,1010):
+    action: X
+    name: Scheduled Study Stop Date
+    keyword: RETIRED_ScheduledStudyStopDate
+    vr: DA
+  (0032,1011):
+    action: X
+    name: Scheduled Study Stop Time
+    keyword: RETIRED_ScheduledStudyStopTime
+    vr: TM
+  (0032,1020):
+    action: X
+    name: Scheduled Study Location
+    keyword: RETIRED_ScheduledStudyLocation
+    vr: LO
+  (0032,1021):
+    action: X
+    name: Scheduled Study Location AE Title
+    keyword: RETIRED_ScheduledStudyLocationAETitle
+    vr: AE
+  (0032,1030):
+    action: X
+    name: Reason for Study
+    keyword: RETIRED_ReasonForStudy
+    vr: LO
+  (0032,1031):
+    action: X
+    name: Requesting Physician Identification Sequence
+    keyword: RequestingPhysicianIdentificationSequence
+    vr: SQ
+  (0032,1032):
+    action: X
+    name: Requesting Physician
+    keyword: RequestingPhysician
+    vr: PN
+  (0032,1033):
+    action: X
+    name: Requesting Service
+    keyword: RequestingService
+    vr: LO
+  (0032,1041):
+    action: X
+    name: Study Arrival Time
+    keyword: RETIRED_StudyArrivalTime
+    vr: TM
+  (0032,1051):
+    action: X
+    name: Study Completion Time
+    keyword: RETIRED_StudyCompletionTime
+    vr: TM
+  (0032,1055):
+    action: X
+    name: Study Component Status ID
+    keyword: RETIRED_StudyComponentStatusID
+    vr: CS
+  (0032,1060):
+    action: X
+    name: Requested Procedure Description
+    keyword: RequestedProcedureDescription
+    vr: LO
+  (0032,1064):
+    action: X
+    name: Requested Procedure Code Sequence
+    keyword: RequestedProcedureCodeSequence
+    vr: SQ
+  (0032,1070):
+    action: X
+    name: Requested Contrast Agent
+    keyword: RequestedContrastAgent
+    vr: LO
+  (0032,4000):
+    action: X
+    name: Study Comments
+    keyword: RETIRED_StudyComments
+    vr: LT
+  (0040,0001):
+    action: X
+    name: Scheduled Station AE Title
+    keyword: ScheduledStationAETitle
+    vr: AE
+  (0040,000B):
+    action: X
+    name: Scheduled Performing Physician Identification Sequence
+    keyword: ScheduledPerformingPhysicianIdentificationSequence
+    vr: SQ
+  (0040,0296):
+    action: X
+    name: Billing Item Sequence
+    keyword: BillingItemSequence
+    vr: SQ
+  (4008,0042):
+    action: X
+    name: Results ID Issuer
+    keyword: RETIRED_ResultsIDIssuer
+    vr: LO
+  (4008,010C):
+    action: X
+    name: Interpretation Author
+    keyword: RETIRED_InterpretationAuthor
+    vr: PN
+  (4008,0114):
+    action: X
+    name: Physician Approving Interpretation
+    keyword: RETIRED_PhysicianApprovingInterpretation
+    vr: PN
+  (4008,0119):
+    action: X
+    name: Distribution Name
+    keyword: RETIRED_DistributionName
+    vr: PN
+  (4008,011A):
+    action: X
+    name: Distribution Address
+    keyword: RETIRED_DistributionAddress
+    vr: LO
+  (4008,0202):
+    action: X
+    name: Interpretation ID Issuer
+    keyword: RETIRED_InterpretationIDIssuer
+    vr: LO
+  (0008,1090):
+    action: X
+    name: Manufacturer's Model Name
+    keyword: ManufacturerModelName
+    vr: LO
+  (0018,1017):
+    action: X
+    name: Hardcopy Device Manufacturer
+    keyword: RETIRED_HardcopyDeviceManufacturer
+    vr: LO
+  (0018,101A):
+    action: X
+    name: Hardcopy Device Software Version
+    keyword: RETIRED_HardcopyDeviceSoftwareVersion
+    vr: LO
+  (0018,101B):
+    action: X
+    name: Hardcopy Device Manufacturer's Model Name
+    keyword: RETIRED_HardcopyDeviceManufacturerModelName
+    vr: LO
+  (0018,7010):
+    action: X
+    name: Exposures on Detector Since Last Calibration
+    keyword: ExposuresOnDetectorSinceLastCalibration
+    vr: IS
+  (0018,7011):
+    action: X
+    name: Exposures on Detector Since Manufactured
+    keyword: ExposuresOnDetectorSinceManufactured
+    vr: IS
+  (2200,0001):
+    action: X/Z
+    name: Label Using Information Extracted From Instances
+    keyword: LabelUsingInformationExtractedFromInstances
+    vr: UT
+  (2200,0002):
+    action: X/Z
+    name: Label Text
+    keyword: LabelText
+    vr: UT
+  (2200,0003):
+    action: X/Z
+    name: Label Style Selection
+    keyword: LabelStyleSelection
+    vr: CS
+  (2200,0004):
+    action: X/Z
+    name: Media Disposition
+    keyword: MediaDisposition
+    vr: LT
+  (2200,0005):
+    action: X/Z
+    name: Barcode Value
+    keyword: BarcodeValue
+    vr: LT
+  (2200,0006):
+    action: X/Z
+    name: Barcode Symbology
+    keyword: BarcodeSymbology
+    vr: CS
+  (50XX,XXXX):
+    action: X
+    name: ''
+    keyword: ''
+    vr: ''
+    options:
+      clean_graphics: X
+  (60XX,XXXX):
+    action: X
+    name: ''
+    keyword: ''
+    vr: ''
+    options:
+      clean_graphics: X
+      clean_pixel_data: X
