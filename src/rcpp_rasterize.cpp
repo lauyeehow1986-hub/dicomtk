@@ -70,9 +70,9 @@ std::vector<uint8_t> rasterize_polygons_scanline(
     return mask;
   }
 
-  // Scan each row (1-based / pixel centers at y + 0.5 or integer scanlines)
-  // Coordinates are assumed to be 1-based R matrix coordinates (row: 1..height, col: 1..width)
-  for (int y = 1; y <= height; ++y) {
+  // Scan each column y in 1..width, intersecting edges to fill rows x in 1..height
+  // Coordinates are 1-based R matrix coordinates: Point2D.x = row (1..height), Point2D.y = col (1..width)
+  for (int y = 1; y <= width; ++y) {
     double scan_y = static_cast<double>(y);
 
     // Collect intersections with active edges
@@ -100,20 +100,20 @@ std::vector<uint8_t> rasterize_polygons_scanline(
       for (size_t i = 0; i + 1 < x_inters.size(); ++i) {
         winding += x_inters[i].direction;
         if (winding != 0) {
-          int x_start = std::max(1, static_cast<int>(std::round(x_inters[i].x)));
-          int x_end = std::min(width, static_cast<int>(std::round(x_inters[i + 1].x)));
-          for (int x = x_start; x <= x_end; ++x) {
-            // R column-major order: index = (x - 1) * height + (y - 1)
-            mask[static_cast<size_t>(x - 1) * height + (y - 1)] = 1;
+          int r_start = std::max(1, static_cast<int>(std::round(x_inters[i].x)));
+          int r_end = std::min(height, static_cast<int>(std::round(x_inters[i + 1].x)));
+          for (int r = r_start; r <= r_end; ++r) {
+            // R column-major order: index = (col - 1) * height + (row - 1)
+            mask[static_cast<size_t>(y - 1) * height + (r - 1)] = 1;
           }
         }
       }
     } else { // "evenodd"
       for (size_t i = 0; i + 1 < x_inters.size(); i += 2) {
-        int x_start = std::max(1, static_cast<int>(std::round(x_inters[i].x)));
-        int x_end = std::min(width, static_cast<int>(std::round(x_inters[i + 1].x)));
-        for (int x = x_start; x <= x_end; ++x) {
-          mask[static_cast<size_t>(x - 1) * height + (y - 1)] = 1;
+        int r_start = std::max(1, static_cast<int>(std::round(x_inters[i].x)));
+        int r_end = std::min(height, static_cast<int>(std::round(x_inters[i + 1].x)));
+        for (int r = r_start; r <= r_end; ++r) {
+          mask[static_cast<size_t>(y - 1) * height + (r - 1)] = 1;
         }
       }
     }
@@ -122,7 +122,7 @@ std::vector<uint8_t> rasterize_polygons_scanline(
   return mask;
 }
 
-// Simple boundary tracing / marching squares to extract closed polygons
+// Simple boundary tracing / marching squares to extract closed polygons in (row, col) coordinates
 std::vector<std::vector<Point2D>> trace_contours_marching_squares(
     const uint8_t* mask,
     int width,
@@ -161,10 +161,10 @@ std::vector<std::vector<Point2D>> trace_contours_marching_squares(
       int cell_case = (tl << 3) | (tr << 2) | (br << 1) | bl;
       if (cell_case == 0 || cell_case == 15) continue;
 
-      Point2D top_mid    = { static_cast<double>(c) + 0.5, static_cast<double>(r) };
-      Point2D right_mid  = { static_cast<double>(c + 1),  static_cast<double>(r) + 0.5 };
-      Point2D bottom_mid = { static_cast<double>(c) + 0.5, static_cast<double>(r + 1) };
-      Point2D left_mid   = { static_cast<double>(c),        static_cast<double>(r) + 0.5 };
+      Point2D top_mid    = { static_cast<double>(r),       static_cast<double>(c) + 0.5 };
+      Point2D right_mid  = { static_cast<double>(r) + 0.5, static_cast<double>(c + 1) };
+      Point2D bottom_mid = { static_cast<double>(r + 1),   static_cast<double>(c) + 0.5 };
+      Point2D left_mid   = { static_cast<double>(r) + 0.5, static_cast<double>(c) };
 
       switch (cell_case) {
         case 1:  segments.push_back({ left_mid, bottom_mid }); break;

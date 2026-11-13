@@ -39,10 +39,8 @@ dicom_dvh <- function(dose, seg, n_bins = 100L) {
   dose_vox <- dose$voxels %||% dose$array
   seg_vox <- seg$voxels %||% seg$array
 
-  # Check dimensions conform
-  if (!identical(dim(dose_vox)[1:3], dim(seg_vox)[1:3])) {
-    rlang::abort("`dose` and `seg` volumes must have matching 3D spatial dimensions.")
-  }
+  same_grid <- identical(dim(dose_vox)[1:3], dim(seg_vox)[1:3]) &&
+               max(abs(dose$affine - seg$affine)) < 1e-4
 
   voxel_vol_cc <- prod(seg$spacing[1:3]) / 1000.0 # mm^3 to cc (cm^3)
 
@@ -53,6 +51,7 @@ dicom_dvh <- function(dose, seg, n_bins = 100L) {
 
   metrics_list <- list()
   curves_list <- list()
+  dose_dims <- dim(dose_vox)[1:3]
 
   for (i in seq_len(nrow(seg_tbl))) {
     s_id <- seg_tbl$segment_id[i]
@@ -66,7 +65,19 @@ dicom_dvh <- function(dose, seg, n_bins = 100L) {
       next
     }
 
-    roi_doses <- dose_vox[roi_mask]
+    if (same_grid) {
+      roi_doses <- as.double(dose_vox[roi_mask])
+    } else {
+      # Map ROI voxel centers through world coordinates into the dose grid
+      ijk_seg <- which(roi_mask, arr.ind = TRUE)
+      xyz_world <- voxel_to_world(seg, ijk_seg, index_base = 1L)
+      ijk_dose <- round(world_to_voxel(dose, xyz_world, index_base = 1L))
+      r_d <- pmin(pmax(as.integer(ijk_dose[, 1L]), 1L), dose_dims[1L])
+      c_d <- pmin(pmax(as.integer(ijk_dose[, 2L]), 1L), dose_dims[2L])
+      s_d <- pmin(pmax(as.integer(ijk_dose[, 3L]), 1L), dose_dims[3L])
+      roi_doses <- as.double(dose_vox[cbind(r_d, c_d, s_d)])
+    }
+
     total_vol_cc <- n_vox * voxel_vol_cc
 
     min_d <- min(roi_doses)
@@ -97,17 +108,19 @@ dicom_dvh <- function(dose, seg, n_bins = 100L) {
       V20 = v20
     )
 
-    # Compute DVH curve
+    # Compute cumulative and differential DVH curves
     eval_doses <- seq(0.0, max(max_d * 1.05, 1.0), length.out = n_bins)
     cum_vol_pct <- vapply(eval_doses, function(d_val) {
       sum(roi_doses >= d_val) / n_vox * 100.0
     }, numeric(1L))
+    diff_vol_pct <- c(-diff(cum_vol_pct), cum_vol_pct[length(cum_vol_pct)])
 
     curves_list[[length(curves_list) + 1L]] <- tibble::tibble(
       roi_number = s_id,
       roi_label = s_label,
       dose_gy = eval_doses,
-      vol_pct_cumulative = cum_vol_pct
+      vol_pct_cumulative = cum_vol_pct,
+      vol_pct_differential = diff_vol_pct
     )
   }
 
@@ -135,7 +148,8 @@ dicom_dvh <- function(dose, seg, n_bins = 100L) {
       roi_number = integer(),
       roi_label = character(),
       dose_gy = numeric(),
-      vol_pct_cumulative = numeric()
+      vol_pct_cumulative = numeric(),
+      vol_pct_differential = numeric()
     )
   }
 
@@ -148,6 +162,7 @@ dicom_dvh <- function(dose, seg, n_bins = 100L) {
   )
 }
 
+#' @keywords internal
 #' @export
 print.dicom_dvh <- function(x, ...) {
   cat("<dicom_dvh [", nrow(x$metrics), " ROI(s)]>\n", sep = "")

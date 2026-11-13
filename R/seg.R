@@ -53,6 +53,7 @@ dicom_seg <- function(mask, ref_volume, segments = NULL) {
   )
 
   vol$array <- mask
+  vol$mask <- mask
   vol$segments <- tibble::as_tibble(segments)
   vol$source_volume_uid <- ref_volume$uids$series_instance_uid %||%
                            ref_volume$header$SeriesInstanceUID[[1L]] %||%
@@ -60,6 +61,63 @@ dicom_seg <- function(mask, ref_volume, segments = NULL) {
 
   class(vol) <- c("dicom_seg", class(vol))
   vol
+}
+
+#' Convert a Multi-Segment `dicom_seg` to a 3D Integer Label-Map
+#'
+#' Flattens a 4D multi-segment [dicom_seg] (`[rows, cols, slices, segments]`) or
+#' 3D binary/labelmap [dicom_seg] into a single 3D integer label-map volume where
+#' each voxel holds the integer `segment_id` (`0L` for background). When segments
+#' overlap, higher `segment_id` values take precedence by default (`conflict = "last"`),
+#' or lower `segment_id` values when `conflict = "first"`.
+#'
+#' @param seg A [dicom_seg] object.
+#' @param conflict Conflict resolution policy for overlapping segments:
+#'   `"last"` (default) or `"first"`.
+#'
+#' @return A 3D integer [dicom_seg] object with `type = "labelmap"`.
+#' @export
+#' @examples
+#' synth <- dicom_synthesize(modality = "CT", dims = c(16L, 16L, 4L))
+#' vol <- read_dicom_volume(synth[["out_dir"]])
+#' m4 <- array(0L, dim = c(16L, 16L, 4L, 2L))
+#' m4[3:7, 3:7, 2L, 1L] <- 1L
+#' m4[10:14, 10:14, 2L, 2L] <- 1L
+#' seg4 <- dicom_seg(m4, vol, tibble::tibble(segment_id = 1:2, label = c("Left", "Right")))
+#' lmap <- as_labelmap(seg4)
+#' dim(lmap)
+as_labelmap <- function(seg, conflict = c("last", "first")) {
+  if (!inherits(seg, "dicom_seg")) {
+    rlang::abort("`seg` must be a `dicom_seg` object.")
+  }
+  conflict <- match.arg(conflict)
+  vox <- seg$voxels %||% seg$array
+  d <- dim(vox)
+
+  if (length(d) == 3L) {
+    out_arr <- array(as.integer(vox), dim = d)
+  } else if (length(d) == 4L) {
+    out_arr <- array(0L, dim = d[1:3])
+    n_seg <- d[4L]
+    seg_ids <- if (!is.null(seg$segments) && nrow(seg$segments) == n_seg) {
+      as.integer(seg$segments$segment_id)
+    } else {
+      seq_len(n_seg)
+    }
+    idx_order <- if (identical(conflict, "last")) seq_len(n_seg) else rev(seq_len(n_seg))
+    for (k in idx_order) {
+      layer <- vox[, , , k] > 0
+      out_arr[layer] <- seg_ids[k]
+    }
+  } else {
+    rlang::abort("`seg` array must have 3 or 4 dimensions.")
+  }
+
+  seg_meta <- seg$segments
+  if (!is.null(seg_meta) && nrow(seg_meta) > 0L) {
+    seg_meta$type <- "labelmap"
+  }
+  dicom_seg(mask = out_arr, ref_volume = seg, segments = seg_meta)
 }
 
 #' Write DICOM Segmentation Object (`dcmseg`)

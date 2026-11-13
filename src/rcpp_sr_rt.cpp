@@ -91,3 +91,79 @@ bool cpp_create_dicom_sr(const std::string& out_path,
 
   return dicomtk::write_dicom_file(dcm, out_path);
 }
+
+// [[Rcpp::export]]
+bool cpp_write_dicom_dataset(const std::string& out_path,
+                             const Rcpp::CharacterVector& meta_tags,
+                             const Rcpp::CharacterVector& meta_values,
+                             Rcpp::Nullable<Rcpp::List> extra_sequences = R_NilValue) {
+  if (meta_tags.size() != meta_values.size()) {
+    Rcpp::stop("`meta_tags` and `meta_values` must have the same length.");
+  }
+
+  dicomtk::DcmParsedFile dcm;
+  dcm.valid_dicom = true;
+  dcm.has_preamble = true;
+  dcm.transfer_syntax = "1.2.840.10008.1.2.1";
+  dcm.explicit_vr = true;
+  dcm.big_endian = false;
+
+  std::string sop_class = "1.2.840.10008.5.1.4.1.1.88.34"; // Comprehensive 3D SR default
+  std::string sop_uid = dicomtk::generate_dicom_uid();
+  std::string study_uid = dicomtk::generate_dicom_uid();
+  std::string series_uid = dicomtk::generate_dicom_uid();
+
+  dicomtk::upsert_tag(dcm, 0x0002, 0x0002, sop_class);
+  dicomtk::upsert_tag(dcm, 0x0002, 0x0003, sop_uid);
+  dicomtk::upsert_tag(dcm, 0x0002, 0x0010, dcm.transfer_syntax);
+  dicomtk::upsert_tag(dcm, 0x0002, 0x0012, "1.2.276.0.7230010.3.0.3.7.1");
+  dicomtk::upsert_tag(dcm, 0x0002, 0x0013, "DICOMTK_371");
+
+  dicomtk::upsert_tag(dcm, 0x0008, 0x0005, "ISO_IR 192");
+  dicomtk::upsert_tag(dcm, 0x0008, 0x0016, sop_class);
+  dicomtk::upsert_tag(dcm, 0x0008, 0x0018, sop_uid);
+  dicomtk::upsert_tag(dcm, 0x0020, 0x000D, study_uid);
+  dicomtk::upsert_tag(dcm, 0x0020, 0x000E, series_uid);
+
+  for (R_xlen_t i = 0; i < meta_tags.size(); ++i) {
+    std::string q = Rcpp::as<std::string>(meta_tags[i]);
+    std::string val = Rcpp::as<std::string>(meta_values[i]);
+    uint16_t g = 0, e = 0;
+    const dicomtk::DcmDictEntry* dict = nullptr;
+    if (!dicomtk::resolve_tag_or_keyword(q, g, e, dict)) {
+      Rcpp::stop("Unknown DICOM tag or keyword in cpp_write_dicom_dataset: " + q);
+    }
+    dicomtk::upsert_tag(dcm, g, e, val);
+    if (g == 0x0008 && e == 0x0016) {
+      dicomtk::upsert_tag(dcm, 0x0002, 0x0002, val);
+    } else if (g == 0x0008 && e == 0x0018) {
+      dicomtk::upsert_tag(dcm, 0x0002, 0x0003, val);
+    }
+  }
+
+  if (extra_sequences.isNotNull()) {
+    Rcpp::List extra_list(extra_sequences);
+    if (extra_list.size() > 0) {
+      SEXP extra_names_sexp = extra_list.names();
+      if (Rf_isNull(extra_names_sexp)) {
+        Rcpp::stop("`extra_sequences` must be a named list.");
+      }
+      Rcpp::CharacterVector extra_names(extra_names_sexp);
+      for (R_xlen_t i = 0; i < extra_list.size(); ++i) {
+        std::string sq_key = Rcpp::as<std::string>(extra_names[i]);
+        uint16_t g = 0, e = 0;
+        const dicomtk::DcmDictEntry* dict = nullptr;
+        if (!dicomtk::resolve_tag_or_keyword(sq_key, g, e, dict)) {
+          Rcpp::stop("Unknown DICOM sequence tag or keyword: " + sq_key);
+        }
+        SEXP sq_val = extra_list[i];
+        if (TYPEOF(sq_val) != VECSXP) {
+          Rcpp::stop("Each entry in `extra_sequences` must be a list of sequence items: " + sq_key);
+        }
+        dicomtk::upsert_sq_tag(dcm, g, e, dicomtk::r_list_to_sq_items(Rcpp::List(sq_val), 1));
+      }
+    }
+  }
+
+  return dicomtk::write_dicom_file(dcm, out_path);
+}

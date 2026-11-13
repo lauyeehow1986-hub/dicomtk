@@ -78,3 +78,25 @@ test_that("C++17 contour tracer extracts closed polygon vertices from binary mas
   dice <- 2 * sum(m & re_mask) / (sum(m) + sum(re_mask))
   expect_gt(dice, 0.90)
 })
+
+test_that("C++17 rasterizer and contour tracer preserve (row, col) alignment on non-square matrices", {
+  # Non-square 24 rows x 40 cols matrix, filled at rows 5:12, cols 25:35
+  m_ns <- matrix(FALSE, nrow = 24L, ncol = 40L)
+  m_ns[5:12, 25:35] <- TRUE
+
+  contours <- trace_contours_2d(m_ns)
+  expect_equal(length(contours), 1L)
+  poly <- contours[[1L]]
+  # Column 1 is row (4.5..12.5), Column 2 is col (24.5..35.5)
+  expect_gte(min(poly[, 1L]), 4.0)
+  expect_lte(max(poly[, 1L]), 13.0)
+  expect_gte(min(poly[, 2L]), 24.0)
+  expect_lte(max(poly[, 2L]), 36.0)
+
+  re_ns <- rasterize_polygon_2d(poly, width = 40L, height = 24L)
+  expect_equal(dim(re_ns), c(24L, 40L))
+  expect_true(re_ns[8L, 30L])
+  expect_false(re_ns[20L, 10L])
+  dice_ns <- 2 * sum(m_ns & re_ns) / (sum(m_ns) + sum(re_ns))
+  expect_gt(dice_ns, 0.90)
+})

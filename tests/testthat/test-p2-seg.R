@@ -1,7 +1,7 @@
 test_that("dicom_seg S3 constructor creates a valid spatial segmentation object inheriting from dicom_volume", {
   # Synthetic 32x32x10 volume for reference geometry
   synth <- dicom_synthesize(modality = "CT", dims = c(32L, 32L, 10L))
-  vol <- read_dicom_volume(synth$files[1L])
+  vol <- read_dicom_volume(synth[["out_dir"]])
 
   # Create a 3D binary mask with a 10x10 cube inside
   mask_arr <- array(0L, dim = c(32L, 32L, 10L))
@@ -50,7 +50,7 @@ test_that("C++17 1-bit frame packer encodes and decodes DICOM-SEG binary frames 
 
 test_that("write_dicom_seg and read_dicom_seg round-trip with full geometry and segment metadata", {
   synth <- dicom_synthesize(modality = "MR", dims = c(32L, 32L, 5L))
-  vol <- read_dicom_volume(synth$files[1L])
+  vol <- read_dicom_volume(synth[["out_dir"]])
 
   mask_arr <- array(0L, dim = c(32L, 32L, 5L))
   mask_arr[8:18, 8:18, 2:4] <- 1L
@@ -85,4 +85,18 @@ test_that("write_dicom_seg and read_dicom_seg round-trip with full geometry and 
   expect_equal(sum(seg_read$array), sum(mask_arr))
   expect_equal(seg_read$affine, vol$affine, tolerance = 1e-5)
   expect_equal(seg_read$segments$label, "GTV_Tumor")
+
+  # Verify as_labelmap() on 4D multi-segment dicom_seg
+  m4 <- array(0L, dim = c(32L, 32L, 5L, 2L))
+  m4[4:10, 4:10, 2L, 1L] <- 1L
+  m4[15:22, 15:22, 2L, 2L] <- 1L
+  seg4 <- dicom_seg(
+    mask = m4,
+    ref_volume = vol,
+    segments = tibble::tibble(segment_id = c(1L, 2L), label = c("Left", "Right"))
+  )
+  lmap <- as_labelmap(seg4)
+  expect_equal(dim(lmap$array), c(32L, 32L, 5L))
+  expect_equal(lmap$array[6L, 6L, 2L], 1L)
+  expect_equal(lmap$array[18L, 18L, 2L], 2L)
 })

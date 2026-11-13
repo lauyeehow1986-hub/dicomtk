@@ -57,7 +57,11 @@ rtstruct_to_seg <- function(rt, ref_volume, roi_numbers = NULL) {
         poly_2d <- vox_pts[, 1:2, drop = FALSE]
 
         slice_mask <- rasterize_polygon_2d(poly_2d, width = w, height = h)
-        mask_arr[, , slice_idx] <- mask_arr[, , slice_idx] | slice_mask
+        r_num <- as.integer(contours$roi_number[i] %||% 1L)
+        if (is.na(r_num) || r_num <= 0L) r_num <- 1L
+        cur_slice <- mask_arr[, , slice_idx]
+        cur_slice[slice_mask] <- r_num
+        mask_arr[, , slice_idx] <- cur_slice
       }
     }
   }
@@ -77,7 +81,7 @@ rtstruct_to_seg <- function(rt, ref_volume, roi_numbers = NULL) {
 #'
 #' Traces closed 2D planar polygon contours slice-by-slice from a [dicom_seg]
 #' mask and transforms pixel indices to LPS world coordinates using `ref_volume$affine`,
-#' producing an `RTSTRUCT` [dicom_rt] object.
+#' producing an `RTSTRUCT` object (see [read_dicom_rt()]).
 #'
 #' @param seg A [dicom_seg] object.
 #' @param ref_volume Reference [dicom_volume] providing spatial geometry.
@@ -109,42 +113,55 @@ seg_to_rtstruct <- function(seg, ref_volume, roi_name = NULL, roi_color = "255\\
 
   mask_data <- seg$voxels %||% seg$array
 
-  if (is.null(roi_name)) {
-    roi_name <- seg$segments$label[1L] %||% "ROI_1"
+  seg_tbl <- seg$segments
+  if (is.null(seg_tbl) || nrow(seg_tbl) == 0L) {
+    seg_tbl <- tibble::tibble(
+      segment_id = 1L,
+      label = roi_name %||% "ROI_1"
+    )
+  } else if (!is.null(roi_name) && length(roi_name) == nrow(seg_tbl)) {
+    seg_tbl$label <- as.character(roi_name)
   }
 
   contour_rows <- list()
 
-  for (k in seq_len(n_slices)) {
-    slice_mat <- as.matrix(mask_data[, , k] > 0)
-    if (!any(slice_mat)) next
+  for (r_idx in seq_len(nrow(seg_tbl))) {
+    s_id <- as.integer(seg_tbl$segment_id[r_idx])
+    for (k in seq_len(n_slices)) {
+      slice_mat <- if (nrow(seg_tbl) == 1L && s_id == 1L) {
+        as.matrix(mask_data[, , k] > 0)
+      } else {
+        as.matrix(mask_data[, , k] == s_id)
+      }
+      if (!any(slice_mat)) next
 
-    # Trace 2D contours on this slice
-    polys <- trace_contours_2d(slice_mat)
+      # Trace 2D contours on this slice
+      polys <- trace_contours_2d(slice_mat)
 
-    for (poly in polys) {
-      if (nrow(poly) < 3L) next
+      for (poly in polys) {
+        if (nrow(poly) < 3L) next
 
-      # Convert 2D pixel coordinates (row, col) with slice k into 1-based voxel indices (r, c, s)
-      n_pts <- nrow(poly)
-      rcs_mat <- cbind(
-        poly[, 1L],
-        poly[, 2L],
-        rep(as.double(k), n_pts)
-      )
+        # Convert 2D pixel coordinates (row, col) with slice k into 1-based voxel indices (r, c, s)
+        n_pts <- nrow(poly)
+        rcs_mat <- cbind(
+          poly[, 1L],
+          poly[, 2L],
+          rep(as.double(k), n_pts)
+        )
 
-      # Convert to world coordinates via voxel_to_world
-      lps_pts <- voxel_to_world(ref_volume, rcs_mat, index_base = 1L)
+        # Convert to world coordinates via voxel_to_world
+        lps_pts <- voxel_to_world(ref_volume, rcs_mat, index_base = 1L)
 
-      # Flatten into x1, y1, z1, x2, y2, z2, ...
-      xyz_flat <- as.numeric(t(lps_pts))
+        # Flatten into x1, y1, z1, x2, y2, z2, ...
+        xyz_flat <- as.numeric(t(lps_pts))
 
-      contour_rows[[length(contour_rows) + 1L]] <- list(
-        roi_number = 1L,
-        geometric_type = "CLOSED_PLANAR",
-        n_points = n_pts,
-        contour_data = xyz_flat
-      )
+        contour_rows[[length(contour_rows) + 1L]] <- list(
+          roi_number = s_id,
+          geometric_type = "CLOSED_PLANAR",
+          n_points = n_pts,
+          contour_data = xyz_flat
+        )
+      }
     }
   }
 
@@ -165,9 +182,9 @@ seg_to_rtstruct <- function(seg, ref_volume, roi_name = NULL, roi_color = "255\\
   }
 
   rois_tbl <- tibble::tibble(
-    roi_number = 1L,
-    roi_name = roi_name,
-    roi_color = roi_color
+    roi_number = as.integer(seg_tbl$segment_id),
+    roi_name = as.character(seg_tbl$label),
+    roi_color = rep(roi_color, length.out = nrow(seg_tbl))
   )
 
   structure(

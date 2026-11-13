@@ -141,6 +141,10 @@ cpp_create_dicom_sr <- function(out_path, title, text_content, patient_name = "A
     .Call(`_dicomtk_cpp_create_dicom_sr`, out_path, title, text_content, patient_name, patient_id, study_uid)
 }
 
+cpp_write_dicom_dataset <- function(out_path, meta_tags, meta_values, extra_sequences = NULL) {
+    .Call(`_dicomtk_cpp_write_dicom_dataset`, out_path, meta_tags, meta_values, extra_sequences)
+}
+
 cpp_modify_dicom <- function(in_path, out_path, mod_tags, mod_values, del_tags, erase_private = FALSE, regenerate_uids = FALSE) {
     .Call(`_dicomtk_cpp_modify_dicom`, in_path, out_path, mod_tags, mod_values, del_tags, erase_private, regenerate_uids)
 }
