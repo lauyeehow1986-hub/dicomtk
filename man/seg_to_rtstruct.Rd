@@ -21,7 +21,7 @@ A \code{dicom_rt} object of modality \code{"RTSTRUCT"}.
 \description{
 Traces closed 2D planar polygon contours slice-by-slice from a \link{dicom_seg}
 mask and transforms pixel indices to LPS world coordinates using \code{ref_volume$affine},
-producing an \code{RTSTRUCT} \link{dicom_rt} object.
+producing an \code{RTSTRUCT} object (see \code{\link[=read_dicom_rt]{read_dicom_rt()}}).
 }
 \examples{
 synth <- dicom_synthesize(modality = "CT", dims = c(32L, 32L, 5L))
