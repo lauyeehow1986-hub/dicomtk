@@ -378,6 +378,22 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// cpp_resample_volume_3d
+Rcpp::NumericVector cpp_resample_volume_3d(const Rcpp::NumericVector& vox, const Rcpp::IntegerVector& old_dims, const Rcpp::DoubleVector& old_spacing, const Rcpp::IntegerVector& new_dims, const Rcpp::DoubleVector& new_spacing, const std::string& method);
+RcppExport SEXP _dicomtk_cpp_resample_volume_3d(SEXP voxSEXP, SEXP old_dimsSEXP, SEXP old_spacingSEXP, SEXP new_dimsSEXP, SEXP new_spacingSEXP, SEXP methodSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type vox(voxSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type old_dims(old_dimsSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::DoubleVector& >::type old_spacing(old_spacingSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type new_dims(new_dimsSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::DoubleVector& >::type new_spacing(new_spacingSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type method(methodSEXP);
+    rcpp_result_gen = Rcpp::wrap(cpp_resample_volume_3d(vox, old_dims, old_spacing, new_dims, new_spacing, method));
+    return rcpp_result_gen;
+END_RCPP
+}
 // cpp_pack_binary_frame
 Rcpp::RawVector cpp_pack_binary_frame(Rcpp::IntegerMatrix frame);
 RcppExport SEXP _dicomtk_cpp_pack_binary_frame(SEXP frameSEXP) {
@@ -553,6 +569,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_dicomtk_cpp_is_dicom", (DL_FUNC) &_dicomtk_cpp_is_dicom, 1},
     {"_dicomtk_cpp_read_dicom_header", (DL_FUNC) &_dicomtk_cpp_read_dicom_header, 3},
     {"_dicomtk_cpp_get_tag_values", (DL_FUNC) &_dicomtk_cpp_get_tag_values, 2},
+    {"_dicomtk_cpp_resample_volume_3d", (DL_FUNC) &_dicomtk_cpp_resample_volume_3d, 6},
     {"_dicomtk_cpp_pack_binary_frame", (DL_FUNC) &_dicomtk_cpp_pack_binary_frame, 1},
     {"_dicomtk_cpp_unpack_binary_frame", (DL_FUNC) &_dicomtk_cpp_unpack_binary_frame, 3},
     {"_dicomtk_cpp_write_dicom_raw_pixels", (DL_FUNC) &_dicomtk_cpp_write_dicom_raw_pixels, 9},

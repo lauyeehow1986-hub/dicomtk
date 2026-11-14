@@ -117,6 +117,10 @@ cpp_get_tag_values <- function(path, queries) {
     .Call(`_dicomtk_cpp_get_tag_values`, path, queries)
 }
 
+cpp_resample_volume_3d <- function(vox, old_dims, old_spacing, new_dims, new_spacing, method = "trilinear") {
+    .Call(`_dicomtk_cpp_resample_volume_3d`, vox, old_dims, old_spacing, new_dims, new_spacing, method)
+}
+
 cpp_pack_binary_frame <- function(frame) {
     .Call(`_dicomtk_cpp_pack_binary_frame`, frame)
 }
