@@ -1,7 +1,7 @@
 Package: dicomtk
 Type: Package
 Title: Comprehensive 'DICOM' Toolkit for Medical Imaging
-Version: 0.3.0
+Version: 0.4.0
 Authors@R: c(
     person("Yee How", "Lau", email = "lauyeehow1986@gmail.com", 
            role = c("aut", "cre")),

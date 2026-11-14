@@ -78,6 +78,17 @@
   - Implemented C++17 Fast Marching Method Telea inpainting (`cpp_telea_inpaint()`) with aspect-ratio bounding-box guardrails and optional OCR verification (`tesseract`).
 - [x] **Task 6: 3D Head CT/MR Defacing & WSI Safeguards**:
   - Added `dicom_deface()` performing analytical cutting-plane facial stripping on 3D volumetric CT and MR series in LPS/RAS space.
+
+### Phase 2 (`v0.4.0` Segmentation, RTSTRUCT/RTDOSE, Quantitative SR & Deep Learning Prep) — Completed
+- [x] **Task 1: C++17 Scanline Rasterizer & Contour Tracer**: `rasterize_polygon_2d()`, `rasterize_polygons_2d()`, `trace_contours_2d()` (`src/rcpp_rasterize.cpp`, `R/rasterize.R`).
+- [x] **Task 2: `dicom_seg` S3 Class & DICOM SEG Writer**: `dicom_seg()`, `write_dicom_seg()`, `as_labelmap()` (`src/rcpp_seg.cpp`, `R/seg.R`).
+- [x] **Task 3: RTSTRUCT <-> `dicom_seg` Conversion**: `rtstruct_to_seg()`, `seg_to_rtstruct()` (`R/rt-struct.R`).
+- [x] **Task 4: RTDOSE & DVH Engine**: `dicom_dvh()` (`R/rt-dose.R`).
+- [x] **Task 5: Quantitative SR (TID 1500) & GSPS**: `dicom_sr_tid1500()`, `read_sr_tid1500()`, `write_dicom_gsps()`, `read_dicom_gsps()` (`src/rcpp_sr_rt.cpp`, `R/sr-tid1500.R`, `R/gsps.R`).
+- [x] **Task 6: Burned-In Visual Annotations**: `dicom_burn_annotations()`, `burned_annot()` (`R/export-burned.R`).
+- [x] **Task 7: Deep Learning Prep**: `volume_resample()`, `volume_window()`, `dicom_patient_splits()` (`src/rcpp_resample.cpp`, `R/dl-prep.R`).
+- [x] **Task 8: ML & FAIR Dataset Exporters**: `export_nnunet()`, `export_monai()`, `export_rocrate()`, `export_croissant()` (`R/export-dataset.R`).
+- [x] **Task 9a: Automated Image QC & Release Prep**: `dicom_image_qc()` (`R/qc.R`), `vignettes/segmentation_and_rt.Rmd`, `DESCRIPTION` (`0.4.0`), `NEWS.md`, `_pkgdown.yml`.
   - Added Whole Slide Imaging (WSI) label/macro frame stripping to prevent specimen identifier leakage.
 - [x] **Task 7: Residual-PHI Verifier & Risk Scorer**:
   - Added `dicom_deid_verify()` scanning processed datasets for 18 statutory PHI canary categories.

@@ -74,21 +74,80 @@ read_dicom_rt <- function(path) {
 #'
 #' Reads a DICOM Segmentation (`SEG`) dataset, extracting segment descriptions
 #' (`SegmentSequence (0062,0002)`) and the binary/fractional 3D segmentation
-#' mask array.
+#' mask array, optionally constructing a unified [dicom_seg] object if a
+#' reference [dicom_volume] is supplied.
 #'
 #' @param path Path to a DICOM Segmentation file.
+#' @param ref_volume Optional reference [dicom_volume] providing spatial geometry.
 #'
-#' @return A list of class `"dicom_seg"` containing `segments` (tibble of
-#'   segment metadata) and `mask` (pixel/voxel mask array).
+#' @return An object of class [dicom_seg] (if `ref_volume` is provided or can be
+#'   derived) or a list of class `"dicom_seg"`.
 #' @export
 #' @examples
 #' dcm_file <- system.file("extdata", "example.dcm", package = "dicomtk")
 #' seg <- read_dicom_seg(dcm_file)
-#' dim(seg$mask)
-read_dicom_seg <- function(path) {
+#' seg$modality
+read_dicom_seg <- function(path, ref_volume = NULL) {
   hdr <- read_dicom(path, include_sequences = TRUE)
   seg_rows <- hdr[hdr$group == "0062" | grepl("0062,0002", hdr$sequence_path, fixed = TRUE), , drop = FALSE]
-  mask <- tryCatch(read_dicom_pixels(path, rescale = FALSE), error = function(e) NULL)
+
+  # Check bits allocated
+  bits_alloc <- suppressWarnings(as.integer(dicom_tag_value(path, "BitsAllocated")[[1L]]))
+  rows <- suppressWarnings(as.integer(dicom_tag_value(path, "Rows")[[1L]]))
+  cols <- suppressWarnings(as.integer(dicom_tag_value(path, "Columns")[[1L]]))
+  n_frames <- suppressWarnings(as.integer(dicom_tag_value(path, "NumberOfFrames")[[1L]]))
+  if (is.na(n_frames) || n_frames <= 0L) n_frames <- 1L
+
+  mask <- NULL
+  if (identical(bits_alloc, 1L) && !is.na(rows) && !is.na(cols)) {
+    # 1-bit packed binary frames
+    raw_bytes <- cpp_read_dicom_raw_pixels(normalizePath(path, mustWork = TRUE))
+    frame_bytes <- (rows * cols + 7L) %/% 8L
+    if (frame_bytes %% 2L != 0L) frame_bytes <- frame_bytes + 1L
+
+    mask_arr <- array(0L, dim = c(rows, cols, n_frames))
+    for (k in seq_len(n_frames)) {
+      start_b <- (k - 1L) * frame_bytes + 1L
+      end_b <- min(length(raw_bytes), start_b + frame_bytes - 1L)
+      if (start_b <= length(raw_bytes)) {
+        sub_raw <- raw_bytes[start_b:end_b]
+        mask_arr[, , k] <- cpp_unpack_binary_frame(sub_raw, cols, rows)
+      }
+    }
+    mask <- mask_arr
+  } else {
+    mask <- tryCatch(read_dicom_pixels(path, rescale = FALSE), error = function(e) NULL)
+  }
+
+  labels <- character()
+  if (nrow(seg_rows) > 0L) {
+    lbl_rows <- seg_rows[seg_rows$keyword == "SegmentLabel" | seg_rows$tag == "(0062,0005)", , drop = FALSE]
+    if (nrow(lbl_rows) > 0L) {
+      labels <- lbl_rows$value_str
+    }
+  }
+
+  if (length(labels) == 0L) {
+    # Check top-level ContentLabel
+    cl_val <- dicom_tag_value(path, "(0070,0080)")[[1L]]
+    if (!is.null(cl_val) && !is.na(cl_val) && nzchar(cl_val)) {
+      labels <- cl_val
+    } else {
+      labels <- "Segment_1"
+    }
+  }
+
+  seg_meta <- tibble::tibble(
+    segment_id = seq_along(labels),
+    label = labels,
+    category = "Anatomy",
+    type = if (identical(bits_alloc, 1L)) "binary" else "fractional"
+  )
+
+  if (!is.null(ref_volume)) {
+    return(dicom_seg(mask = mask, ref_volume = ref_volume, segments = seg_meta))
+  }
+
   structure(
     list(
       segments = seg_rows,

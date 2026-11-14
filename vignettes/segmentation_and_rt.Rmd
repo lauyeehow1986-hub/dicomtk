@@ -1,0 +1,65 @@
+---
+title: "Segmentation, Radiotherapy (RTSTRUCT/RTDOSE), and Deep Learning Prep"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Segmentation, Radiotherapy (RTSTRUCT/RTDOSE), and Deep Learning Prep}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Overview
+
+`dicomtk` 0.4.0 introduces end-to-end support for **DICOM Segmentation (`SEG`)**, **Radiotherapy (`RTSTRUCT` and `RTDOSE`)**, **Quantitative Structured Reports (`TID 1500`)**, **Grayscale Presentation States (`GSPS`)**, **Automated Image Quality Control**, and **ML Dataset Exporters (`nnU-Net v2`, `MONAI`, `RO-Crate`, `Croissant`)**.
+
+## 1. Creating and Writing a DICOM Segmentation (`dicom_seg`)
+
+Because `dicom_seg` inherits from `dicom_volume`, it preserves full 3D LPS/RAS spatial geometry alongside segment metadata:
+
+```{r}
+library(dicomtk)
+
+synth <- dicom_synthesize(modality = "CT", dims = c(32L, 32L, 6L))
+vol <- read_dicom_volume(synth[["out_dir"]])
+
+mask <- array(0L, dim = dim(vol))
+mask[10:22, 10:22, 2:5] <- 1L
+
+seg <- dicom_seg(
+  mask = mask,
+  ref_volume = vol,
+  segments = tibble::tibble(segment_id = 1L, label = "Liver")
+)
+seg
+```
+
+## 2. Automated Image Quality Control (`dicom_image_qc`)
+
+Before feeding volumes into a downstream pipeline or ML trainer, run `dicom_image_qc()` to check SNR, CNR, FOV border truncation, slice spacing anomalies, gantry tilt, and high-frequency ringing:
+
+```{r}
+qc <- dicom_image_qc(vol)
+qc$qc_status
+```
+
+## 3. Deep Learning Preprocessing (`volume_resample`, `volume_window`)
+
+Resample volumes to isotropic voxel spacing and apply clinical HU windowing:
+
+```{r}
+vol_iso <- volume_resample(vol, target_spacing = c(2, 2, 2), method = "trilinear")
+vol_win <- volume_window(vol_iso, center = 40, width = 400, normalize = "minmax")
+range(vol_win$voxels)
+```
+
+## 4. Cleanup
+
+```{r, include = FALSE}
+unlink(synth[["out_dir"]], recursive = TRUE)
+```

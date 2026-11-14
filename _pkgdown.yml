@@ -113,13 +113,40 @@ reference:
     contents:
       - read_dicom_sr
       - create_dicom_sr
+      - dicom_sr_tid1500
+      - read_sr_tid1500
       - read_dicom_rt
       - read_dicom_seg
+      - dicom_seg
+      - write_dicom_seg
+      - as_labelmap
+      - rtstruct_to_seg
+      - seg_to_rtstruct
+      - dicom_dvh
+      - rasterize_polygon_2d
+      - rasterize_polygons_2d
+      - trace_contours_2d
+      - write_dicom_gsps
+      - read_dicom_gsps
       - read_dicom_pmap
       - read_dicom_tract
       - read_dicom_pstate
       - read_dicom_ect
       - dicom_verify_signature
+
+  - title: "Deep Learning Prep, QC & Dataset Exporters"
+    desc: "3D resampling, intensity windowing, patient-level splits, automated QC, burned-in annotations, and nnU-Net/MONAI/RO-Crate/Croissant export."
+    contents:
+      - volume_resample
+      - volume_window
+      - dicom_patient_splits
+      - dicom_image_qc
+      - dicom_burn_annotations
+      - burned_annot
+      - export_nnunet
+      - export_monai
+      - export_rocrate
+      - export_croissant
 
   - title: "AI & LLM Integration (Ollama, OpenAI, Claude)"
     desc: "Connect DICOM studies and images to local Ollama and cloud OpenAI/Anthropic models."

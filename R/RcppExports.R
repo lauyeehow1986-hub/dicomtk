@@ -93,6 +93,18 @@ cpp_clean_pixels_file <- function(in_path, out_path, boxes, method = "blackout",
     .Call(`_dicomtk_cpp_clean_pixels_file`, in_path, out_path, boxes, method, radius)
 }
 
+cpp_rasterize_polygon_2d <- function(coords, width, height) {
+    .Call(`_dicomtk_cpp_rasterize_polygon_2d`, coords, width, height)
+}
+
+cpp_rasterize_polygons_2d <- function(poly_list, width, height, rule = "evenodd") {
+    .Call(`_dicomtk_cpp_rasterize_polygons_2d`, poly_list, width, height, rule)
+}
+
+cpp_trace_contours_2d <- function(mask) {
+    .Call(`_dicomtk_cpp_trace_contours_2d`, mask)
+}
+
 cpp_is_dicom <- function(path) {
     .Call(`_dicomtk_cpp_is_dicom`, path)
 }
@@ -105,12 +117,36 @@ cpp_get_tag_values <- function(path, queries) {
     .Call(`_dicomtk_cpp_get_tag_values`, path, queries)
 }
 
+cpp_resample_volume_3d <- function(vox, old_dims, old_spacing, new_dims, new_spacing, method = "trilinear") {
+    .Call(`_dicomtk_cpp_resample_volume_3d`, vox, old_dims, old_spacing, new_dims, new_spacing, method)
+}
+
+cpp_pack_binary_frame <- function(frame) {
+    .Call(`_dicomtk_cpp_pack_binary_frame`, frame)
+}
+
+cpp_unpack_binary_frame <- function(bytes, width, height) {
+    .Call(`_dicomtk_cpp_unpack_binary_frame`, bytes, width, height)
+}
+
+cpp_write_dicom_raw_pixels <- function(in_dcm_path, out_dcm_path, raw_pixel_bytes, bits_allocated = 1L, bits_stored = 1L, high_bit = 0L, pixel_representation = 0L, samples_per_pixel = 1L, number_of_frames = 1L) {
+    .Call(`_dicomtk_cpp_write_dicom_raw_pixels`, in_dcm_path, out_dcm_path, raw_pixel_bytes, bits_allocated, bits_stored, high_bit, pixel_representation, samples_per_pixel, number_of_frames)
+}
+
+cpp_read_dicom_raw_pixels <- function(path) {
+    .Call(`_dicomtk_cpp_read_dicom_raw_pixels`, path)
+}
+
 cpp_read_dicom_sr <- function(path) {
     .Call(`_dicomtk_cpp_read_dicom_sr`, path)
 }
 
 cpp_create_dicom_sr <- function(out_path, title, text_content, patient_name = "ANONYMOUS", patient_id = "ANON001", study_uid = "") {
     .Call(`_dicomtk_cpp_create_dicom_sr`, out_path, title, text_content, patient_name, patient_id, study_uid)
+}
+
+cpp_write_dicom_dataset <- function(out_path, meta_tags, meta_values, extra_sequences = NULL) {
+    .Call(`_dicomtk_cpp_write_dicom_dataset`, out_path, meta_tags, meta_values, extra_sequences)
 }
 
 cpp_modify_dicom <- function(in_path, out_path, mod_tags, mod_values, del_tags, erase_private = FALSE, regenerate_uids = FALSE) {
