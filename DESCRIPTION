@@ -1,7 +1,7 @@
 Package: dicomtk
 Type: Package
 Title: Comprehensive 'DICOM' Toolkit for Medical Imaging
-Version: 0.4.0
+Version: 0.5.0
 Authors@R: c(
     person("Yee How", "Lau", email = "lauyeehow1986@gmail.com", 
            role = c("aut", "cre")),
@@ -55,7 +55,9 @@ Suggests:
     openssl,
     mirai,
     pkgload,
-    tesseract
+    tesseract,
+    DBI (>= 1.2.0),
+    duckdb (>= 1.0.0)
 LinkingTo:
     Rcpp
 SystemRequirements: 

@@ -1,3 +1,24 @@
+# dicomtk 0.5.0
+
+### Interoperability, DuckDB/Parquet Index & OHDSI OMOP MI-CDM (Phase 4)
+
+* **DICOMweb (PS3.18) & OAuth2 (`R/dicomweb.R`, `R/network.R`)**:
+  - Extended `dicom_connect()` with Bearer, Basic, and OAuth2 client-credentials authentication (`auth` and custom `headers`) and wired `dicom_find()` / `dicom_send()` to delegate to DICOMweb when `dicomweb_url` is set.
+  - Added `as_dicom_json()`, `from_dicom_json()`, `pack_multipart_dicom()`, `unpack_multipart_dicom()`, `dicomweb_qido()`, `dicomweb_wado()`, `dicomweb_stow()`, and `dicomweb_metadata()`.
+
+* **HL7 FHIR R4/R5 Imaging & Synthea Linkage (`R/fhir.R`, `R/fhir-link.R`)**:
+  - Added `as_fhir_imaging_study()`, `from_fhir_imaging_study()`, `as_fhir_imaging_selection()`, `as_fhir_diagnostic_report()`, `as_fhir_provenance()`, and `as_w3c_prov()`.
+  - Added `fhir_post()`, `fhir_get()`, and `link_synthea_cohort()` for HAPI FHIR / Epic sandboxes and Synthea Coherent Data Set patient-imaging linkage.
+
+* **DuckDB/Parquet Archive Index & Guardrailed NL-to-SQL (`R/archive-index.R`, `R/cohort-nl.R`)**:
+  - Added `dicom_index_build()`, `dicom_index_query()`, and `dicom_index_close()` building normalized `studies`, `series`, and `instances` tables with Parquet export and pure-R tibble fallback.
+  - Added `validate_readonly_sql()`, `dicom_cohort_nl()`, `export_cohort_spec()`, and `run_cohort_spec()` with strict read-only SQL enforcement blocking DDL/DML, multi-statements, comments, and host-file reader functions.
+
+* **OHDSI OMOP Medical Imaging CDM (`R/omop-micdm.R`, `omop_imaging_concepts`)**:
+  - Added `omop_imaging_concepts` dataset, `to_omop_image_occurrence()`, `to_omop_image_feature()`, and `write_omop_micdm()`.
+
+---
+
 # dicomtk 0.4.0
 
 ### Segmentation, Radiotherapy, Quantitative SR & Deep Learning Prep (Phase 2)

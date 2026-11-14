@@ -159,6 +159,50 @@ reference:
       - dicom_ask
 
 
+  - title: "DICOMweb (QIDO-RS, WADO-RS, STOW-RS)"
+    desc: "PS3.18 DICOM JSON, RFC 2387 binary multipart/related framing, OAuth2, and QIDO/WADO/STOW REST clients."
+    contents:
+      - as_dicom_json
+      - from_dicom_json
+      - pack_multipart_dicom
+      - unpack_multipart_dicom
+      - dicomweb_qido
+      - dicomweb_metadata
+      - dicomweb_wado
+      - dicomweb_stow
+
+  - title: "HL7 FHIR R4/R5 & Synthea Linkage"
+    desc: "Bi-directional ImagingStudy, ImagingSelection, DiagnosticReport, Provenance, W3C PROV, and Synthea cohort linkage."
+    contents:
+      - as_fhir_imaging_study
+      - from_fhir_imaging_study
+      - as_fhir_imaging_selection
+      - as_fhir_diagnostic_report
+      - as_fhir_provenance
+      - as_w3c_prov
+      - fhir_post
+      - fhir_get
+      - link_synthea_cohort
+
+  - title: "DuckDB/Parquet Archive Index & NL-to-SQL"
+    desc: "Normalized 3-table study/series/instance index, Parquet export, and read-only SQL cohort builder."
+    contents:
+      - dicom_index_build
+      - dicom_index_query
+      - dicom_index_close
+      - validate_readonly_sql
+      - dicom_cohort_nl
+      - export_cohort_spec
+      - run_cohort_spec
+
+  - title: "OHDSI OMOP Medical Imaging CDM (MI-CDM)"
+    desc: "Map studies, segmentations, and TID 1500 SR metrics into OMOP image_occurrence and image_feature tables."
+    contents:
+      - omop_imaging_concepts
+      - to_omop_image_occurrence
+      - to_omop_image_feature
+      - write_omop_micdm
+
   - title: "Legacy Compatibility"
     desc: "Backward-compatible wrappers for original dcmtk R package functions."
     contents:

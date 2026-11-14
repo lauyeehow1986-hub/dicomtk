@@ -18,6 +18,11 @@
 #'   STOW-RS) REST APIs.
 #' @param local_dir Optional local directory path to act as a local file-backed
 #'   PACS repository for testing queries and retrievals offline.
+#' @param auth Optional authentication list: `list(type = "none" | "bearer" |
+#'   "basic" | "oauth2_client_credentials", token = ..., username = ...,
+#'   password = ..., client_id = ..., client_secret = ..., token_url = ...,
+#'   scope = ...)`.
+#' @param headers Optional named character vector of custom HTTP headers.
 #'
 #' @return An S3 object of class `"dicom_connection"`.
 #' @export
@@ -30,7 +35,15 @@ dicom_connect <- function(host = "127.0.0.1",
                           calling_ae = "DICOMTK",
                           timeout_ms = 5000L,
                           dicomweb_url = NULL,
-                          local_dir = NULL) {
+                          local_dir = NULL,
+                          auth = list(type = "none"),
+                          headers = character(0)) {
+  if (is.null(auth) || !is.list(auth)) {
+    auth <- list(type = "none")
+  }
+  if (is.null(auth$type)) {
+    auth$type <- "none"
+  }
   structure(
     list(
       host = as.character(host),
@@ -39,7 +52,9 @@ dicom_connect <- function(host = "127.0.0.1",
       calling_ae = as.character(calling_ae),
       timeout_ms = as.integer(timeout_ms),
       dicomweb_url = dicomweb_url,
-      local_dir = local_dir
+      local_dir = local_dir,
+      auth = auth,
+      headers = headers
     ),
     class = "dicom_connection"
   )
@@ -53,7 +68,27 @@ print.dicom_connection <- function(x, ...) {
   if (!is.null(x$local_dir)) {
     cli::cli_alert_info("Local PACS directory: {x$local_dir}")
   }
+  if (!is.null(x$auth$type) && !identical(x$auth$type, "none")) {
+    cli::cli_alert_info("Auth mode: {x$auth$type} (credentials: <REDACTED>)")
+  }
   invisible(x)
+}
+
+#' @export
+str.dicom_connection <- function(object, ...) {
+  redacted <- object
+  if (is.list(redacted$auth)) {
+    for (s_field in c("token", "password", "client_secret")) {
+      if (!is.null(redacted$auth[[s_field]])) {
+        redacted$auth[[s_field]] <- "<REDACTED>"
+      }
+    }
+  }
+  if (length(redacted$headers) > 0L && !is.null(names(redacted$headers))) {
+    auth_idx <- tolower(names(redacted$headers)) %in% c("authorization", "x-api-key", "proxy-authorization")
+    redacted$headers[auth_idx] <- "<REDACTED>"
+  }
+  utils::str(unclass(redacted), ...)
 }
 
 #' Verify DICOM PACS Connectivity (C-ECHO SCU)
@@ -163,17 +198,12 @@ dicom_find <- function(conn, level = c("STUDY", "SERIES", "IMAGE"), ...) {
   }
 
   if (inherits(conn, "dicom_connection") && !is.null(conn$dicomweb_url)) {
-    endpoint <- switch(level,
+    dw_level <- switch(level,
       STUDY = "studies",
       SERIES = "series",
       IMAGE = "instances"
     )
-    req <- httr2::request(conn$dicomweb_url) |>
-      httr2::req_url_path_append(endpoint) |>
-      httr2::req_headers(Accept = "application/dicom+json")
-    resp <- httr2::req_perform(req)
-    body <- httr2::resp_body_json(resp)
-    return(tibble::tibble(result = body))
+    return(dicomweb_qido(conn, level = dw_level, ...))
   }
 
   rlang::abort("Active PACS C-FIND server not reachable or `local_dir` not configured on `conn`.")
@@ -239,6 +269,9 @@ dicom_send <- function(files, conn) {
       success = ok,
       status = ifelse(ok, "STORED_LOCAL", "COPY_FAILED")
     ))
+  }
+  if (inherits(conn, "dicom_connection") && !is.null(conn$dicomweb_url)) {
+    return(dicomweb_stow(conn, files = files))
   }
   echo_res <- dicom_echo(conn)
   tibble::tibble(
