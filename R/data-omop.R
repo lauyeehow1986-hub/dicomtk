@@ -4,6 +4,7 @@
 #' quantitative TID 1500 / segmentation features, UCUM units, and provenance
 #' type codes onto standard OHDSI OMOP, SNOMED CT, LOINC, and RadLex concepts.
 #'
+#' @usage data(omop_imaging_concepts)
 #' @format A tibble with 52 rows and 8 variables:
 #' \describe{
 #'   \item{concept_id}{Integer OMOP standard concept identifier.}

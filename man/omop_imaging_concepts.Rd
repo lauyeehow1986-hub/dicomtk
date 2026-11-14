@@ -24,7 +24,7 @@ A tibble with 52 rows and 8 variables:
 OHDSI Medical Imaging Working Group (\code{MI-CDM}) & DICOM PS3.16.
 }
 \usage{
-omop_imaging_concepts
+data(omop_imaging_concepts)
 }
 \description{
 Curated reference crosswalk mapping DICOM modalities, anatomic sites,
