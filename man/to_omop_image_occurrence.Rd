@@ -20,7 +20,7 @@ to integer OMOP \code{person_id} values.}
 A \link[tibble:tibble]{tibble::tibble} conforming to OHDSI \code{image_occurrence}.
 }
 \description{
-Converts a \link{dicom_archive_index}, DICOM directory path, or header tibble
+Converts a \code{\link[=dicom_index_build]{dicom_index_build()}} index, DICOM directory path, or header tibble
 into a standard OHDSI Medical Imaging CDM (\code{MI-CDM}) \code{image_occurrence}
 table using the bundled \link{omop_imaging_concepts} crosswalk.
 }

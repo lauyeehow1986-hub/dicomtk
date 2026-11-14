@@ -1,0 +1,51 @@
+---
+title: "DICOMweb, HL7 FHIR, DuckDB Cohort Indexing, and OMOP MI-CDM"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{DICOMweb, HL7 FHIR, DuckDB Cohort Indexing, and OMOP MI-CDM}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Overview
+
+`dicomtk 0.5.0` introduces standards-compliant medical imaging interoperability:
+
+1. **DICOMweb (PS3.18)**: `as_dicom_json()`, `from_dicom_json()`, `pack_multipart_dicom()`, `unpack_multipart_dicom()`, `dicomweb_qido()`, `dicomweb_wado()`, `dicomweb_stow()`, and `dicomweb_metadata()` with OAuth2/Bearer/Basic authentication.
+2. **HL7 FHIR R4/R5**: `as_fhir_imaging_study()`, `from_fhir_imaging_study()`, `as_fhir_imaging_selection()`, `as_fhir_diagnostic_report()`, `as_fhir_provenance()`, `as_w3c_prov()`, and `link_synthea_cohort()`.
+3. **DuckDB / Parquet Archive Index & Guardrailed NL-to-SQL**: `dicom_index_build()`, `dicom_index_query()`, `validate_readonly_sql()`, `dicom_cohort_nl()`, `export_cohort_spec()`, and `run_cohort_spec()`.
+4. **OHDSI OMOP MI-CDM**: `to_omop_image_occurrence()`, `to_omop_image_feature()`, and `write_omop_micdm()` backed by `omop_imaging_concepts`.
+
+## 1. Archive Index & Guardrailed NL-to-SQL Cohort Builder
+
+```{r}
+library(dicomtk)
+
+synth <- dicom_synthesize(modality = "CT", dims = c(16L, 16L, 3L), phi_profile = "basic")
+idx <- dicom_index_build(synth[["out_dir"]])
+
+cohort <- dicom_cohort_nl(idx, "CT series with at least 2 instances")
+cohort$sql
+cohort$results
+```
+
+## 2. HL7 FHIR `ImagingStudy` & OHDSI OMOP `MI-CDM`
+
+```{r}
+vol <- read_dicom_volume(synth[["out_dir"]])
+fhir_study <- as_fhir_imaging_study(vol, patient_ref = "Patient/p-001")
+fhir_study$resourceType
+
+occ <- to_omop_image_occurrence(idx)
+occ[, c("image_occurrence_id", "modality_concept_id", "image_study_uid")]
+
+dicom_index_close(idx)
+unlink(synth[["out_dir"]], recursive = TRUE)
+```

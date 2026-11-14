@@ -1,7 +1,7 @@
 #' Validate That a SQL String Is Strictly Read-Only and Free of File-Access Functions
 #'
 #' Enforces an unbypassable read-only SQL policy for natural-language cohort
-#' queries against a [dicom_archive_index]. Rejects SQL comments, multi-statement
+#' queries against a [dicom_index_build()] index. Rejects SQL comments, multi-statement
 #' semicolons, DDL/DML/admin statements, and DuckDB host-file reader functions.
 #'
 #' @param sql Character SQL string to validate.

@@ -30,7 +30,7 @@
 
 #' Map DICOM Studies and Series to OHDSI OMOP `IMAGE_OCCURRENCE`
 #'
-#' Converts a [dicom_archive_index], DICOM directory path, or header tibble
+#' Converts a [dicom_index_build()] index, DICOM directory path, or header tibble
 #' into a standard OHDSI Medical Imaging CDM (`MI-CDM`) `image_occurrence`
 #' table using the bundled [omop_imaging_concepts] crosswalk.
 #'

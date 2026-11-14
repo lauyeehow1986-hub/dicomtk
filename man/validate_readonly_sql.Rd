@@ -14,7 +14,7 @@ Invisibly returns \code{TRUE} if valid; otherwise aborts via \code{\link[cli:cli
 }
 \description{
 Enforces an unbypassable read-only SQL policy for natural-language cohort
-queries against a \link{dicom_archive_index}. Rejects SQL comments, multi-statement
+queries against a \code{\link[=dicom_index_build]{dicom_index_build()}} index. Rejects SQL comments, multi-statement
 semicolons, DDL/DML/admin statements, and DuckDB host-file reader functions.
 }
 \examples{
