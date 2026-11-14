@@ -275,6 +275,9 @@ Rcpp::LogicalMatrix cpp_rasterize_polygons_2d(
   std::vector<std::vector<dicomtk::Point2D>> polys;
   for (int k = 0; k < poly_list.size(); ++k) {
     Rcpp::NumericMatrix coords = poly_list[k];
+    if (coords.ncol() < 2) {
+      Rcpp::stop("Each polygon matrix must have at least 2 columns (x, y).");
+    }
     int n = coords.nrow();
     std::vector<dicomtk::Point2D> pts(n);
     for (int i = 0; i < n; ++i) {

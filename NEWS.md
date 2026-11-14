@@ -10,7 +10,7 @@
 
 * **RTSTRUCT & RTDOSE Radiotherapy Suite**:
   - Added `rtstruct_to_seg()` and `seg_to_rtstruct()` for bidirectional conversion between 3D `dicom_seg` labelmaps and DICOM `RTSTRUCT` `ROIContourSequence` world-space polygons.
-  - Added `dicom_dvh()` computing cumulative and differential Dose-Volume Histograms (DVH) and clinical dosimetric metrics (`D98`, `D95`, `D50`, `D2`, `V20`, `mean_dose`, `max_dose`) from `RTDOSE` and `dicom_seg` masks.
+  - Added `dicom_dvh()` computing cumulative and differential Dose-Volume Histograms (DVH) and clinical dosimetric metrics (`D95`, `D90`, `D50`, `V20`, `min_dose`, `max_dose`, `mean_dose`, `volume_cc`) from `RTDOSE` and `dicom_seg` masks.
 
 * **Quantitative SR (TID 1500) & Grayscale Presentation States (GSPS)**:
   - Added `dicom_sr_tid1500()` and `read_sr_tid1500()` for DICOM TID 1500 Measurement Reports.

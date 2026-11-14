@@ -40,6 +40,10 @@ Rcpp::NumericVector cpp_resample_volume_3d(const Rcpp::NumericVector& vox,
   const double scale_c = new_spacing[1] / dc_in;
   const double scale_s = new_spacing[2] / ds_in;
 
+  const std::size_t n_in = static_cast<std::size_t>(nr_in) * nc_in * ns_in;
+  if (static_cast<std::size_t>(vox.size()) < n_in) {
+    Rcpp::stop("`vox` length is smaller than `prod(old_dims)`.");
+  }
   const std::size_t n_out = static_cast<std::size_t>(nr_out) * nc_out * ns_out;
   Rcpp::NumericVector out(n_out);
   out.attr("dim") = Rcpp::IntegerVector::create(nr_out, nc_out, ns_out);
