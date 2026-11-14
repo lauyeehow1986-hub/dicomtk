@@ -51,4 +51,5 @@ dcm_file <- system.file("extdata", "example.dcm", package = "dicomtk")
 png_file <- dicom_to_png(dcm_file)
 file.exists(png_file)
 #> [1] TRUE
+unlink(png_file)
 ```

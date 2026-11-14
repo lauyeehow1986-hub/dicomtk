@@ -5,7 +5,7 @@ Standard DICOM tags with Value Representation `DT` (DateTime).
 ## Usage
 
 ``` r
-datetime_tags
+data(datetime_tags)
 ```
 
 ## Format

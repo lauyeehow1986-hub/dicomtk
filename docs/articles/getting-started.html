@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">dicomtk</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,11 +38,14 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/anonymization.html">DICOM Anonymization &amp; HIPAA De-identification</a></li>
+<li><a class="dropdown-item" href="../articles/anonymization.html">Research-Grade DICOM De-Identification &amp; Privacy Engine</a></li>
     <li><a class="dropdown-item" href="../articles/getting-started.html">Getting Started with dicomtk</a></li>
     <li><a class="dropdown-item" href="../articles/image-visualization.html">DICOM Image Visualization: ggplot2, Clinical Windows, Shiny, and 3D Volumes</a></li>
+    <li><a class="dropdown-item" href="../articles/interop_fhir_and_omop.html">DICOMweb, HL7 FHIR, DuckDB Cohort Indexing, and OMOP MI-CDM</a></li>
     <li><a class="dropdown-item" href="../articles/llm-integration.html">AI &amp; LLM Integration: Local Ollama, OpenAI, and Anthropic Claude</a></li>
     <li><a class="dropdown-item" href="../articles/pacs-networking.html">PACS Networking &amp; DICOM Query/Retrieve</a></li>
+    <li><a class="dropdown-item" href="../articles/segmentation_and_rt.html">Segmentation, Radiotherapy (RTSTRUCT/RTDOSE), and Deep Learning Prep</a></li>
+    <li><a class="dropdown-item" href="../articles/volume-geometry.html">3D/4D Volume Geometry, Spatial Transforms, and NIfTI Export</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -153,6 +156,11 @@ and 3D MPR/MIP)<a class="anchor" aria-label="anchor" href="#visualizing-dicom-im
 <span>  patient_id <span class="op">=</span> <span class="st">"SUBJ001"</span>,</span>
 <span>  shift_days <span class="op">=</span> <span class="op">-</span><span class="fl">365</span></span>
 <span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: `dicom_anonymize()` was deprecated in dicomtk 0.3.0.</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Please use `dicom_deid()` instead.</span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">This warning is displayed once per session.</span></span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">Call `lifecycle::last_lifecycle_warnings()` to see where this warning was</span></span></span>
+<span><span class="co">#&gt; <span style="color: #555555;">generated.</span></span></span>
 <span><span class="fu"><a href="../reference/dicom_tag_value.html">dicom_tag_value</a></span><span class="op">(</span><span class="va">anon_path</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PatientName"</span>, <span class="st">"PatientID"</span>, <span class="st">"PatientIdentityRemoved"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;            PatientName              PatientID PatientIdentityRemoved </span></span>
 <span><span class="co">#&gt;      "STUDY^SUBJECT01"              "SUBJ001"                  "YES"</span></span></code></pre></div>

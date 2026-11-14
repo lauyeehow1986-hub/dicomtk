@@ -35,4 +35,5 @@ dcm_file <- system.file("extdata", "example.dcm", package = "dicomtk")
 rle_file <- dicom_compress(dcm_file)
 file.exists(rle_file)
 #> [1] TRUE
+unlink(rle_file)
 ```

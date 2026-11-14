@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">dicomtk</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -18,11 +18,14 @@
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/anonymization.html">DICOM Anonymization &amp; HIPAA De-identification</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/anonymization.html">Research-Grade DICOM De-Identification &amp; Privacy Engine</a></li>
     <li><a class="dropdown-item" href="../articles/getting-started.html">Getting Started with dicomtk</a></li>
     <li><a class="dropdown-item" href="../articles/image-visualization.html">DICOM Image Visualization: ggplot2, Clinical Windows, Shiny, and 3D Volumes</a></li>
+    <li><a class="dropdown-item" href="../articles/interop_fhir_and_omop.html">DICOMweb, HL7 FHIR, DuckDB Cohort Indexing, and OMOP MI-CDM</a></li>
     <li><a class="dropdown-item" href="../articles/llm-integration.html">AI &amp; LLM Integration: Local Ollama, OpenAI, and Anthropic Claude</a></li>
     <li><a class="dropdown-item" href="../articles/pacs-networking.html">PACS Networking &amp; DICOM Query/Retrieve</a></li>
+    <li><a class="dropdown-item" href="../articles/segmentation_and_rt.html">Segmentation, Radiotherapy (RTSTRUCT/RTDOSE), and Deep Learning Prep</a></li>
+    <li><a class="dropdown-item" href="../articles/volume-geometry.html">3D/4D Volume Geometry, Spatial Transforms, and NIfTI Export</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -39,6 +42,78 @@
     </div>
 
     <div class="section level2">
+      <h2 id="-d-d-volume-geometry-coordinate-spaces">3D/4D Volume Geometry &amp; Coordinate Spaces<a class="anchor" aria-label="anchor" href="#-d-d-volume-geometry-coordinate-spaces"></a></h2>
+
+      <div class="section-desc"><p>Standards-compliant 3D/4D DICOM volume reconstruction, LPS/RAS coordinate transforms, and slicing.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="read_dicom_volume.html">read_dicom_volume()</a></code>
+
+        </dt>
+        <dd>Read a 3D or 4D DICOM Volume with Exact Patient-Space Geometry</dd>
+
+        <dt>
+
+          <code><a href="dicom_split_series.html">dicom_split_series()</a></code>
+
+        </dt>
+        <dd>Discover and Split Homogeneous DICOM Sub-Series</dd>
+
+        <dt>
+
+          <code><a href="new_dicom_volume.html">new_dicom_volume()</a></code> <code><a href="new_dicom_volume.html">dim(<i>&lt;dicom_volume&gt;</i>)</a></code> <code><a href="new_dicom_volume.html">as.array(<i>&lt;dicom_volume&gt;</i>)</a></code> <code><a href="new_dicom_volume.html">print(<i>&lt;dicom_volume&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Construct and Validate a <code>dicom_volume</code> Object</dd>
+
+        <dt>
+
+          <code><a href="is_dicom_volume.html">is_dicom_volume()</a></code>
+
+        </dt>
+        <dd>Test Whether an Object Is a <code>dicom_volume</code></dd>
+
+        <dt>
+
+          <code><a href="sub-.dicom_volume.html">`[`(<i>&lt;dicom_volume&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Subset a <code>dicom_volume</code> While Preserving World Geometry</dd>
+
+        <dt>
+
+          <code><a href="plot.dicom_volume.html">plot(<i>&lt;dicom_volume&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Plot a <code>dicom_volume</code> Object</dd>
+
+        <dt>
+
+          <code><a href="dicom_orientation.html">dicom_orientation()</a></code>
+
+        </dt>
+        <dd>Query Anatomical Orientation of a DICOM Volume</dd>
+
+        <dt>
+
+          <code><a href="to_ras.html">to_ras()</a></code> <code><a href="to_ras.html">to_lps()</a></code> <code><a href="to_ras.html">dicom_to_ras()</a></code> <code><a href="to_ras.html">dicom_to_lps()</a></code>
+
+        </dt>
+        <dd>Convert a <code>dicom_volume</code> Between DICOM LPS and NIfTI RAS World Coordinates</dd>
+
+        <dt>
+
+          <code><a href="voxel_to_world.html">voxel_to_world()</a></code> <code><a href="voxel_to_world.html">world_to_voxel()</a></code>
+
+        </dt>
+        <dd>Map Between Voxel Indices and Physical World Coordinates</dd>
+      </dl></div><div class="section level2">
       <h2 id="core-dicom-i-o">Core DICOM I/O<a class="anchor" aria-label="anchor" href="#core-dicom-i-o"></a></h2>
 
       <div class="section-desc"><p>Read and write DICOM headers, pixel matrices, and 3D multi-slice series.</p></div>
@@ -72,7 +147,7 @@
         <dt>
 
           <code><a href="read_dicom_series.html">read_dicom_series()</a></code>
-
+          <span class="badge lifecycle lifecycle-deprecated">deprecated</span>
         </dt>
         <dd>Read a Multi-Slice DICOM Series into a 3D Volume</dd>
 
@@ -103,6 +178,59 @@
 
         </dt>
         <dd>Inspect Bundled DCMTK Configuration and Version Info</dd>
+
+        <dt>
+
+          <code><a href="dicom_sync_upstream.html">dicom_sync_upstream()</a></code>
+
+        </dt>
+        <dd>Check or Synchronize with Upstream OFFIS DCMTK Repository</dd>
+      </dl></div><div class="section level2">
+      <h2 id="synthetic-modality-phantoms">Synthetic Modality Phantoms<a class="anchor" aria-label="anchor" href="#synthetic-modality-phantoms"></a></h2>
+
+      <div class="section-desc"><p>Generate analytical multi-slice DICOM series (CT, MR, PET) with known ground-truth geometry.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="dicom_synthesize.html">dicom_synthesize()</a></code> <code><a href="dicom_synthesize.html">print(<i>&lt;dicom_phantom&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Synthesize Multi-Modality DICOM Phantoms with Exact Ground-Truth Geometry</dd>
+      </dl></div><div class="section level2">
+      <h2 id="quantitative-modality-transforms">Quantitative Modality Transforms<a class="anchor" aria-label="anchor" href="#quantitative-modality-transforms"></a></h2>
+
+      <div class="section-desc"><p>PET SUV quantification, Mammography VOI LUT curves, and Philips MR private scaling.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="dicom_pet_suv.html">dicom_pet_suv()</a></code>
+
+        </dt>
+        <dd>Calculate Standardized Uptake Value (SUV) for PET Volumes</dd>
+
+        <dt>
+
+          <code><a href="dicom_apply_voi_lut.html">dicom_apply_voi_lut()</a></code>
+
+        </dt>
+        <dd>Apply VOI LUT (Window/Level or Sigmoidal Transfer Function) to DICOM Volume</dd>
+
+        <dt>
+
+          <code><a href="dicom_mr_rescale.html">dicom_mr_rescale()</a></code>
+
+        </dt>
+        <dd>Apply Philips MR Quantitative Floating-Point or Console Display Scaling</dd>
       </dl></div><div class="section level2">
       <h2 id="dicom-tags-dictionary">DICOM Tags &amp; Dictionary<a class="anchor" aria-label="anchor" href="#dicom-tags-dictionary"></a></h2>
 
@@ -115,10 +243,10 @@
 
       <dl><dt>
 
-          <code><a href="dicom_tags.html">dicom_tags</a></code> <code><a href="dicom_tags.html">dicom_tags()</a></code>
+          <code><a href="dicom_tags.html">dicom_tags()</a></code>
 
         </dt>
-        <dd>Standard DICOM Data Dictionary (DCMTK 3.7.1 / PS 3.6-2026d)</dd>
+        <dd>Retrieve DICOM Tags from a File or the Standard Dictionary</dd>
 
         <dt>
 
@@ -143,6 +271,13 @@
 
         <dt>
 
+          <code><a href="legacy-dcmtk.html">dcmdump()</a></code> <code><a href="legacy-dcmtk.html">dcmdump_full()</a></code> <code><a href="legacy-dcmtk.html">dcmhd()</a></code> <code><a href="legacy-dcmtk.html">wide_hdr()</a></code> <code><a href="legacy-dcmtk.html">burned_annot()</a></code> <code><a href="legacy-dcmtk.html">dcmodify()</a></code> <code><a href="legacy-dcmtk.html">dcm_anon()</a></code> <code><a href="legacy-dcmtk.html">dcm_subtract_date()</a></code> <code><a href="legacy-dcmtk.html">dcmj2pnm()</a></code> <code><a href="legacy-dcmtk.html">dcmdjpeg()</a></code> <code><a href="legacy-dcmtk.html">dcmdrle()</a></code> <code><a href="legacy-dcmtk.html">dcmcrle()</a></code> <code><a href="legacy-dcmtk.html">check_dcmtk_cmd()</a></code>
+
+        </dt>
+        <dd>Legacy Compatibility Functions from <code>dcmtk</code></dd>
+
+        <dt>
+
           <code><a href="date_tags.html">date_tags</a></code>
 
         </dt>
@@ -162,9 +297,9 @@
         </dt>
         <dd>HIPAA / DICOM De-identification Removal Tags</dd>
       </dl></div><div class="section level2">
-      <h2 id="de-identification-anonymization">De-identification &amp; Anonymization<a class="anchor" aria-label="anchor" href="#de-identification-anonymization"></a></h2>
+      <h2 id="de-identification-privacy-engine">De-identification &amp; Privacy Engine<a class="anchor" aria-label="anchor" href="#de-identification-privacy-engine"></a></h2>
 
-      <div class="section-desc"><p>HIPAA Safe Harbor and DICOM PS3.15 confidentiality profile anonymization.</p></div>
+      <div class="section-desc"><p>Regulatory-grade PS3.15 de-identification, jurisdiction presets, pixel cleaning, 3D defacing, and risk auditing.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -172,6 +307,111 @@
 
 
       <dl><dt>
+
+          <code><a href="dicom_deid.html">dicom_deid()</a></code>
+
+        </dt>
+        <dd>De-Identify a DICOM File, Directory, or Cohort</dd>
+
+        <dt>
+
+          <code><a href="dicom_deid_profile.html">dicom_deid_profile()</a></code>
+
+        </dt>
+        <dd>DICOM De-Identification Profiles and Composable Jurisdictions</dd>
+
+        <dt>
+
+          <code><a href="dicom_list_jurisdictions.html">dicom_list_jurisdictions()</a></code>
+
+        </dt>
+        <dd>List Built-In Statutory De-Identification Jurisdictions</dd>
+
+        <dt>
+
+          <code><a href="dicom_key_provider.html">dicom_key_provider()</a></code>
+
+        </dt>
+        <dd>Pluggable Cryptographic Key Provider for DICOM De-Identification</dd>
+
+        <dt>
+
+          <code><a href="is_dicom_key_provider.html">is_dicom_key_provider()</a></code>
+
+        </dt>
+        <dd>Check if Object is a DICOM Key Provider</dd>
+
+        <dt>
+
+          <code><a href="deid_map_uid.html">deid_map_uid()</a></code>
+
+        </dt>
+        <dd>Deterministically Map a DICOM UID</dd>
+
+        <dt>
+
+          <code><a href="deid_patient_shift.html">deid_patient_shift()</a></code>
+
+        </dt>
+        <dd>Compute Per-Patient Date Shift</dd>
+
+        <dt>
+
+          <code><a href="derive_patient_shift_days.html">derive_patient_shift_days()</a></code>
+
+        </dt>
+        <dd>Derive Patient Shift Days from Key or Provider</dd>
+
+        <dt>
+
+          <code><a href="dicom_crosswalk_read.html">dicom_crosswalk_read()</a></code>
+
+        </dt>
+        <dd>Read and Decrypt a DICOM De-Identification Crosswalk</dd>
+
+        <dt>
+
+          <code><a href="dicom_detect_burned_phi.html">dicom_detect_burned_phi()</a></code>
+
+        </dt>
+        <dd>Detect Burned-In Annotation / Pixel PHI Regions</dd>
+
+        <dt>
+
+          <code><a href="dicom_clean_pixels.html">dicom_clean_pixels()</a></code>
+
+        </dt>
+        <dd>Clean Burned-In Pixel PHI via Blackout or Telea Inpainting</dd>
+
+        <dt>
+
+          <code><a href="dicom_deface.html">dicom_deface()</a></code>
+
+        </dt>
+        <dd>3D Coordinate-Aware Head CT/MR Defacing</dd>
+
+        <dt>
+
+          <code><a href="dicom_deid_verify.html">dicom_deid_verify()</a></code>
+
+        </dt>
+        <dd>Verify De-Identification Residual PHI and Generate Cryptographic Attestation</dd>
+
+        <dt>
+
+          <code><a href="dicom_verify_attestation.html">dicom_verify_attestation()</a></code>
+
+        </dt>
+        <dd>Verify Cryptographic Attestation Manifest</dd>
+
+        <dt>
+
+          <code><a href="dicom_deid_risk.html">dicom_deid_risk()</a></code>
+
+        </dt>
+        <dd>Re-Identification Risk Scoring and K-Anonymity Assessment</dd>
+
+        <dt>
 
           <code><a href="dicom_anonymize.html">dicom_anonymize()</a></code>
 
@@ -233,10 +473,10 @@
 
       <dl><dt>
 
-          <code><a href="dicom_to_png.html">dicom_to_png()</a></code>
+          <code><a href="write_nifti.html">write_nifti()</a></code>
 
         </dt>
-        <dd>Export a DICOM Image Slice to PNG</dd>
+        <dd>Write a DICOM Volume to NIfTI-1 With dcm2niix-Compatible Geometry</dd>
 
         <dt>
 
@@ -244,6 +484,13 @@
 
         </dt>
         <dd>Convert DICOM File(s) or Series to NIfTI-1 Format</dd>
+
+        <dt>
+
+          <code><a href="dicom_to_png.html">dicom_to_png()</a></code>
+
+        </dt>
+        <dd>Export a DICOM Image Slice to PNG</dd>
 
         <dt>
 
@@ -377,6 +624,20 @@
 
         <dt>
 
+          <code><a href="dicom_sr_tid1500.html">dicom_sr_tid1500()</a></code>
+
+        </dt>
+        <dd>Create a Quantitative Imaging DICOM SR TID 1500 Measurement Report</dd>
+
+        <dt>
+
+          <code><a href="read_sr_tid1500.html">read_sr_tid1500()</a></code>
+
+        </dt>
+        <dd>Read a DICOM SR TID 1500 Measurement Report</dd>
+
+        <dt>
+
           <code><a href="read_dicom_rt.html">read_dicom_rt()</a></code>
 
         </dt>
@@ -388,6 +649,83 @@
 
         </dt>
         <dd>Read DICOM Segmentation Objects (<code>dcmseg</code>)</dd>
+
+        <dt>
+
+          <code><a href="dicom_seg.html">dicom_seg()</a></code>
+
+        </dt>
+        <dd>DICOM Segmentation S3 Class</dd>
+
+        <dt>
+
+          <code><a href="write_dicom_seg.html">write_dicom_seg()</a></code>
+
+        </dt>
+        <dd>Write DICOM Segmentation Object (<code>dcmseg</code>)</dd>
+
+        <dt>
+
+          <code><a href="as_labelmap.html">as_labelmap()</a></code>
+
+        </dt>
+        <dd>Convert a Multi-Segment <code>dicom_seg</code> to a 3D Integer Label-Map</dd>
+
+        <dt>
+
+          <code><a href="rtstruct_to_seg.html">rtstruct_to_seg()</a></code>
+
+        </dt>
+        <dd>Convert RTSTRUCT Contours to a 3D Segmentation Mask (<code>dicom_seg</code>)</dd>
+
+        <dt>
+
+          <code><a href="seg_to_rtstruct.html">seg_to_rtstruct()</a></code>
+
+        </dt>
+        <dd>Convert a 3D Segmentation Mask (<code>dicom_seg</code>) to <code>RTSTRUCT</code> Contours</dd>
+
+        <dt>
+
+          <code><a href="dicom_dvh.html">dicom_dvh()</a></code>
+
+        </dt>
+        <dd>Compute Dose-Volume Histogram (DVH) and Clinical Radiation Metrics</dd>
+
+        <dt>
+
+          <code><a href="rasterize_polygon_2d.html">rasterize_polygon_2d()</a></code>
+
+        </dt>
+        <dd>2D Polygon Rasterization</dd>
+
+        <dt>
+
+          <code><a href="rasterize_polygons_2d.html">rasterize_polygons_2d()</a></code>
+
+        </dt>
+        <dd>Rasterize Multiple 2D Polygons</dd>
+
+        <dt>
+
+          <code><a href="trace_contours_2d.html">trace_contours_2d()</a></code>
+
+        </dt>
+        <dd>Trace Contours from 2D Binary Mask</dd>
+
+        <dt>
+
+          <code><a href="write_dicom_gsps.html">write_dicom_gsps()</a></code>
+
+        </dt>
+        <dd>Write a DICOM Grayscale Softcopy Presentation State (GSPS) Object</dd>
+
+        <dt>
+
+          <code><a href="read_dicom_gsps.html">read_dicom_gsps()</a></code>
+
+        </dt>
+        <dd>Read a DICOM Grayscale Softcopy Presentation State (GSPS) Object</dd>
 
         <dt>
 
@@ -423,6 +761,85 @@
 
         </dt>
         <dd>Inspect Digital Signatures in a DICOM File (<code>dcmsign</code>)</dd>
+      </dl></div><div class="section level2">
+      <h2 id="deep-learning-prep-qc-dataset-exporters">Deep Learning Prep, QC &amp; Dataset Exporters<a class="anchor" aria-label="anchor" href="#deep-learning-prep-qc-dataset-exporters"></a></h2>
+
+      <div class="section-desc"><p>3D resampling, intensity windowing, patient-level splits, automated QC, burned-in annotations, and nnU-Net/MONAI/RO-Crate/Croissant export.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="volume_resample.html">volume_resample()</a></code>
+
+        </dt>
+        <dd>Resample a 3D <code>dicom_volume</code> or <code>dicom_seg</code> to Target Voxel Spacing</dd>
+
+        <dt>
+
+          <code><a href="volume_window.html">volume_window()</a></code>
+
+        </dt>
+        <dd>Apply Intensity Windowing and Normalization to a <code>dicom_volume</code></dd>
+
+        <dt>
+
+          <code><a href="dicom_patient_splits.html">dicom_patient_splits()</a></code>
+
+        </dt>
+        <dd>Generate Leakage-Free Patient-Level Train / Validation / Test Splits</dd>
+
+        <dt>
+
+          <code><a href="dicom_image_qc.html">dicom_image_qc()</a></code>
+
+        </dt>
+        <dd>Automated Image Quality Control for DICOM Volumes</dd>
+
+        <dt>
+
+          <code><a href="dicom_burn_annotations.html">dicom_burn_annotations()</a></code>
+
+        </dt>
+        <dd>Export Derived Burned-In Annotation Secondary Capture DICOMs</dd>
+
+        <dt>
+
+          <code><a href="legacy-dcmtk.html">dcmdump()</a></code> <code><a href="legacy-dcmtk.html">dcmdump_full()</a></code> <code><a href="legacy-dcmtk.html">dcmhd()</a></code> <code><a href="legacy-dcmtk.html">wide_hdr()</a></code> <code><a href="legacy-dcmtk.html">burned_annot()</a></code> <code><a href="legacy-dcmtk.html">dcmodify()</a></code> <code><a href="legacy-dcmtk.html">dcm_anon()</a></code> <code><a href="legacy-dcmtk.html">dcm_subtract_date()</a></code> <code><a href="legacy-dcmtk.html">dcmj2pnm()</a></code> <code><a href="legacy-dcmtk.html">dcmdjpeg()</a></code> <code><a href="legacy-dcmtk.html">dcmdrle()</a></code> <code><a href="legacy-dcmtk.html">dcmcrle()</a></code> <code><a href="legacy-dcmtk.html">check_dcmtk_cmd()</a></code>
+
+        </dt>
+        <dd>Legacy Compatibility Functions from <code>dcmtk</code></dd>
+
+        <dt>
+
+          <code><a href="export_nnunet.html">export_nnunet()</a></code>
+
+        </dt>
+        <dd>Export Volumes and Segmentations in nnU-Net v2 Format</dd>
+
+        <dt>
+
+          <code><a href="export_monai.html">export_monai()</a></code>
+
+        </dt>
+        <dd>Export Volumes and Segmentations in MONAI Datalist Format</dd>
+
+        <dt>
+
+          <code><a href="export_rocrate.html">export_rocrate()</a></code>
+
+        </dt>
+        <dd>Export RO-Crate 1.1 Dataset Metadata</dd>
+
+        <dt>
+
+          <code><a href="export_croissant.html">export_croissant()</a></code>
+
+        </dt>
+        <dd>Export MLCommons Croissant 1.0 Dataset Metadata</dd>
       </dl></div><div class="section level2">
       <h2 id="ai-llm-integration-ollama-openai-claude-">AI &amp; LLM Integration (Ollama, OpenAI, Claude)<a class="anchor" aria-label="anchor" href="#ai-llm-integration-ollama-openai-claude-"></a></h2>
 
@@ -474,6 +891,289 @@
 
         </dt>
         <dd>Ask a Natural-Language Question About a DICOM File</dd>
+      </dl></div><div class="section level2">
+      <h2 id="dicomweb-qido-rs-wado-rs-stow-rs-">DICOMweb (QIDO-RS, WADO-RS, STOW-RS)<a class="anchor" aria-label="anchor" href="#dicomweb-qido-rs-wado-rs-stow-rs-"></a></h2>
+
+      <div class="section-desc"><p>PS3.18 DICOM JSON, RFC 2387 binary multipart/related framing, OAuth2, and QIDO/WADO/STOW REST clients.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="as_dicom_json.html">as_dicom_json()</a></code>
+
+        </dt>
+        <dd>Convert DICOM Header Tibble to PS3.18 DICOM JSON Model</dd>
+
+        <dt>
+
+          <code><a href="from_dicom_json.html">from_dicom_json()</a></code>
+
+        </dt>
+        <dd>Convert PS3.18 DICOM JSON Model to a Tidy Header Tibble</dd>
+
+        <dt>
+
+          <code><a href="pack_multipart_dicom.html">pack_multipart_dicom()</a></code>
+
+        </dt>
+        <dd>Pack DICOM Files Into an RFC 2387 <code>multipart/related</code> Binary Payload</dd>
+
+        <dt>
+
+          <code><a href="unpack_multipart_dicom.html">unpack_multipart_dicom()</a></code>
+
+        </dt>
+        <dd>Unpack an RFC 2387 <code>multipart/related</code> DICOM Payload to Disk</dd>
+
+        <dt>
+
+          <code><a href="dicomweb_qido.html">dicomweb_qido()</a></code>
+
+        </dt>
+        <dd>Query a DICOMweb Endpoint Using QIDO-RS</dd>
+
+        <dt>
+
+          <code><a href="dicomweb_metadata.html">dicomweb_metadata()</a></code>
+
+        </dt>
+        <dd>Retrieve DICOMweb Study/Series Metadata (WADO-RS Metadata)</dd>
+
+        <dt>
+
+          <code><a href="dicomweb_wado.html">dicomweb_wado()</a></code>
+
+        </dt>
+        <dd>Retrieve DICOM Instances via WADO-RS</dd>
+
+        <dt>
+
+          <code><a href="dicomweb_stow.html">dicomweb_stow()</a></code>
+
+        </dt>
+        <dd>Store DICOM Instances via STOW-RS</dd>
+      </dl></div><div class="section level2">
+      <h2 id="hl-fhir-r-r-synthea-linkage">HL7 FHIR R4/R5 &amp; Synthea Linkage<a class="anchor" aria-label="anchor" href="#hl-fhir-r-r-synthea-linkage"></a></h2>
+
+      <div class="section-desc"><p>Bi-directional ImagingStudy, ImagingSelection, DiagnosticReport, Provenance, W3C PROV, and Synthea cohort linkage.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="as_fhir_imaging_study.html">as_fhir_imaging_study()</a></code>
+
+        </dt>
+        <dd>Build an HL7 FHIR R4/R5 <code>ImagingStudy</code> Resource</dd>
+
+        <dt>
+
+          <code><a href="from_fhir_imaging_study.html">from_fhir_imaging_study()</a></code>
+
+        </dt>
+        <dd>Parse an HL7 FHIR <code>ImagingStudy</code> Resource Into a Tidy Tibble</dd>
+
+        <dt>
+
+          <code><a href="as_fhir_imaging_selection.html">as_fhir_imaging_selection()</a></code>
+
+        </dt>
+        <dd>Build an HL7 FHIR R5 <code>ImagingSelection</code> Resource From a Segmentation or GSPS</dd>
+
+        <dt>
+
+          <code><a href="as_fhir_diagnostic_report.html">as_fhir_diagnostic_report()</a></code>
+
+        </dt>
+        <dd>Build an HL7 FHIR <code>DiagnosticReport</code> Resource From a DICOM SR / TID 1500 Report</dd>
+
+        <dt>
+
+          <code><a href="as_fhir_provenance.html">as_fhir_provenance()</a></code>
+
+        </dt>
+        <dd>Build an HL7 FHIR <code>Provenance</code> Resource From De-Identification or Volume Provenance</dd>
+
+        <dt>
+
+          <code><a href="as_w3c_prov.html">as_w3c_prov()</a></code>
+
+        </dt>
+        <dd>Convert DICOM Processing Provenance to W3C PROV-JSON</dd>
+
+        <dt>
+
+          <code><a href="fhir_post.html">fhir_post()</a></code>
+
+        </dt>
+        <dd>Post a FHIR Resource to a FHIR REST Server or Local Mock Directory</dd>
+
+        <dt>
+
+          <code><a href="fhir_get.html">fhir_get()</a></code>
+
+        </dt>
+        <dd>Retrieve or Search FHIR Resources From a FHIR Server or Local Mock Directory</dd>
+
+        <dt>
+
+          <code><a href="link_synthea_cohort.html">link_synthea_cohort()</a></code>
+
+        </dt>
+        <dd>Link Synthea FHIR Clinical Bundles With Local DICOM Studies</dd>
+      </dl></div><div class="section level2">
+      <h2 id="duckdb-parquet-archive-index-nl-to-sql">DuckDB/Parquet Archive Index &amp; NL-to-SQL<a class="anchor" aria-label="anchor" href="#duckdb-parquet-archive-index-nl-to-sql"></a></h2>
+
+      <div class="section-desc"><p>Normalized 3-table study/series/instance index, Parquet export, and read-only SQL cohort builder.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="dicom_index_build.html">dicom_index_build()</a></code>
+
+        </dt>
+        <dd>Build a Normalized 3-Table DICOM Archive Index (DuckDB / Parquet / Tibble)</dd>
+
+        <dt>
+
+          <code><a href="dicom_index_query.html">dicom_index_query()</a></code>
+
+        </dt>
+        <dd>Execute a Read-Only SQL Query Against a <code>dicom_archive_index</code></dd>
+
+        <dt>
+
+          <code><a href="dicom_index_close.html">dicom_index_close()</a></code>
+
+        </dt>
+        <dd>Close a <code>dicom_archive_index</code> Database Connection</dd>
+
+        <dt>
+
+          <code><a href="validate_readonly_sql.html">validate_readonly_sql()</a></code>
+
+        </dt>
+        <dd>Validate That a SQL String Is Strictly Read-Only and Free of File-Access Functions</dd>
+
+        <dt>
+
+          <code><a href="dicom_cohort_nl.html">dicom_cohort_nl()</a></code>
+
+        </dt>
+        <dd>Build and Execute a Guardrailed Natural-Language Cohort Query</dd>
+
+        <dt>
+
+          <code><a href="export_cohort_spec.html">export_cohort_spec()</a></code>
+
+        </dt>
+        <dd>Export a Portable JSON Cohort Specification</dd>
+
+        <dt>
+
+          <code><a href="run_cohort_spec.html">run_cohort_spec()</a></code>
+
+        </dt>
+        <dd>Execute a Portable JSON Cohort Specification Against an Archive Index</dd>
+      </dl></div><div class="section level2">
+      <h2 id="ohdsi-omop-medical-imaging-cdm-mi-cdm-">OHDSI OMOP Medical Imaging CDM (MI-CDM)<a class="anchor" aria-label="anchor" href="#ohdsi-omop-medical-imaging-cdm-mi-cdm-"></a></h2>
+
+      <div class="section-desc"><p>Map studies, segmentations, and TID 1500 SR metrics into OMOP image_occurrence and image_feature tables.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="omop_imaging_concepts.html">omop_imaging_concepts</a></code>
+
+        </dt>
+        <dd>OHDSI OMOP Medical Imaging CDM Concept Crosswalk</dd>
+
+        <dt>
+
+          <code><a href="to_omop_image_occurrence.html">to_omop_image_occurrence()</a></code>
+
+        </dt>
+        <dd>Map DICOM Studies and Series to OHDSI OMOP <code>IMAGE_OCCURRENCE</code></dd>
+
+        <dt>
+
+          <code><a href="to_omop_image_feature.html">to_omop_image_feature()</a></code>
+
+        </dt>
+        <dd>Map Segmentation Masks or TID 1500 SR Reports to OHDSI OMOP <code>IMAGE_FEATURE</code></dd>
+
+        <dt>
+
+          <code><a href="write_omop_micdm.html">write_omop_micdm()</a></code>
+
+        </dt>
+        <dd>Write and Validate OHDSI OMOP MI-CDM Tables in a DBI / DuckDB Database</dd>
+      </dl></div><div class="section level2">
+      <h2 id="whole-slide-imaging-wsi-sup-annotations">Whole Slide Imaging (WSI) &amp; Sup 222 Annotations<a class="anchor" aria-label="anchor" href="#whole-slide-imaging-wsi-sup-annotations"></a></h2>
+
+      <div class="section-desc"><p>Multi-resolution WSI pyramid reader, out-of-core tile stitching, and Microscopy Bulk Simple Annotations.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="dicom_synthesize_wsi.html">dicom_synthesize_wsi()</a></code>
+
+        </dt>
+        <dd>Synthesize a Multi-Resolution DICOM WSI Pyramid for Testing</dd>
+
+        <dt>
+
+          <code><a href="read_dicom_wsi_pyramid.html">read_dicom_wsi_pyramid()</a></code>
+
+        </dt>
+        <dd>Read a Multi-Resolution DICOM WSI Pyramid Index</dd>
+
+        <dt>
+
+          <code><a href="wsi_extract_tile.html">wsi_extract_tile()</a></code>
+
+        </dt>
+        <dd>Extract a Single Tile from a DICOM WSI Pyramid Out-of-Core</dd>
+
+        <dt>
+
+          <code><a href="wsi_stitch_region.html">wsi_stitch_region()</a></code>
+
+        </dt>
+        <dd>Stitch an Arbitrary Rectangular Region Across WSI Tile Boundaries</dd>
+
+        <dt>
+
+          <code><a href="dicom_wsi_annotations.html">dicom_wsi_annotations()</a></code>
+
+        </dt>
+        <dd>Construct DICOM Supplement 222 Microscopy Bulk Simple Annotations</dd>
+
+        <dt>
+
+          <code><a href="wsi_annotations_to_mask.html">wsi_annotations_to_mask()</a></code>
+
+        </dt>
+        <dd>Rasterize DICOM Sup 222 WSI Annotations into a 2D Label Mask</dd>
       </dl></div><div class="section level2">
       <h2 id="legacy-compatibility">Legacy Compatibility<a class="anchor" aria-label="anchor" href="#legacy-compatibility"></a></h2>
 

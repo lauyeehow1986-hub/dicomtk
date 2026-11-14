@@ -49,4 +49,5 @@ head(readLines(xml_file), 10)
 #>  [8] "    <Value number=\"2\">01</Value>"                                                      
 #>  [9] "  </DicomAttribute>"                                                                     
 #> [10] "  <DicomAttribute tag=\"00020002\" vr=\"UI\" keyword=\"MediaStorageSOPClassUID\">"       
+unlink(xml_file)
 ```

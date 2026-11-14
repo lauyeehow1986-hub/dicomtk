@@ -15,7 +15,7 @@ engine without requiring external CLI binaries."><meta property="og:image" conte
 
     <a class="navbar-brand me-2" href="../index.html">dicomtk</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -26,11 +26,14 @@ engine without requiring external CLI binaries."><meta property="og:image" conte
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/anonymization.html">DICOM Anonymization &amp; HIPAA De-identification</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/anonymization.html">Research-Grade DICOM De-Identification &amp; Privacy Engine</a></li>
     <li><a class="dropdown-item" href="../articles/getting-started.html">Getting Started with dicomtk</a></li>
     <li><a class="dropdown-item" href="../articles/image-visualization.html">DICOM Image Visualization: ggplot2, Clinical Windows, Shiny, and 3D Volumes</a></li>
+    <li><a class="dropdown-item" href="../articles/interop_fhir_and_omop.html">DICOMweb, HL7 FHIR, DuckDB Cohort Indexing, and OMOP MI-CDM</a></li>
     <li><a class="dropdown-item" href="../articles/llm-integration.html">AI &amp; LLM Integration: Local Ollama, OpenAI, and Anthropic Claude</a></li>
     <li><a class="dropdown-item" href="../articles/pacs-networking.html">PACS Networking &amp; DICOM Query/Retrieve</a></li>
+    <li><a class="dropdown-item" href="../articles/segmentation_and_rt.html">Segmentation, Radiotherapy (RTSTRUCT/RTDOSE), and Deep Learning Prep</a></li>
+    <li><a class="dropdown-item" href="../articles/volume-geometry.html">3D/4D Volume Geometry, Spatial Transforms, and NIfTI Export</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -119,6 +122,52 @@ engine without requiring external CLI binaries.</p>
 
 <dt id="arg-cmd">cmd<a class="anchor" aria-label="anchor" href="#arg-cmd"></a></dt>
 <dd><p>Command name.</p></dd>
+
+</dl></div>
+    <div class="section level2">
+    <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
+    <p>Return values depend on the specific legacy wrapper function called:</p><dl><dt><code>dcmdump</code></dt>
+<dd><p>Character vector formatted similarly to CLI <code>dcmdump</code> output
+with tag, VR, value, length, VM, and keyword.</p></dd>
+
+<dt><code>dcmdump_full</code></dt>
+<dd><p>A <a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble::tibble</a> containing full header and nested
+sequence items as returned by <code><a href="read_dicom.html">read_dicom()</a></code>.</p></dd>
+
+<dt><code>dcmhd</code></dt>
+<dd><p>A <a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble::tibble</a> containing the top-level DICOM header elements.</p></dd>
+
+<dt><code>wide_hdr</code></dt>
+<dd><p>A wide <a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble::tibble</a> with one row per file and columns
+corresponding to DICOM element keywords.</p></dd>
+
+<dt><code>burned_annot</code></dt>
+<dd><p>Character scalar value of the <code>BurnedInAnnotation (0028,0301)</code> tag.</p></dd>
+
+<dt><code>dcmodify</code></dt>
+<dd><p>Character vector of modified DICOM file paths as returned
+by <code><a href="dicom_modify.html">dicom_modify()</a></code>.</p></dd>
+
+<dt><code>dcm_anon</code>, <code>dcm_subtract_date</code></dt>
+<dd><p>Character vector of anonymized DICOM
+file paths as returned by <code><a href="dicom_anonymize.html">dicom_anonymize()</a></code>.</p></dd>
+
+<dt><code>dcmj2pnm</code></dt>
+<dd><p>Character path to the rendered output PNG file as returned
+by <code><a href="dicom_to_png.html">dicom_to_png()</a></code>.</p></dd>
+
+<dt><code>dcmdjpeg</code>, <code>dcmdrle</code></dt>
+<dd><p>Character path to the decompressed DICOM file
+as returned by <code><a href="dicom_decompress.html">dicom_decompress()</a></code>.</p></dd>
+
+<dt><code>dcmcrle</code></dt>
+<dd><p>Character path to the compressed DICOM file as returned
+by <code><a href="dicom_compress.html">dicom_compress()</a></code>.</p></dd>
+
+<dt><code>check_dcmtk_cmd</code></dt>
+<dd><p>Logical <code>TRUE</code> indicating the native DCMTK engine
+is available.</p></dd>
+
 
 </dl></div>
 

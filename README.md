@@ -6,7 +6,9 @@
 [![R-universe](https://lauyeehow1986-hub.r-universe.dev/badges/:name)](https://lauyeehow1986-hub.r-universe.dev)
 <!-- badges: end -->
 
-`dicomtk` is a complete, modern rebuild of the R `dcmtk` wrapper, synchronized with **OFFIS DCMTK 3.7.1 (PS 3.6-2026d)** and powered by a **bundled C++17 / Rcpp engine** requiring **zero external installation**.
+`dicomtk` (`0.6.0`) is the core R package of the four-package **dicomtk** imaging ecosystem (`dicomtk`, [`dicomtk.ai`](https://lauyeehow1986-hub.github.io/dicomtk.ai/), [`dicomtk.server`](https://lauyeehow1986-hub.github.io/dicomtk.server/), [`dicomtk.fl`](https://lauyeehow1986-hub.github.io/dicomtk.fl/)). It is synchronized with **OFFIS DCMTK 3.7.1 (PS 3.6-2026d)** and powered by a **bundled C++17 / Rcpp engine** requiring zero external installation.
+
+---
 
 ## Installation
 
@@ -22,52 +24,94 @@ install.packages(
 )
 ```
 
-Or install the development version from GitHub:
+Or install from GitHub:
 
 ```r
-# install.packages("remotes")
 remotes::install_github("lauyeehow1986-hub/dicomtk")
 ```
 
-## Key Features
+---
 
-- **Zero External Dependencies**: Bundles the full 5,354-tag DCMTK 3.7.1 data dictionary, headers (`inst/include/dcmtk/`), and native C++17 DICOM engine directly inside the package.
-- **Tidyverse Compliant**: All tabular functions (`read_dicom()`, `dicom_tags()`, `dicom_find()`, `read_dicom_sr()`, `dicom_report()`) return `tibble` objects (`tbl_df`) and compose naturally with `|>` and `dplyr`/`tidyr`.
-- **Full DCMTK Module Coverage**:
-  - **Core (`dcmdata`)**: `read_dicom()`, `read_dicom_header()`, `write_dicom()`, `dicom_tags()`, `dicom_modify()`, `dicom_tag_value()`, `dicom_tag_lookup()`, `dicom_anonymize()`, `dcm2xml()`, `dcm2json()`, `dcm2pdf()`.
-  - **Image Processing & Codecs (`dcmimgle`, `dcmimage`, `dcmjpeg`, `dcmjpls`)**: `read_dicom_pixels()`, `read_dicom_series()`, `dicom_window()`, `dicom_compress()`, `dicom_decompress()`, `dicom_to_png()`, `dicom_to_nifti()`.
-  - **Visualization**: `plot_dicom()` and `ggdicom()` (`ggplot2` with clinical CT/MR window presets), `dicom_viewer()` (interactive `Shiny` app), and `render_volume()` (3-plane MPR, MIP, and interactive `rgl` 3D rendering).
-  - **PACS Networking (`dcmnet`, `dcmqrdb`, `dcmwlm`)**: `dicom_connect()`, `dicom_echo()`, `dicom_find()`, `dicom_get()`, `dicom_send()`, `dicom_receive()`.
-  - **Structured Reporting & Specialized IODs (`dcmsr`, `dcmrt`, `dcmseg`, `dcmpmap`, `dcmtract`, `dcmect`, `dcmsign`)**: `read_dicom_sr()`, `create_dicom_sr()`, `read_dicom_rt()`, `read_dicom_seg()`, `read_dicom_pmap()`, `read_dicom_ect()`, `dicom_verify_signature()`.
-- **Local & Cloud LLM Integration**:
-  - Native support for **local Ollama** (`http://localhost:11434`), **OpenAI** (`gpt-4o`, etc.), **Anthropic Claude** (`claude-sonnet-4-20250514`, etc.), and any **OpenAI-compatible endpoint** (vLLM, LM Studio, OpenRouter, Azure).
-  - Automatic HIPAA Safe Harbor de-identification before sending metadata or images to remote APIs.
-- **100% Backward Compatible**: Preserves legacy `dcmtk` functions (`dcmdump()`, `dcmhd()`, `wide_hdr()`, `burned_annot()`, `dcmodify()`, `dcm_anon()`, `dcm_subtract_date()`, `dcmj2pnm()`, `dcmdjpeg()`, `dcmdrle()`, `dcmcrle()`).
+## How to Use `dicomtk`
 
-## Quick Start
-
+### 1. Read Headers, 3D Volumes & Coordinate Transforms
 ```r
 library(dicomtk)
 library(dplyr)
 
 dcm_file <- system.file("extdata", "example.dcm", package = "dicomtk")
 
-# 1. Read DICOM header as a tidy tibble
+# Read DICOM metadata as a tidy tibble
 read_dicom(dcm_file) |>
   filter(group == "0028") |>
   select(tag, vr, keyword, value)
 
-# 2. Visualize with ggplot2 and clinical CT/MR window presets
-plot_dicom(dcm_file, window = "auto", palette = "gray")
-
-# 3. Launch interactive Shiny DICOM viewer
-if (interactive()) {
-  dicom_viewer(dcm_file)
-}
-
-# 4. Connect to Local Ollama or OpenAI / Claude for AI-Assisted Analysis
-llm <- dicom_llm("ollama", model = "llava:13b")
-dicom_summarize(dcm_file, llm = llm)
-dicom_describe_image(dcm_file, llm = llm)
-dicom_report(dcm_file, llm = llm)
+# Synthesize a 3D multi-slice phantom & reconstruct a 3D dicom_volume (LPS/RAS)
+tmp_dir <- tempfile("phantom_")
+dicom_synthesize("CT", slices = 16, out_dir = tmp_dir)
+vol <- read_dicom_volume(tmp_dir)
+ras_vol <- to_ras(vol)
+voxel_to_world(vol, c(1, 1, 1))
 ```
+
+### 2. Regulatory-Grade De-Identification (PS 3.15, Pixel Cleaning & Defacing)
+```r
+kp <- dicom_key_provider("my-consortium-hmac-key")
+out_deid <- tempfile("deid_")
+
+# Jurisdiction-aware de-identification (HIPAA, GDPR, PDPA, or custom profile)
+res <- dicom_deid(
+  tmp_dir,
+  out_dir = out_deid,
+  jurisdiction = "HIPAA",
+  key = kp,
+  verify = TRUE
+)
+
+# Check residual re-identification risk & verify cryptographic attestation
+dicom_deid_risk(out_deid)
+dicom_verify_attestation(res$attestation)
+```
+
+### 3. Segmentation (`DICOM-SEG`), Radiotherapy (`RTSTRUCT`/`RTDOSE`/`DVH`) & `TID 1500` SR
+```r
+# Convert 3D mask to dicom_seg and RTSTRUCT
+mask <- array(0L, dim = dim(vol$voxels))
+mask[20:40, 20:40, 4:12] <- 1L
+seg <- as_dicom_seg(mask, reference_volume = vol, segment_label = "Lesion")
+rt <- seg_to_rtstruct(seg, reference_volume = vol)
+
+# Compute Dose-Volume Histogram (DVH) and TID 1500 Measurement Report
+# dvh <- dicom_dvh(rtdose, seg)
+# sr <- create_dicom_sr_tid1500(seg, reference_volume = vol)
+```
+
+### 4. Deep Learning Dataset Export (`nnU-Net`, `MONAI`, `RO-Crate`) & QC
+```r
+# Resample to isotropic spacing, apply clinical windowing, and check QC
+iso_vol <- resample_volume(vol, target_spacing = c(1.5, 1.5, 1.5))
+qc <- dicom_qc_volume(iso_vol)
+
+# Export patient-level train/val splits for nnU-Net v2 or MONAI
+# export_nnunet_v2(...) / export_monai_datalist(...)
+```
+
+### 5. Interoperability: DICOMweb, HL7 FHIR, DuckDB Index & OMOP `MI-CDM`
+```r
+# Build a normalized DuckDB archive index & export OMOP MI-CDM tables
+idx <- dicom_index_build(out_deid)
+omop <- export_omop_micdm(idx)
+omop$image_occurrence
+omop$image_feature
+```
+
+### 6. Whole-Slide Imaging (WSI) Pyramids & Supplement 222 Annotations
+```r
+# Inspect multi-resolution WSI pyramid & stitch an out-of-core tile region
+# pyr <- read_wsi_pyramid("slide_level0.dcm")
+# region <- wsi_stitch_region(pyr, level = 1L, x = 1L, y = 1L, width = 512L, height = 512L)
+# ann <- write_wsi_annotations(points_df, out_file = "slide_ann.dcm")
+```
+
+### 7. Documentation & Vignettes
+Browse the full function reference and vignettes on the [pkgdown site](https://lauyeehow1986-hub.github.io/dicomtk/).

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">dicomtk</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -18,11 +18,14 @@
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/anonymization.html">DICOM Anonymization &amp; HIPAA De-identification</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/anonymization.html">Research-Grade DICOM De-Identification &amp; Privacy Engine</a></li>
     <li><a class="dropdown-item" href="../articles/getting-started.html">Getting Started with dicomtk</a></li>
     <li><a class="dropdown-item" href="../articles/image-visualization.html">DICOM Image Visualization: ggplot2, Clinical Windows, Shiny, and 3D Volumes</a></li>
+    <li><a class="dropdown-item" href="../articles/interop_fhir_and_omop.html">DICOMweb, HL7 FHIR, DuckDB Cohort Indexing, and OMOP MI-CDM</a></li>
     <li><a class="dropdown-item" href="../articles/llm-integration.html">AI &amp; LLM Integration: Local Ollama, OpenAI, and Anthropic Claude</a></li>
     <li><a class="dropdown-item" href="../articles/pacs-networking.html">PACS Networking &amp; DICOM Query/Retrieve</a></li>
+    <li><a class="dropdown-item" href="../articles/segmentation_and_rt.html">Segmentation, Radiotherapy (RTSTRUCT/RTDOSE), and Deep Learning Prep</a></li>
+    <li><a class="dropdown-item" href="../articles/volume-geometry.html">3D/4D Volume Geometry, Spatial Transforms, and NIfTI Export</a></li>
   </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -40,7 +43,172 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.1.0" id="dicomtk-010">dicomtk 0.1.0<a class="anchor" aria-label="anchor" href="#dicomtk-010"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.6.0" id="dicomtk-060">dicomtk 0.6.0<a class="anchor" aria-label="anchor" href="#dicomtk-060"></a></h2>
+<div class="section level4">
+<h4 id="whole-slide-imaging-wsi-pyramids--sup-annotations-phase-0-6-0">Whole Slide Imaging (WSI) Pyramids &amp; Sup 222 Annotations (Phase 7)<a class="anchor" aria-label="anchor" href="#whole-slide-imaging-wsi-pyramids--sup-annotations-phase-0-6-0"></a></h4>
+<ul><li>
+<strong>WSI Pyramid Reader &amp; Tile Stitcher (<code>R/wsi.R</code>)</strong>:
+<ul><li>Added <code><a href="../reference/dicom_synthesize_wsi.html">dicom_synthesize_wsi()</a></code>, <code><a href="../reference/read_dicom_wsi_pyramid.html">read_dicom_wsi_pyramid()</a></code>, <code><a href="../reference/wsi_extract_tile.html">wsi_extract_tile()</a></code>, and <code><a href="../reference/wsi_stitch_region.html">wsi_stitch_region()</a></code> supporting <code>TILED_FULL</code> and <code>TILED_SPARSE</code> multi-resolution WSI pyramids with out-of-core tile extraction and cross-tile region stitching.</li>
+<li>Added <code><a href="../reference/dicom_wsi_annotations.html">dicom_wsi_annotations()</a></code> and <code><a href="../reference/wsi_annotations_to_mask.html">wsi_annotations_to_mask()</a></code> for Supplement 222 Microscopy Bulk Simple Annotations.</li>
+</ul></li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.5.0" id="dicomtk-050">dicomtk 0.5.0<a class="anchor" aria-label="anchor" href="#dicomtk-050"></a></h2>
+<div class="section level4">
+<h4 id="interoperability-duckdbparquet-index--ohdsi-omop-mi-cdm-phase-0-5-0">Interoperability, DuckDB/Parquet Index &amp; OHDSI OMOP MI-CDM (Phase 4)<a class="anchor" aria-label="anchor" href="#interoperability-duckdbparquet-index--ohdsi-omop-mi-cdm-phase-0-5-0"></a></h4>
+<ul><li>
+<strong>DICOMweb (PS3.18) &amp; OAuth2 (<code>R/dicomweb.R</code>, <code>R/network.R</code>)</strong>:
+<ul><li>Extended <code><a href="../reference/dicom_connect.html">dicom_connect()</a></code> with Bearer, Basic, and OAuth2 client-credentials authentication (<code>auth</code> and custom <code>headers</code>) and wired <code><a href="../reference/dicom_find.html">dicom_find()</a></code> / <code><a href="../reference/dicom_send.html">dicom_send()</a></code> to delegate to DICOMweb when <code>dicomweb_url</code> is set.</li>
+<li>Added <code><a href="../reference/as_dicom_json.html">as_dicom_json()</a></code>, <code><a href="../reference/from_dicom_json.html">from_dicom_json()</a></code>, <code><a href="../reference/pack_multipart_dicom.html">pack_multipart_dicom()</a></code>, <code><a href="../reference/unpack_multipart_dicom.html">unpack_multipart_dicom()</a></code>, <code><a href="../reference/dicomweb_qido.html">dicomweb_qido()</a></code>, <code><a href="../reference/dicomweb_wado.html">dicomweb_wado()</a></code>, <code><a href="../reference/dicomweb_stow.html">dicomweb_stow()</a></code>, and <code><a href="../reference/dicomweb_metadata.html">dicomweb_metadata()</a></code>.</li>
+</ul></li>
+<li>
+<strong>HL7 FHIR R4/R5 Imaging &amp; Synthea Linkage (<code>R/fhir.R</code>, <code>R/fhir-link.R</code>)</strong>:
+<ul><li>Added <code><a href="../reference/as_fhir_imaging_study.html">as_fhir_imaging_study()</a></code>, <code><a href="../reference/from_fhir_imaging_study.html">from_fhir_imaging_study()</a></code>, <code><a href="../reference/as_fhir_imaging_selection.html">as_fhir_imaging_selection()</a></code>, <code><a href="../reference/as_fhir_diagnostic_report.html">as_fhir_diagnostic_report()</a></code>, <code><a href="../reference/as_fhir_provenance.html">as_fhir_provenance()</a></code>, and <code><a href="../reference/as_w3c_prov.html">as_w3c_prov()</a></code>.</li>
+<li>Added <code><a href="../reference/fhir_post.html">fhir_post()</a></code>, <code><a href="../reference/fhir_get.html">fhir_get()</a></code>, and <code><a href="../reference/link_synthea_cohort.html">link_synthea_cohort()</a></code> for HAPI FHIR / Epic sandboxes and Synthea Coherent Data Set patient-imaging linkage.</li>
+</ul></li>
+<li>
+<strong>DuckDB/Parquet Archive Index &amp; Guardrailed NL-to-SQL (<code>R/archive-index.R</code>, <code>R/cohort-nl.R</code>)</strong>:
+<ul><li>Added <code><a href="../reference/dicom_index_build.html">dicom_index_build()</a></code>, <code><a href="../reference/dicom_index_query.html">dicom_index_query()</a></code>, and <code><a href="../reference/dicom_index_close.html">dicom_index_close()</a></code> building normalized <code>studies</code>, <code>series</code>, and <code>instances</code> tables with Parquet export and pure-R tibble fallback.</li>
+<li>Added <code><a href="../reference/validate_readonly_sql.html">validate_readonly_sql()</a></code>, <code><a href="../reference/dicom_cohort_nl.html">dicom_cohort_nl()</a></code>, <code><a href="../reference/export_cohort_spec.html">export_cohort_spec()</a></code>, and <code><a href="../reference/run_cohort_spec.html">run_cohort_spec()</a></code> with strict read-only SQL enforcement blocking DDL/DML, multi-statements, comments, and host-file reader functions.</li>
+</ul></li>
+<li>
+<strong>OHDSI OMOP Medical Imaging CDM (<code>R/omop-micdm.R</code>, <code>omop_imaging_concepts</code>)</strong>:
+<ul><li>Added <code>omop_imaging_concepts</code> dataset, <code><a href="../reference/to_omop_image_occurrence.html">to_omop_image_occurrence()</a></code>, <code><a href="../reference/to_omop_image_feature.html">to_omop_image_feature()</a></code>, and <code><a href="../reference/write_omop_micdm.html">write_omop_micdm()</a></code>.</li>
+</ul></li>
+</ul><hr></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.4.0" id="dicomtk-040">dicomtk 0.4.0<a class="anchor" aria-label="anchor" href="#dicomtk-040"></a></h2>
+<div class="section level4">
+<h4 id="segmentation-radiotherapy-quantitative-sr--deep-learning-prep-phase-0-4-0">Segmentation, Radiotherapy, Quantitative SR &amp; Deep Learning Prep (Phase 2)<a class="anchor" aria-label="anchor" href="#segmentation-radiotherapy-quantitative-sr--deep-learning-prep-phase-0-4-0"></a></h4>
+<ul><li>
+<strong>C++17 Scanline Rasterizer &amp; Contour Tracer (<code>src/rcpp_rasterize.cpp</code>)</strong>:
+<ul><li>Added <code><a href="../reference/rasterize_polygon_2d.html">rasterize_polygon_2d()</a></code>, <code><a href="../reference/rasterize_polygons_2d.html">rasterize_polygons_2d()</a></code>, and <code><a href="../reference/trace_contours_2d.html">trace_contours_2d()</a></code> with exact even-odd fill rules, hole handling, and Moore-neighbor contour extraction.</li>
+</ul></li>
+<li>
+<strong>DICOM Segmentation (<code>dicom_seg</code>)</strong>:
+<ul><li>Added <code><a href="../reference/dicom_seg.html">dicom_seg()</a></code>, <code><a href="../reference/write_dicom_seg.html">write_dicom_seg()</a></code>, and <code><a href="../reference/as_labelmap.html">as_labelmap()</a></code> supporting <code>BINARY</code> and <code>FRACTIONAL</code> DICOM SEG IODs with <code>SegmentSequence</code>, <code>SharedFunctionalGroupsSequence</code>, and <code>PerFrameFunctionalGroupsSequence</code>, inheriting directly from <code>dicom_volume</code>.</li>
+</ul></li>
+<li>
+<strong>RTSTRUCT &amp; RTDOSE Radiotherapy Suite</strong>:
+<ul><li>Added <code><a href="../reference/rtstruct_to_seg.html">rtstruct_to_seg()</a></code> and <code><a href="../reference/seg_to_rtstruct.html">seg_to_rtstruct()</a></code> for bidirectional conversion between 3D <code>dicom_seg</code> labelmaps and DICOM <code>RTSTRUCT</code> <code>ROIContourSequence</code> world-space polygons.</li>
+<li>Added <code><a href="../reference/dicom_dvh.html">dicom_dvh()</a></code> computing cumulative and differential Dose-Volume Histograms (DVH) and clinical dosimetric metrics (<code>D95</code>, <code>D90</code>, <code>D50</code>, <code>V20</code>, <code>min_dose</code>, <code>max_dose</code>, <code>mean_dose</code>, <code>volume_cc</code>) from <code>RTDOSE</code> and <code>dicom_seg</code> masks.</li>
+</ul></li>
+<li>
+<strong>Quantitative SR (TID 1500) &amp; Grayscale Presentation States (GSPS)</strong>:
+<ul><li>Added <code><a href="../reference/dicom_sr_tid1500.html">dicom_sr_tid1500()</a></code> and <code><a href="../reference/read_sr_tid1500.html">read_sr_tid1500()</a></code> for DICOM TID 1500 Measurement Reports.</li>
+<li>Added <code><a href="../reference/write_dicom_gsps.html">write_dicom_gsps()</a></code> and <code><a href="../reference/read_dicom_gsps.html">read_dicom_gsps()</a></code> for Softcopy Presentation State (<code>PR</code>) annotations.</li>
+</ul></li>
+<li>
+<strong>Deep Learning Prep, Burned-In Annotations, QC &amp; Dataset Exporters</strong>:
+<ul><li>Added <code><a href="../reference/volume_resample.html">volume_resample()</a></code>, <code><a href="../reference/volume_window.html">volume_window()</a></code>, and <code><a href="../reference/dicom_patient_splits.html">dicom_patient_splits()</a></code> for leak-free 3D trilinear/nearest-neighbor resampling, HU/percentile normalization, and patient-level train/val/test splitting.</li>
+<li>Added <code><a href="../reference/dicom_burn_annotations.html">dicom_burn_annotations()</a></code> and <code><a href="../reference/legacy-dcmtk.html">burned_annot()</a></code> for rendering segmentations and text overlays onto 2D PNG/DICOM Secondary Capture images.</li>
+<li>Added <code><a href="../reference/dicom_image_qc.html">dicom_image_qc()</a></code> for automated SNR, CNR, FOV border truncation, spacing/tilt anomaly, and high-frequency ringing artifact detection.</li>
+<li>Added <code><a href="../reference/export_nnunet.html">export_nnunet()</a></code>, <code><a href="../reference/export_monai.html">export_monai()</a></code>, <code><a href="../reference/export_rocrate.html">export_rocrate()</a></code>, and <code><a href="../reference/export_croissant.html">export_croissant()</a></code> for ML-ready dataset and JSON-LD metadata export.</li>
+</ul></li>
+</ul><hr></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.3.0" id="dicomtk-030">dicomtk 0.3.0<a class="anchor" aria-label="anchor" href="#dicomtk-030"></a></h2>
+<div class="section level4">
+<h4 id="research-grade-de-identification--privacy-engine-phase-0-3-0">Research-Grade De-Identification &amp; Privacy Engine (Phase 1)<a class="anchor" aria-label="anchor" href="#research-grade-de-identification--privacy-engine-phase-0-3-0"></a></h4>
+<ul><li>
+<strong>Pure C++17 RFC Cryptography &amp; Pluggable Key Provider</strong>:
+<ul><li>Implemented standalone C++17 implementations of RFC 6234 SHA-256, RFC 4231 HMAC-SHA256, RFC 2898 PBKDF2-HMAC-SHA256, RFC 5869 HKDF-SHA256, and RFC 8439 ChaCha20-Poly1305 AEAD (<code>src/rcpp_crypto.h</code>, <code>src/rcpp_crypto.cpp</code>).</li>
+<li>Added <code><a href="../reference/dicom_key_provider.html">dicom_key_provider()</a></code> S3 class supporting <code>local</code>, <code>broker</code>, and <code>ttp</code> modes with cryptographic subkey derivation, strict credential redaction (<code><a href="https://rdrr.io/r/base/format.html" class="external-link">format()</a></code>, <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code>, <code><a href="https://rdrr.io/r/utils/str.html" class="external-link">str()</a></code>), deterministic <code>2.25.&lt;128-bit&gt;</code> UID pseudonymization (<code><a href="../reference/deid_map_uid.html">deid_map_uid()</a></code>), and per-patient pseudo-random date shifting (<code><a href="../reference/derive_patient_shift_days.html">derive_patient_shift_days()</a></code>, <code><a href="../reference/deid_patient_shift.html">deid_patient_shift()</a></code>). Zero external C/Python crypto runtime dependencies.</li>
+</ul></li>
+<li>
+<strong>DICOM PS3.15 Profile Compiler &amp; Composable Jurisdictions</strong>:
+<ul><li>Added <code><a href="../reference/dicom_deid_profile.html">dicom_deid_profile()</a></code> and <code><a href="../reference/dicom_list_jurisdictions.html">dicom_list_jurisdictions()</a></code> compiling declarative YAML profiles (<code>ps3.15-basic.yml</code> + 10 PS3.15 options).</li>
+<li>Added 8 composable statutory jurisdiction overlays (<code>hipaa_safe_harbor</code>, <code>hipaa_limited_dataset</code>, <code>gdpr_eu</code>, <code>sg_pdpa_hib</code>, <code>my_pdpa_2024</code>, <code>au_privacy_act</code>, <code>uk_gdpr</code>, <code>ca_pipeda</code>) with strictest-wins monotonic action lattice resolution (<code>D &gt; Z &gt; X &gt; K</code>) and safe-private creator allowlisting.</li>
+</ul></li>
+<li>
+<strong>Single-Pass Recursive C++17 Dataset &amp; Sequence Mutator</strong>:
+<ul><li>Implemented <code>cpp_deid_file()</code> executing in-memory DICOM de-identification in a single recursive traversal across all dataset tags and arbitrary-depth Sequence of Items (<code>VR=SQ</code>).</li>
+<li>Features Howard Hinnant C++ date shifting (<code>DA</code>, <code>DT</code>), safe-private block retention with orphan private creator pruning, wildcard tag matching (<code>(50xx,eeee)</code>, <code>(60xx,eeee)</code>), dummy string/integer substitution, and W3C PROV-compliant De-identification Method sequence logging <code>(0012,0062)</code> and <code>(0012,0063)</code>.</li>
+</ul></li>
+<li>
+<strong>Cohort <code><a href="../reference/dicom_deid.html">dicom_deid()</a></code> &amp; Encrypted Crosswalk</strong>:
+<ul><li>Added <code><a href="../reference/dicom_deid.html">dicom_deid()</a></code> supporting file, directory, and vector inputs with progress reporting (<code>cli</code>) and optional asynchronous multi-process parallelism via <code>mirai</code>.</li>
+<li>Generates ChaCha20-Poly1305 AEAD-encrypted crosswalk files (<code>dicomtk_crosswalk.enc</code>) decryptable via <code><a href="../reference/dicom_crosswalk_read.html">dicom_crosswalk_read()</a></code> using the original key provider.</li>
+<li>Automatically records input/output checksums, timestamps, applied profiles, and patient mapping tables with full W3C PROV audit metadata.</li>
+</ul></li>
+<li>
+<strong>Burned-In Pixel PHI Detection &amp; C++17 Fast Telea Inpainting</strong>:
+<ul><li>Added <code><a href="../reference/dicom_detect_burned_phi.html">dicom_detect_burned_phi()</a></code> and <code><a href="../reference/dicom_clean_pixels.html">dicom_clean_pixels()</a></code> for identifying and blacking out burned-in text in secondary captures, ultrasound overlays, and scanned radiographs.</li>
+<li>Implemented C++17 Fast Marching Method (FMM) Telea inpainting (<code>cpp_telea_inpaint()</code>) for smooth edge preservation with aspect-ratio bounding-box guardrails and optional OCR verification (<code>tesseract</code>).</li>
+</ul></li>
+<li>
+<strong>3D Head CT/MR Defacing &amp; WSI Whole Slide Safeguards</strong>:
+<ul><li>Added <code><a href="../reference/dicom_deface.html">dicom_deface()</a></code> performing analytical cutting-plane facial stripping on 3D volumetric CT and MR series in LPS/RAS coordinate space.</li>
+<li>Added Whole Slide Imaging (WSI) label/macro frame stripping to prevent specimen identifier leakage.</li>
+</ul></li>
+<li>
+<strong>Residual-PHI Verifier, Attestations &amp; Re-identification Risk Scorer</strong>:
+<ul><li>Added <code><a href="../reference/dicom_deid_verify.html">dicom_deid_verify()</a></code> scanning processed DICOM datasets for 18 statutory PHI canaries (MRNs, names, free-text patterns, unshifted dates, age cap violations &gt;89y, unsafe private tags, and orphan creators).</li>
+<li>Added HMAC-SHA256 signed tamper-evident compliance certificates (<code><a href="../reference/dicom_verify_attestation.html">dicom_verify_attestation()</a></code>).</li>
+<li>Added <code><a href="../reference/dicom_deid_risk.html">dicom_deid_risk()</a></code> computing cohort re-identification risk metrics including equivalence class distribution, <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>-anonymity, <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>l</mi><annotation encoding="application/x-tex">l</annotation></semantics></math>-diversity, and prosecutor/markov re-identification probabilities.</li>
+</ul></li>
+<li>
+<strong>Synthetic MIDI-B Ground Truth Benchmark Suite</strong>:
+<ul><li>Extended <code><a href="../reference/dicom_synthesize.html">dicom_synthesize()</a></code> with <code>phi_profile = c("basic", "midi_b")</code> planting 18 HIPAA, PS3.15, and international PHI canary categories across structured tags, nested sequences, and free text.</li>
+<li>Added <code>tools/run_midib_benchmark.R</code> producing validated audit scorecards (<code>inst/extdata/midib_scorecard.json</code>) demonstrating 100.0% sensitivity, 100.0% specificity, zero residual PHI leaks, and exact longitudinal UID isomorphism.</li>
+</ul></li>
+</ul><hr></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.2.0" id="dicomtk-020">dicomtk 0.2.0<a class="anchor" aria-label="anchor" href="#dicomtk-020"></a></h2>
+<div class="section level4">
+<h4 id="id_3d4d-volume-geometry--foundations-phase-0-2-0">3D/4D Volume Geometry &amp; Foundations (Phase 0)<a class="anchor" aria-label="anchor" href="#id_3d4d-volume-geometry--foundations-phase-0-2-0"></a></h4>
+<ul><li>
+<strong><code>dicom_volume</code> S3 Class &amp; Spatial Transforms</strong>:
+<ul><li>Introduced the <code>dicom_volume</code> S3 class encapsulating 3D/4D voxel data arrays, analytical 4x4 coordinate affine matrices, and slice-level metadata.</li>
+<li>Implemented S3 methods: <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code>, <code><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim()</a></code>, <code>[</code> (with affine translation/rescaling update and <code>drop = FALSE</code> default), and <code><a href="https://rdrr.io/r/base/array.html" class="external-link">as.array()</a></code>.</li>
+<li>Added coordinate orientation helpers <code><a href="../reference/dicom_orientation.html">dicom_orientation()</a></code>, <code><a href="../reference/to_ras.html">dicom_to_lps()</a></code>, and <code><a href="../reference/to_ras.html">dicom_to_ras()</a></code> supporting standard neurological (RAS) and radiological (LPS) conventions.</li>
+</ul></li>
+<li>
+<strong>Geometry-Aware <code><a href="../reference/read_dicom_volume.html">read_dicom_volume()</a></code></strong>:
+<ul><li>Added <code><a href="../reference/read_dicom_volume.html">read_dicom_volume()</a></code> supporting multi-slice series, enhanced multi-frame DICOM IODs (<code>SharedFunctionalGroupsSequence</code> and <code>PerFrameFunctionalGroupsSequence</code>), and automatic series splitting on <code>SeriesInstanceUID</code>, <code>FrameOfReferenceUID</code>, or spatial discontinuities.</li>
+<li>Retained <code><a href="../reference/read_dicom_series.html">read_dicom_series()</a></code> as a backward-compatible wrapper returning <code>dicom_series</code> / <code>dicom_volume</code>.</li>
+</ul></li>
+<li>
+<strong>C++ Hierarchical Sequences &amp; SQ Writer</strong>:
+<ul><li>Extended native C++17 bindings (<code>cpp_write_dicom_multiframe()</code>, <code>cpp_modify_dicom()</code>, and <code>cpp_dcm_transcode_rle()</code>) to read, prune, and write arbitrary nested Sequence of Items (<code>VR=SQ</code>) trees from R lists.</li>
+<li>Added full support for multi-level nested clinical sequences (e.g. <code>SharedFunctionalGroupsSequence</code>, <code>PerFrameFunctionalGroupsSequence</code>, <code>RadiopharmaceuticalInformationSequence</code>).</li>
+</ul></li>
+<li>
+<strong>Synthetic Modality Phantom Generator (<code><a href="../reference/dicom_synthesize.html">dicom_synthesize()</a></code>)</strong>:
+<ul><li>Implemented <code><a href="../reference/dicom_synthesize.html">dicom_synthesize()</a></code> generating standard-compliant synthetic DICOM series across CT, MR, and PET modalities.</li>
+<li>Full parametric control over geometric orientation (<code>axial</code>, <code>coronal</code>, <code>sagittal</code>, <code>oblique</code>), non-orthogonal gantry tilt, slice reverse order, and PHI injection/scrubbing for offline CI testing.</li>
+</ul></li>
+<li>
+<strong>Modality Quantitative Transforms</strong>:
+<ul><li>Added PET Standardized Uptake Value conversion (<code><a href="../reference/dicom_pet_suv.html">dicom_pet_suv()</a></code>) with Body Weight (<code>bw</code>), Lean Body Mass (<code>lbm</code>, James/Janmahasatian formulations), and Body Surface Area (<code>bsa</code>) corrections with radionuclide half-life decay compensation.</li>
+<li>Added Mammography/Radiography VOI LUT non-linear mapping (<code><a href="../reference/dicom_apply_voi_lut.html">dicom_apply_voi_lut()</a></code>) supporting both <code>LINEAR</code> and <code>SIGMOID</code> transfer functions.</li>
+<li>Added Philips MR precise rescale slope/intercept (<code><a href="../reference/dicom_mr_rescale.html">dicom_mr_rescale()</a></code>) using private attributes <code>(2005,100D)</code> and <code>(2005,100E)</code>.</li>
+</ul></li>
+<li>
+<strong>NIfTI-1 Export with <code>dcm2niix</code> Parity (<code><a href="../reference/write_nifti.html">write_nifti()</a></code>)</strong>:
+<ul><li>Added <code><a href="../reference/write_nifti.html">write_nifti()</a></code> producing standard NIfTI-1 files with rigorous <code>qform</code> (polar SVD decomposition) and <code>sform</code> (exact affine mapping) coordinate spaces matching Chris Rorden’s <code>dcm2niix</code> specification.</li>
+<li>Generates companion BIDS JSON sidecars (<code>SliceThickness</code>, <code>SpacingBetweenSlices</code>, <code>RepetitionTime</code>, <code>EchoTime</code>).</li>
+<li>Implemented zero-dependency pure R binary NIfTI writer with automatic fallback to <code>RNifti</code> backend when installed.</li>
+<li>Added non-orthogonal gantry tilt detection and user notification when shear is orthogonalized for quaternion storage.</li>
+</ul></li>
+<li>
+<strong>CI Fixtures &amp; Parity Validation</strong>:
+<ul><li>Added <code>tools/download_fixtures.R</code> syncing 11 open-license scanner fixtures from <code>pydicom</code>, <code>dcm_qa_ct</code>, and <code>dcm_qa_nih</code>.</li>
+<li>Added comprehensive <code>test-p0-dcm2niix-parity.R</code> ensuring continuous orientation and voxel parity.</li>
+</ul></li>
+<li>
+<strong><code>dicomtk-lab</code> Multi-Container Testbed</strong>:
+<ul><li>Created standalone repository <code>dicomtk-lab</code> containing Docker Compose profiles for <code>core</code> (Orthanc PACS + Keycloak IAM), <code>enterprise</code> (dcm4chee-arc + PostgreSQL + OpenLDAP), <code>ehr</code> (HAPI FHIR R4), <code>ohdsi</code> (OMOP CDM v5.4), <code>ttp</code> (Honest Broker pseudonymization enclave), and <code>fl</code> (Federated Learning Flower/OpenFL aggregator).</li>
+<li>Integrated <code>test-p0-lab-core.R</code> smoke test verifying DIMSE C-ECHO and HTTP REST series round-tripping with exact affine preservation.</li>
+</ul></li>
+</ul><hr></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.1.0" id="dicomtk-010">dicomtk 0.1.0<a class="anchor" aria-label="anchor" href="#dicomtk-010"></a></h2><p class="text-muted">CRAN release: 2026-11-13</p>
 <ul><li>Initial release of <code>dicomtk</code>, a full rebuild of the <code>dcmtk</code> R wrapper synchronized with <strong>OFFIS DCMTK 3.7.1 (<code>PS 3.6-2026d</code>)</strong>.</li>
 <li>Bundled the complete 5,354-tag DCMTK 3.7.1 data dictionary, all 23 module header trees (<code>inst/include/dcmtk/</code>), and a self-contained C++17 / <code>Rcpp</code> engine requiring no external installation.</li>
 <li>Added tidyverse-compliant DICOM I/O and tag functions (<code><a href="../reference/read_dicom.html">read_dicom()</a></code>, <code><a href="../reference/read_dicom_header.html">read_dicom_header()</a></code>, <code><a href="../reference/read_dicom_pixels.html">read_dicom_pixels()</a></code>, <code><a href="../reference/read_dicom_series.html">read_dicom_series()</a></code>, <code><a href="../reference/write_dicom.html">write_dicom()</a></code>, <code><a href="../reference/dicom_tags.html">dicom_tags()</a></code>, <code><a href="../reference/dicom_tag_value.html">dicom_tag_value()</a></code>, <code><a href="../reference/dicom_modify.html">dicom_modify()</a></code>, <code><a href="../reference/dicom_tag_lookup.html">dicom_tag_lookup()</a></code>).</li>
@@ -51,7 +219,8 @@
 <li>Added unified LLM integration (<code><a href="../reference/dicom_llm.html">dicom_llm()</a></code>, <code><a href="../reference/dicom_summarize.html">dicom_summarize()</a></code>, <code><a href="../reference/dicom_describe_image.html">dicom_describe_image()</a></code>, <code><a href="../reference/dicom_report.html">dicom_report()</a></code>, <code><a href="../reference/dicom_ask.html">dicom_ask()</a></code>) supporting local <strong>Ollama</strong> and <strong>OpenAI-compatible</strong> APIs (OpenAI, Anthropic Claude, Azure, vLLM, LM Studio).</li>
 <li>Maintained full backward compatibility with legacy <code>dcmtk</code> functions (<code><a href="../reference/legacy-dcmtk.html">dcmdump()</a></code>, <code><a href="../reference/legacy-dcmtk.html">dcmhd()</a></code>, <code><a href="../reference/legacy-dcmtk.html">wide_hdr()</a></code>, <code><a href="../reference/legacy-dcmtk.html">burned_annot()</a></code>, <code><a href="../reference/legacy-dcmtk.html">dcmodify()</a></code>, <code><a href="../reference/legacy-dcmtk.html">dcm_anon()</a></code>, <code><a href="../reference/legacy-dcmtk.html">dcm_subtract_date()</a></code>, <code><a href="../reference/legacy-dcmtk.html">dcmj2pnm()</a></code>, <code><a href="../reference/legacy-dcmtk.html">dcmdjpeg()</a></code>, <code><a href="../reference/legacy-dcmtk.html">dcmdrle()</a></code>, <code><a href="../reference/legacy-dcmtk.html">dcmcrle()</a></code>).</li>
 </ul></div>
-  </main></div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">

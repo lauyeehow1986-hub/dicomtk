@@ -22,7 +22,7 @@ networking, and local/cloud LLM integration (`Ollama`, `OpenAI`,
 
 ## Anonymization & Tag Modification
 
-`anon_path`` ``<-`` `[`dicom_anonymize`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_anonymize.md)`(`` `` ``dcm_file``,`` `` patient_name ``=`` ``"STUDY^SUBJECT01"``,`` `` patient_id ``=`` ``"SUBJ001"``,`` `` shift_days ``=`` ``-``365`` ``)`` `[`dicom_tag_value`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_tag_value.md)`(``anon_path``, `[`c`](https://rdrr.io/r/base/c.html)`(``"PatientName"``, ``"PatientID"``, ``"PatientIdentityRemoved"``)``)`` ``#> PatientName PatientID PatientIdentityRemoved `` ``#> "STUDY^SUBJECT01" "SUBJ001" "YES"`
+`anon_path`` ``<-`` `[`dicom_anonymize`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_anonymize.md)`(`` `` ``dcm_file``,`` `` patient_name ``=`` ``"STUDY^SUBJECT01"``,`` `` patient_id ``=`` ``"SUBJ001"``,`` `` shift_days ``=`` ``-``365`` ``)`` ``` #> Warning: `dicom_anonymize()` was deprecated in dicomtk 0.3.0. ``` ``#> ``ℹ```  Please use `dicom_deid()` instead. ``` ``#> ``This warning is displayed once per session.`` ``#> ``` Call `lifecycle::last_lifecycle_warnings()` to see where this warning was ``` ``#> ``generated.`` `[`dicom_tag_value`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_tag_value.md)`(``anon_path``, `[`c`](https://rdrr.io/r/base/c.html)`(``"PatientName"``, ``"PatientID"``, ``"PatientIdentityRemoved"``)``)`` ``#> PatientName PatientID PatientIdentityRemoved `` ``#> "STUDY^SUBJECT01" "SUBJ001" "YES"`
 
 ## AI / LLM Integration (Ollama, OpenAI, and Anthropic Claude)
 

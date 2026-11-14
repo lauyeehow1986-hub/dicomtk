@@ -33,4 +33,5 @@ rle_file <- dicom_compress(dcm_file)
 dec_file <- dicom_decompress(rle_file)
 is_dicom(dec_file)
 #> [1] TRUE
+unlink(c(rle_file, dec_file))
 ```

@@ -1,7 +1,4 @@
-# Standard DICOM Data Dictionary (DCMTK 3.7.1 / PS 3.6-2026d)
-
-A data frame containing 5,354 standard DICOM tags from the OFFIS DCMTK
-3.7.1 data dictionary (`dicom.dic`).
+# Retrieve DICOM Tags from a File or the Standard Dictionary
 
 If `path` is provided, reads and returns the DICOM header tags present
 in `path` as a tidy tibble. If `path` is `NULL`, returns the complete
@@ -10,38 +7,8 @@ built-in OFFIS DCMTK 3.7.1 DICOM data dictionary (5,354 tags).
 ## Usage
 
 ``` r
-dicom_tags
-
 dicom_tags(path = NULL, ...)
 ```
-
-## Format
-
-A `data.frame` with 5,354 rows and 6 columns:
-
-- tag:
-
-  Tag identifier formatted as `"(GGGG,EEEE)"`
-
-- name:
-
-  Human-readable tag description
-
-- keyword:
-
-  DICOM standard keyword without spaces
-
-- vr:
-
-  Value Representation (e.g., `"PN"`, `"DA"`, `"UI"`, `"US"`)
-
-- vm:
-
-  Value Multiplicity (e.g., `"1"`, `"1-n"`)
-
-- retired:
-
-  `"RET"` if the tag is retired, `""` otherwise
 
 ## Arguments
 

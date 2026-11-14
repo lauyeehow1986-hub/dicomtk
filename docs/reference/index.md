@@ -1,5 +1,55 @@
 # Package index
 
+## 3D/4D Volume Geometry & Coordinate Spaces
+
+Standards-compliant 3D/4D DICOM volume reconstruction, LPS/RAS
+coordinate transforms, and slicing.
+
+- [`read_dicom_volume()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/read_dicom_volume.md)
+  : Read a 3D or 4D DICOM Volume with Exact Patient-Space Geometry
+
+- [`dicom_split_series()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_split_series.md)
+  : Discover and Split Homogeneous DICOM Sub-Series
+
+- [`new_dicom_volume()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/new_dicom_volume.md)
+  [`dim(`*`<dicom_volume>`*`)`](https://lauyeehow1986-hub.github.io/dicomtk/reference/new_dicom_volume.md)
+  [`as.array(`*`<dicom_volume>`*`)`](https://lauyeehow1986-hub.github.io/dicomtk/reference/new_dicom_volume.md)
+  [`print(`*`<dicom_volume>`*`)`](https://lauyeehow1986-hub.github.io/dicomtk/reference/new_dicom_volume.md)
+  :
+
+  Construct and Validate a `dicom_volume` Object
+
+- [`is_dicom_volume()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/is_dicom_volume.md)
+  :
+
+  Test Whether an Object Is a `dicom_volume`
+
+- [`` `[`( ``*`<dicom_volume>`*`)`](https://lauyeehow1986-hub.github.io/dicomtk/reference/sub-.dicom_volume.md)
+  :
+
+  Subset a `dicom_volume` While Preserving World Geometry
+
+- [`plot(`*`<dicom_volume>`*`)`](https://lauyeehow1986-hub.github.io/dicomtk/reference/plot.dicom_volume.md)
+  :
+
+  Plot a `dicom_volume` Object
+
+- [`dicom_orientation()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_orientation.md)
+  : Query Anatomical Orientation of a DICOM Volume
+
+- [`to_ras()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/to_ras.md)
+  [`to_lps()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/to_ras.md)
+  [`dicom_to_ras()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/to_ras.md)
+  [`dicom_to_lps()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/to_ras.md)
+  :
+
+  Convert a `dicom_volume` Between DICOM LPS and NIfTI RAS World
+  Coordinates
+
+- [`voxel_to_world()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/voxel_to_world.md)
+  [`world_to_voxel()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/voxel_to_world.md)
+  : Map Between Voxel Indices and Physical World Coordinates
+
 ## Core DICOM I/O
 
 Read and write DICOM headers, pixel matrices, and 3D multi-slice series.
@@ -11,7 +61,7 @@ Read and write DICOM headers, pixel matrices, and 3D multi-slice series.
 - [`read_dicom_pixels()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/read_dicom_pixels.md)
   : Extract Pixel Data from a DICOM File
 - [`read_dicom_series()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/read_dicom_series.md)
-  : Read a Multi-Slice DICOM Series into a 3D Volume
+  **\[deprecated\]** : Read a Multi-Slice DICOM Series into a 3D Volume
 - [`write_dicom()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/write_dicom.md)
   : Write a Matrix, Array, or DICOM Series to a DICOM File
 - [`is_dicom()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/is_dicom.md)
@@ -20,32 +70,111 @@ Read and write DICOM headers, pixel matrices, and 3D multi-slice series.
   : Check DCMTK Backend Availability and Version
 - [`dicom_info()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_info.md)
   : Inspect Bundled DCMTK Configuration and Version Info
+- [`dicom_sync_upstream()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_sync_upstream.md)
+  : Check or Synchronize with Upstream OFFIS DCMTK Repository
+
+## Synthetic Modality Phantoms
+
+Generate analytical multi-slice DICOM series (CT, MR, PET) with known
+ground-truth geometry.
+
+- [`dicom_synthesize()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_synthesize.md)
+  [`print(`*`<dicom_phantom>`*`)`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_synthesize.md)
+  : Synthesize Multi-Modality DICOM Phantoms with Exact Ground-Truth
+  Geometry
+
+## Quantitative Modality Transforms
+
+PET SUV quantification, Mammography VOI LUT curves, and Philips MR
+private scaling.
+
+- [`dicom_pet_suv()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_pet_suv.md)
+  : Calculate Standardized Uptake Value (SUV) for PET Volumes
+- [`dicom_apply_voi_lut()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_apply_voi_lut.md)
+  : Apply VOI LUT (Window/Level or Sigmoidal Transfer Function) to DICOM
+  Volume
+- [`dicom_mr_rescale()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_mr_rescale.md)
+  : Apply Philips MR Quantitative Floating-Point or Console Display
+  Scaling
 
 ## DICOM Tags & Dictionary
 
 Inspect, modify, and query the 5,354-tag DCMTK 3.7.1 data dictionary.
 
-- [`dicom_tags`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_tags.md)
-  [`dicom_tags()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_tags.md)
-  : Standard DICOM Data Dictionary (DCMTK 3.7.1 / PS 3.6-2026d)
+- [`dicom_tags()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_tags.md)
+  : Retrieve DICOM Tags from a File or the Standard Dictionary
+
 - [`dicom_tag_value()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_tag_value.md)
   : Quickly Extract Specific Tag Values from a DICOM File
+
 - [`dicom_modify()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_modify.md)
   : Modify, Insert, or Delete DICOM Header Tags
+
 - [`dicom_tag_lookup()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_tag_lookup.md)
   : Search or Query the DICOM Data Dictionary
+
+- [`dcmdump()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/legacy-dcmtk.md)
+  [`dcmdump_full()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/legacy-dcmtk.md)
+  [`dcmhd()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/legacy-dcmtk.md)
+  [`wide_hdr()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/legacy-dcmtk.md)
+  [`burned_annot()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/legacy-dcmtk.md)
+  [`dcmodify()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/legacy-dcmtk.md)
+  [`dcm_anon()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/legacy-dcmtk.md)
+  [`dcm_subtract_date()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/legacy-dcmtk.md)
+  [`dcmj2pnm()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/legacy-dcmtk.md)
+  [`dcmdjpeg()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/legacy-dcmtk.md)
+  [`dcmdrle()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/legacy-dcmtk.md)
+  [`dcmcrle()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/legacy-dcmtk.md)
+  [`check_dcmtk_cmd()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/legacy-dcmtk.md)
+  :
+
+  Legacy Compatibility Functions from `dcmtk`
+
 - [`date_tags`](https://lauyeehow1986-hub.github.io/dicomtk/reference/date_tags.md)
   : DICOM Date Tags
+
 - [`datetime_tags`](https://lauyeehow1986-hub.github.io/dicomtk/reference/datetime_tags.md)
   : DICOM DateTime Tags
+
 - [`removal_tags`](https://lauyeehow1986-hub.github.io/dicomtk/reference/removal_tags.md)
   : HIPAA / DICOM De-identification Removal Tags
 
-## De-identification & Anonymization
+## De-identification & Privacy Engine
 
-HIPAA Safe Harbor and DICOM PS3.15 confidentiality profile
-anonymization.
+Regulatory-grade PS3.15 de-identification, jurisdiction presets, pixel
+cleaning, 3D defacing, and risk auditing.
 
+- [`dicom_deid()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_deid.md)
+  : De-Identify a DICOM File, Directory, or Cohort
+- [`dicom_deid_profile()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_deid_profile.md)
+  : DICOM De-Identification Profiles and Composable Jurisdictions
+- [`dicom_list_jurisdictions()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_list_jurisdictions.md)
+  : List Built-In Statutory De-Identification Jurisdictions
+- [`dicom_key_provider()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_key_provider.md)
+  : Pluggable Cryptographic Key Provider for DICOM De-Identification
+- [`is_dicom_key_provider()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/is_dicom_key_provider.md)
+  : Check if Object is a DICOM Key Provider
+- [`deid_map_uid()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/deid_map_uid.md)
+  : Deterministically Map a DICOM UID
+- [`deid_patient_shift()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/deid_patient_shift.md)
+  : Compute Per-Patient Date Shift
+- [`derive_patient_shift_days()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/derive_patient_shift_days.md)
+  : Derive Patient Shift Days from Key or Provider
+- [`dicom_crosswalk_read()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_crosswalk_read.md)
+  : Read and Decrypt a DICOM De-Identification Crosswalk
+- [`dicom_detect_burned_phi()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_detect_burned_phi.md)
+  : Detect Burned-In Annotation / Pixel PHI Regions
+- [`dicom_clean_pixels()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_clean_pixels.md)
+  : Clean Burned-In Pixel PHI via Blackout or Telea Inpainting
+- [`dicom_deface()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_deface.md)
+  : 3D Coordinate-Aware Head CT/MR Defacing
+- [`dicom_deid_verify()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_deid_verify.md)
+  : Verify De-Identification Residual PHI and Generate Cryptographic
+  Attestation
+- [`dicom_verify_attestation()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_verify_attestation.md)
+  : Verify Cryptographic Attestation Manifest
+- [`dicom_deid_risk()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_deid_risk.md)
+  : Re-Identification Risk Scoring and K-Anonymity Assessment
 - [`dicom_anonymize()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_anonymize.md)
   : De-identify / Anonymize a DICOM File (HIPAA & DICOM PS3.15 Profile)
 
@@ -70,10 +199,12 @@ MPR/MIP/rgl.
 
 Convert between DICOM, PNG, NIfTI, XML, JSON, PDF, and RLE compression.
 
-- [`dicom_to_png()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_to_png.md)
-  : Export a DICOM Image Slice to PNG
+- [`write_nifti()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/write_nifti.md)
+  : Write a DICOM Volume to NIfTI-1 With dcm2niix-Compatible Geometry
 - [`dicom_to_nifti()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_to_nifti.md)
   : Convert DICOM File(s) or Series to NIfTI-1 Format
+- [`dicom_to_png()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_to_png.md)
+  : Export a DICOM Image Slice to PNG
 - [`dcm2xml()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dcm2xml.md)
   : Convert a DICOM File to XML (Native DICOM Model PS3.19)
 - [`dcm2json()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dcm2json.md)
@@ -136,6 +267,12 @@ dcmpstat, and dcmsign.
 - [`create_dicom_sr()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/create_dicom_sr.md)
   : Create a DICOM Basic Text Structured Report (SR)
 
+- [`dicom_sr_tid1500()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_sr_tid1500.md)
+  : Create a Quantitative Imaging DICOM SR TID 1500 Measurement Report
+
+- [`read_sr_tid1500()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/read_sr_tid1500.md)
+  : Read a DICOM SR TID 1500 Measurement Report
+
 - [`read_dicom_rt()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/read_dicom_rt.md)
   :
 
@@ -145,6 +282,47 @@ dcmpstat, and dcmsign.
   :
 
   Read DICOM Segmentation Objects (`dcmseg`)
+
+- [`dicom_seg()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_seg.md)
+  : DICOM Segmentation S3 Class
+
+- [`write_dicom_seg()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/write_dicom_seg.md)
+  :
+
+  Write DICOM Segmentation Object (`dcmseg`)
+
+- [`as_labelmap()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/as_labelmap.md)
+  :
+
+  Convert a Multi-Segment `dicom_seg` to a 3D Integer Label-Map
+
+- [`rtstruct_to_seg()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/rtstruct_to_seg.md)
+  :
+
+  Convert RTSTRUCT Contours to a 3D Segmentation Mask (`dicom_seg`)
+
+- [`seg_to_rtstruct()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/seg_to_rtstruct.md)
+  :
+
+  Convert a 3D Segmentation Mask (`dicom_seg`) to `RTSTRUCT` Contours
+
+- [`dicom_dvh()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_dvh.md)
+  : Compute Dose-Volume Histogram (DVH) and Clinical Radiation Metrics
+
+- [`rasterize_polygon_2d()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/rasterize_polygon_2d.md)
+  : 2D Polygon Rasterization
+
+- [`rasterize_polygons_2d()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/rasterize_polygons_2d.md)
+  : Rasterize Multiple 2D Polygons
+
+- [`trace_contours_2d()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/trace_contours_2d.md)
+  : Trace Contours from 2D Binary Mask
+
+- [`write_dicom_gsps()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/write_dicom_gsps.md)
+  : Write a DICOM Grayscale Softcopy Presentation State (GSPS) Object
+
+- [`read_dicom_gsps()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/read_dicom_gsps.md)
+  : Read a DICOM Grayscale Softcopy Presentation State (GSPS) Object
 
 - [`read_dicom_pmap()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/read_dicom_pmap.md)
   :
@@ -172,6 +350,59 @@ dcmpstat, and dcmsign.
 
   Inspect Digital Signatures in a DICOM File (`dcmsign`)
 
+## Deep Learning Prep, QC & Dataset Exporters
+
+3D resampling, intensity windowing, patient-level splits, automated QC,
+burned-in annotations, and nnU-Net/MONAI/RO-Crate/Croissant export.
+
+- [`volume_resample()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/volume_resample.md)
+  :
+
+  Resample a 3D `dicom_volume` or `dicom_seg` to Target Voxel Spacing
+
+- [`volume_window()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/volume_window.md)
+  :
+
+  Apply Intensity Windowing and Normalization to a `dicom_volume`
+
+- [`dicom_patient_splits()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_patient_splits.md)
+  : Generate Leakage-Free Patient-Level Train / Validation / Test Splits
+
+- [`dicom_image_qc()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_image_qc.md)
+  : Automated Image Quality Control for DICOM Volumes
+
+- [`dicom_burn_annotations()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_burn_annotations.md)
+  : Export Derived Burned-In Annotation Secondary Capture DICOMs
+
+- [`dcmdump()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/legacy-dcmtk.md)
+  [`dcmdump_full()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/legacy-dcmtk.md)
+  [`dcmhd()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/legacy-dcmtk.md)
+  [`wide_hdr()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/legacy-dcmtk.md)
+  [`burned_annot()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/legacy-dcmtk.md)
+  [`dcmodify()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/legacy-dcmtk.md)
+  [`dcm_anon()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/legacy-dcmtk.md)
+  [`dcm_subtract_date()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/legacy-dcmtk.md)
+  [`dcmj2pnm()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/legacy-dcmtk.md)
+  [`dcmdjpeg()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/legacy-dcmtk.md)
+  [`dcmdrle()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/legacy-dcmtk.md)
+  [`dcmcrle()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/legacy-dcmtk.md)
+  [`check_dcmtk_cmd()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/legacy-dcmtk.md)
+  :
+
+  Legacy Compatibility Functions from `dcmtk`
+
+- [`export_nnunet()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/export_nnunet.md)
+  : Export Volumes and Segmentations in nnU-Net v2 Format
+
+- [`export_monai()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/export_monai.md)
+  : Export Volumes and Segmentations in MONAI Datalist Format
+
+- [`export_rocrate()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/export_rocrate.md)
+  : Export RO-Crate 1.1 Dataset Metadata
+
+- [`export_croissant()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/export_croissant.md)
+  : Export MLCommons Croissant 1.0 Dataset Metadata
+
 ## AI & LLM Integration (Ollama, OpenAI, Claude)
 
 Connect DICOM studies and images to local Ollama and cloud
@@ -189,6 +420,159 @@ OpenAI/Anthropic models.
   : Generate a Structured Radiology Report from a DICOM File
 - [`dicom_ask()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_ask.md)
   : Ask a Natural-Language Question About a DICOM File
+
+## DICOMweb (QIDO-RS, WADO-RS, STOW-RS)
+
+PS3.18 DICOM JSON, RFC 2387 binary multipart/related framing, OAuth2,
+and QIDO/WADO/STOW REST clients.
+
+- [`as_dicom_json()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/as_dicom_json.md)
+  : Convert DICOM Header Tibble to PS3.18 DICOM JSON Model
+
+- [`from_dicom_json()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/from_dicom_json.md)
+  : Convert PS3.18 DICOM JSON Model to a Tidy Header Tibble
+
+- [`pack_multipart_dicom()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/pack_multipart_dicom.md)
+  :
+
+  Pack DICOM Files Into an RFC 2387 `multipart/related` Binary Payload
+
+- [`unpack_multipart_dicom()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/unpack_multipart_dicom.md)
+  :
+
+  Unpack an RFC 2387 `multipart/related` DICOM Payload to Disk
+
+- [`dicomweb_qido()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicomweb_qido.md)
+  : Query a DICOMweb Endpoint Using QIDO-RS
+
+- [`dicomweb_metadata()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicomweb_metadata.md)
+  : Retrieve DICOMweb Study/Series Metadata (WADO-RS Metadata)
+
+- [`dicomweb_wado()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicomweb_wado.md)
+  : Retrieve DICOM Instances via WADO-RS
+
+- [`dicomweb_stow()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicomweb_stow.md)
+  : Store DICOM Instances via STOW-RS
+
+## HL7 FHIR R4/R5 & Synthea Linkage
+
+Bi-directional ImagingStudy, ImagingSelection, DiagnosticReport,
+Provenance, W3C PROV, and Synthea cohort linkage.
+
+- [`as_fhir_imaging_study()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/as_fhir_imaging_study.md)
+  :
+
+  Build an HL7 FHIR R4/R5 `ImagingStudy` Resource
+
+- [`from_fhir_imaging_study()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/from_fhir_imaging_study.md)
+  :
+
+  Parse an HL7 FHIR `ImagingStudy` Resource Into a Tidy Tibble
+
+- [`as_fhir_imaging_selection()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/as_fhir_imaging_selection.md)
+  :
+
+  Build an HL7 FHIR R5 `ImagingSelection` Resource From a Segmentation
+  or GSPS
+
+- [`as_fhir_diagnostic_report()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/as_fhir_diagnostic_report.md)
+  :
+
+  Build an HL7 FHIR `DiagnosticReport` Resource From a DICOM SR / TID
+  1500 Report
+
+- [`as_fhir_provenance()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/as_fhir_provenance.md)
+  :
+
+  Build an HL7 FHIR `Provenance` Resource From De-Identification or
+  Volume Provenance
+
+- [`as_w3c_prov()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/as_w3c_prov.md)
+  : Convert DICOM Processing Provenance to W3C PROV-JSON
+
+- [`fhir_post()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/fhir_post.md)
+  : Post a FHIR Resource to a FHIR REST Server or Local Mock Directory
+
+- [`fhir_get()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/fhir_get.md)
+  : Retrieve or Search FHIR Resources From a FHIR Server or Local Mock
+  Directory
+
+- [`link_synthea_cohort()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/link_synthea_cohort.md)
+  : Link Synthea FHIR Clinical Bundles With Local DICOM Studies
+
+## DuckDB/Parquet Archive Index & NL-to-SQL
+
+Normalized 3-table study/series/instance index, Parquet export, and
+read-only SQL cohort builder.
+
+- [`dicom_index_build()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_index_build.md)
+  : Build a Normalized 3-Table DICOM Archive Index (DuckDB / Parquet /
+  Tibble)
+
+- [`dicom_index_query()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_index_query.md)
+  :
+
+  Execute a Read-Only SQL Query Against a `dicom_archive_index`
+
+- [`dicom_index_close()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_index_close.md)
+  :
+
+  Close a `dicom_archive_index` Database Connection
+
+- [`validate_readonly_sql()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/validate_readonly_sql.md)
+  : Validate That a SQL String Is Strictly Read-Only and Free of
+  File-Access Functions
+
+- [`dicom_cohort_nl()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_cohort_nl.md)
+  : Build and Execute a Guardrailed Natural-Language Cohort Query
+
+- [`export_cohort_spec()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/export_cohort_spec.md)
+  : Export a Portable JSON Cohort Specification
+
+- [`run_cohort_spec()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/run_cohort_spec.md)
+  : Execute a Portable JSON Cohort Specification Against an Archive
+  Index
+
+## OHDSI OMOP Medical Imaging CDM (MI-CDM)
+
+Map studies, segmentations, and TID 1500 SR metrics into OMOP
+image_occurrence and image_feature tables.
+
+- [`omop_imaging_concepts`](https://lauyeehow1986-hub.github.io/dicomtk/reference/omop_imaging_concepts.md)
+  : OHDSI OMOP Medical Imaging CDM Concept Crosswalk
+
+- [`to_omop_image_occurrence()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/to_omop_image_occurrence.md)
+  :
+
+  Map DICOM Studies and Series to OHDSI OMOP `IMAGE_OCCURRENCE`
+
+- [`to_omop_image_feature()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/to_omop_image_feature.md)
+  :
+
+  Map Segmentation Masks or TID 1500 SR Reports to OHDSI OMOP
+  `IMAGE_FEATURE`
+
+- [`write_omop_micdm()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/write_omop_micdm.md)
+  : Write and Validate OHDSI OMOP MI-CDM Tables in a DBI / DuckDB
+  Database
+
+## Whole Slide Imaging (WSI) & Sup 222 Annotations
+
+Multi-resolution WSI pyramid reader, out-of-core tile stitching, and
+Microscopy Bulk Simple Annotations.
+
+- [`dicom_synthesize_wsi()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_synthesize_wsi.md)
+  : Synthesize a Multi-Resolution DICOM WSI Pyramid for Testing
+- [`read_dicom_wsi_pyramid()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/read_dicom_wsi_pyramid.md)
+  : Read a Multi-Resolution DICOM WSI Pyramid Index
+- [`wsi_extract_tile()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/wsi_extract_tile.md)
+  : Extract a Single Tile from a DICOM WSI Pyramid Out-of-Core
+- [`wsi_stitch_region()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/wsi_stitch_region.md)
+  : Stitch an Arbitrary Rectangular Region Across WSI Tile Boundaries
+- [`dicom_wsi_annotations()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_wsi_annotations.md)
+  : Construct DICOM Supplement 222 Microscopy Bulk Simple Annotations
+- [`wsi_annotations_to_mask()`](https://lauyeehow1986-hub.github.io/dicomtk/reference/wsi_annotations_to_mask.md)
+  : Rasterize DICOM Sup 222 WSI Annotations into a 2D Label Mask
 
 ## Legacy Compatibility
 

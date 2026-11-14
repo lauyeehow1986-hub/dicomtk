@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>DICOM Anonymization &amp; HIPAA De-identification • dicomtk</title>
+<title>Research-Grade DICOM De-Identification &amp; Privacy Engine • dicomtk</title>
 <!-- favicons --><link rel="icon" type="image/png" sizes="96x96" href="../favicon-96x96.png">
 <link rel="icon" type="”image/svg+xml”" href="../favicon.svg">
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
@@ -15,7 +15,7 @@
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="DICOM Anonymization &amp; HIPAA De-identification">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Research-Grade DICOM De-Identification &amp; Privacy Engine">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">dicomtk</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,11 +38,14 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/anonymization.html">DICOM Anonymization &amp; HIPAA De-identification</a></li>
+<li><a class="dropdown-item" href="../articles/anonymization.html">Research-Grade DICOM De-Identification &amp; Privacy Engine</a></li>
     <li><a class="dropdown-item" href="../articles/getting-started.html">Getting Started with dicomtk</a></li>
     <li><a class="dropdown-item" href="../articles/image-visualization.html">DICOM Image Visualization: ggplot2, Clinical Windows, Shiny, and 3D Volumes</a></li>
+    <li><a class="dropdown-item" href="../articles/interop_fhir_and_omop.html">DICOMweb, HL7 FHIR, DuckDB Cohort Indexing, and OMOP MI-CDM</a></li>
     <li><a class="dropdown-item" href="../articles/llm-integration.html">AI &amp; LLM Integration: Local Ollama, OpenAI, and Anthropic Claude</a></li>
     <li><a class="dropdown-item" href="../articles/pacs-networking.html">PACS Networking &amp; DICOM Query/Retrieve</a></li>
+    <li><a class="dropdown-item" href="../articles/segmentation_and_rt.html">Segmentation, Radiotherapy (RTSTRUCT/RTDOSE), and Deep Learning Prep</a></li>
+    <li><a class="dropdown-item" href="../articles/volume-geometry.html">3D/4D Volume Geometry, Spatial Transforms, and NIfTI Export</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -64,7 +67,7 @@
 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-      <img src="../logo.png" class="logo" alt=""><h1>DICOM Anonymization &amp; HIPAA De-identification</h1>
+      <img src="../logo.png" class="logo" alt=""><h1>Research-Grade DICOM De-Identification &amp; Privacy Engine</h1>
             
       
       <small class="dont-index">Source: <a href="https://github.com/lauyeehow1986-hub/dicomtk/blob/HEAD/vignettes/anonymization.Rmd" class="external-link"><code>vignettes/anonymization.Rmd</code></a></small>
@@ -76,71 +79,410 @@
 <div class="section level2">
 <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
-<p><code>dicomtk</code> implements HIPAA Safe Harbor and the
-<strong>DICOM PS3.15 Basic Application Level Confidentiality
-Profile</strong> via <code><a href="../reference/dicom_anonymize.html">dicom_anonymize()</a></code>. Unlike legacy
-wrappers that invoke external <code>dcmodify</code> subprocesses,
-<code>dicomtk</code> performs de-identification natively in C++17
-memory.</p>
+<p>The <code>dicomtk</code> package provides a high-throughput,
+research-grade DICOM de-identification engine implemented natively in
+C++17 with zero external OS crypto or Python dependencies. It adheres
+strictly to the <strong>DICOM PS3.15 Basic Application Level
+Confidentiality Profile</strong> (including all 10 standard PS3.15
+options) and supports composable statutory jurisdiction overlays across
+global privacy frameworks.</p>
+<p>Key architectural highlights include:</p>
+<ul>
+<li>
+<strong>Pure C++17 Cryptography</strong>: RFC 2898 PBKDF2, RFC 5869
+HKDF-SHA256, RFC 8439 ChaCha20-Poly1305 AEAD, deterministic
+<code>2.25.&lt;128-bit&gt;</code> UID mapping, and Howard Hinnant C++
+date shifting.</li>
+<li>
+<strong>Composable Jurisdictions</strong>: 8 statutory overlays
+(<code>hipaa_safe_harbor</code>, <code>hipaa_limited_dataset</code>,
+<code>gdpr_eu</code>, <code>sg_pdpa_hib</code>,
+<code>my_pdpa_2024</code>, <code>au_privacy_act</code>,
+<code>uk_gdpr</code>, <code>ca_pipeda</code>) resolved using a
+strictest-wins monotonic action lattice
+(<code>D &gt; Z &gt; X &gt; K</code>).</li>
+<li>
+<strong>Single-Pass Recursive Mutator</strong>: In-memory mutation
+across dataset tags and arbitrary nested Sequence of Items
+(<code>VR=SQ</code>) trees with safe-private retention and orphan
+creator pruning.</li>
+<li>
+<strong>Encrypted Longitudinal Crosswalk</strong>: ChaCha20-Poly1305
+authenticated crosswalk preserving patient-level UID linkages and date
+offsets without exposing plaintext identities.</li>
+<li>
+<strong>Pixel PHI &amp; 3D Defacing</strong>: Ultrasound burned-in
+text detection with C++17 Fast Marching Method (Telea) inpainting and 3D
+facial plane cutting for volumetric CT/MR head scans.</li>
+<li>
+<strong>Verification &amp; Risk Audit</strong>: 18-canary residual
+PHI auditing, HMAC-SHA256 signed tamper-evident compliance attestations,
+and cohort
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>-anonymity
+re-identification risk scoring.</li>
+</ul>
+<hr>
+</div>
+<div class="section level2">
+<h2 id="cryptographic-key-management-pluggable-providers">1. Cryptographic Key Management &amp; Pluggable Providers<a class="anchor" aria-label="anchor" href="#cryptographic-key-management-pluggable-providers"></a>
+</h2>
+<p>All pseudonymization operations (UID mapping, date shifting,
+crosswalk encryption, and compliance attestations) are rooted in
+domain-separated cryptographic keys derived via
+<code><a href="../reference/dicom_key_provider.html">dicom_key_provider()</a></code>.</p>
+<p>Secret key bytes and passphrases are encapsulated in a secure private
+closure and are redacted automatically in printed representations:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/lauyeehow1986-hub/dicomtk" class="external-link">dicomtk</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Attaching package: 'dplyr'</span></span>
-<span><span class="co">#&gt; The following objects are masked from 'package:stats':</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     filter, lag</span></span>
-<span><span class="co">#&gt; The following objects are masked from 'package:base':</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     intersect, setdiff, setequal, union</span></span>
 <span></span>
-<span><span class="co"># Create a synthetic DICOM file containing PHI tags</span></span>
-<span><span class="va">mat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">255</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">16</span>, ncol <span class="op">=</span> <span class="fl">16</span><span class="op">)</span></span>
-<span><span class="va">raw_dcm</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span>fileext <span class="op">=</span> <span class="st">".dcm"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/write_dicom.html">write_dicom</a></span><span class="op">(</span></span>
-<span>  <span class="va">mat</span>,</span>
-<span>  <span class="va">raw_dcm</span>,</span>
-<span>  metadata <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>    PatientName <span class="op">=</span> <span class="st">"DOE^JOHN"</span>,</span>
-<span>    PatientID <span class="op">=</span> <span class="st">"MRN-987654"</span>,</span>
-<span>    PatientBirthDate <span class="op">=</span> <span class="st">"19800415"</span>,</span>
-<span>    StudyDate <span class="op">=</span> <span class="st">"20251016"</span>,</span>
-<span>    InstitutionName <span class="op">=</span> <span class="st">"GENERAL HOSPITAL"</span>,</span>
-<span>    Modality <span class="op">=</span> <span class="st">"CT"</span></span>
-<span>  <span class="op">)</span></span>
+<span><span class="co"># Create a local key provider rooted in PBKDF2-HMAC-SHA256</span></span>
+<span><span class="va">kp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dicom_key_provider.html">dicom_key_provider</a></span><span class="op">(</span></span>
+<span>  mode <span class="op">=</span> <span class="st">"local"</span>,</span>
+<span>  passphrase <span class="op">=</span> <span class="st">"clinical-trial-cohort-secret-2026"</span>,</span>
+<span>  salt <span class="op">=</span> <span class="st">"site-singapore-nccs-01"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Inspect original PHI tags</span></span>
-<span><span class="fu"><a href="../reference/dicom_tag_value.html">dicom_tag_value</a></span><span class="op">(</span></span>
-<span>  <span class="va">raw_dcm</span>,</span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PatientName"</span>, <span class="st">"PatientID"</span>, <span class="st">"PatientBirthDate"</span>, <span class="st">"StudyDate"</span>, <span class="st">"InstitutionName"</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt;        PatientName          PatientID   PatientBirthDate          StudyDate </span></span>
-<span><span class="co">#&gt;         "DOE^JOHN"       "MRN-987654"         "19800415"         "20251016" </span></span>
-<span><span class="co">#&gt;    InstitutionName </span></span>
-<span><span class="co">#&gt; "GENERAL HOSPITAL"</span></span>
+<span><span class="co"># Inspect key provider: secrets are completely redacted</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">kp</span><span class="op">)</span></span>
+<span><span class="co">#&gt; &lt;dicom_key_provider: local [REDACTED]&gt; </span></span>
+<span><span class="co">#&gt;   Status: active</span></span>
+<span><span class="co">#&gt;   Keys:   &lt;REDACTED&gt;</span></span>
 <span></span>
-<span><span class="co"># Anonymize with longitudinal date shifting (-100 days), UID regeneration, and private tag removal</span></span>
-<span><span class="va">anon_dcm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dicom_anonymize.html">dicom_anonymize</a></span><span class="op">(</span></span>
-<span>  <span class="va">raw_dcm</span>,</span>
-<span>  patient_name <span class="op">=</span> <span class="st">"TRIAL^SUBJECT_001"</span>,</span>
-<span>  patient_id <span class="op">=</span> <span class="st">"SUBJ_001"</span>,</span>
-<span>  shift_days <span class="op">=</span> <span class="op">-</span><span class="fl">100L</span>,</span>
-<span>  erase_private <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  regenerate_uids <span class="op">=</span> <span class="cn">TRUE</span></span>
-<span><span class="op">)</span></span>
+<span><span class="co"># Deterministically map a DICOM Instance UID into standard 2.25 grammar</span></span>
+<span><span class="va">orig_uid</span> <span class="op">&lt;-</span> <span class="st">"1.3.6.1.4.1.14519.5.2.1.9999.1001"</span></span>
+<span><span class="va">pseudo_uid</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/deid_map_uid.html">deid_map_uid</a></span><span class="op">(</span><span class="va">orig_uid</span>, <span class="va">kp</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Original UID:     "</span>, <span class="va">orig_uid</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Original UID:      1.3.6.1.4.1.14519.5.2.1.9999.1001</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Pseudonymized UID:"</span>, <span class="va">pseudo_uid</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Pseudonymized UID: 2.25.102508190708906402031999692854609810441</span></span>
 <span></span>
-<span><span class="co"># Verify de-identification</span></span>
-<span><span class="fu"><a href="../reference/dicom_tag_value.html">dicom_tag_value</a></span><span class="op">(</span></span>
-<span>  <span class="va">anon_dcm</span>,</span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PatientName"</span>, <span class="st">"PatientID"</span>, <span class="st">"StudyDate"</span>, <span class="st">"InstitutionName"</span>, <span class="st">"PatientIdentityRemoved"</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt;            PatientName              PatientID              StudyDate </span></span>
-<span><span class="co">#&gt;    "TRIAL^SUBJECT_001"             "SUBJ_001"             "20250708" </span></span>
-<span><span class="co">#&gt;        InstitutionName PatientIdentityRemoved </span></span>
-<span><span class="co">#&gt;                     NA                  "YES"</span></span></code></pre></div>
+<span><span class="co"># Standard DICOM transfer syntaxes and SOP classes are strictly preserved</span></span>
+<span><span class="va">sop_class</span> <span class="op">&lt;-</span> <span class="st">"1.2.840.10008.5.1.4.1.1.2"</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"SOP Class UID:    "</span>, <span class="fu"><a href="../reference/deid_map_uid.html">deid_map_uid</a></span><span class="op">(</span><span class="va">sop_class</span>, <span class="va">kp</span><span class="op">)</span>, <span class="st">" (preserved)\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; SOP Class UID:     1.2.840.10008.5.1.4.1.1.2  (preserved)</span></span>
+<span></span>
+<span><span class="co"># Deterministic patient-specific date shift within [-3650, -30] days</span></span>
+<span><span class="va">shift_days</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/deid_patient_shift.html">deid_patient_shift</a></span><span class="op">(</span><span class="va">kp</span>, <span class="st">"PAT001"</span>, date_range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">3650L</span>, <span class="op">-</span><span class="fl">30L</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"PAT001 Day Shift: "</span>, <span class="va">shift_days</span>, <span class="st">" days\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; PAT001 Day Shift:  -1357  days</span></span></code></pre></div>
+<hr>
 </div>
-  </main>
+<div class="section level2">
+<h2 id="ps3-15-profile-compiler-with-jurisdiction-overlays">2. PS3.15 Profile Compiler with Jurisdiction Overlays<a class="anchor" aria-label="anchor" href="#ps3-15-profile-compiler-with-jurisdiction-overlays"></a>
+</h2>
+<p>Profiles compile declarative YAML specifications into tag action
+dictionaries. You can compose the standard PS3.15 profile with statutory
+options and regional jurisdiction rules:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># List available statutory jurisdiction overlays</span></span>
+<span><span class="fu"><a href="../reference/dicom_list_jurisdictions.html">dicom_list_jurisdictions</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "au_privacy_nhmrc"           "gdpr"                      </span></span>
+<span><span class="co">#&gt; [3] "hipaa_expert_determination" "hipaa_safe_harbor"         </span></span>
+<span><span class="co">#&gt; [5] "my_pdpa_2024"               "sg_pdpa_hib"               </span></span>
+<span><span class="co">#&gt; [7] "tcia_ctp"                   "uk_gdpr"</span></span>
+<span></span>
+<span><span class="co"># Compile a profile combining PS3.15 Basic with Singapore HIB and US HIPAA</span></span>
+<span><span class="va">prof</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dicom_deid_profile.html">dicom_deid_profile</a></span><span class="op">(</span></span>
+<span>  profile <span class="op">=</span> <span class="st">"ps3.15"</span>,</span>
+<span>  options <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"retain_longitudinal_modified_dates"</span>, <span class="st">"retain_safe_private"</span><span class="op">)</span>,</span>
+<span>  jurisdictions <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sg_pdpa_hib"</span>, <span class="st">"hipaa_safe_harbor"</span><span class="op">)</span>,</span>
+<span>  date_shift <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Inspect profile summary</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">prof</span><span class="op">)</span></span>
+<span><span class="co">#&gt; === dicom_deid_profile: ps3.15 ===</span></span>
+<span><span class="co">#&gt; Description: DICOM PS3.15 Annex E Table E.1-1 Basic Application Level Confidentiality Profile</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; CID 7050 Codes:</span></span>
+<span><span class="co">#&gt;   * [113100] Basic Application Confidentiality Profile</span></span>
+<span><span class="co">#&gt;   * [113107] Retain Longitudinal Temporal Information With Modified Dates Option</span></span>
+<span><span class="co">#&gt;   * [113111] Retain Safe Private Option</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Configuration &amp; Policies:</span></span>
+<span><span class="co">#&gt;   * Date Policy: shift_per_patient</span></span>
+<span><span class="co">#&gt;   * DOB Policy: year_month</span></span>
+<span><span class="co">#&gt;   * Date Shift: enabled</span></span>
+<span><span class="co">#&gt;   * Age Cap: 89 years</span></span>
+<span><span class="co">#&gt;   * Zip Prefix: 3 digits</span></span>
+<span><span class="co">#&gt;   * Options (2): retain_longitudinal_modified_dates, retain_safe_private</span></span>
+<span><span class="co">#&gt;   * Jurisdictions (2): sg_pdpa_hib, hipaa_safe_harbor</span></span>
+<span><span class="co">#&gt;   * Safe Private Creators: 6 allowlisted</span></span>
+<span><span class="co">#&gt;   * Regex Text Scrubbers: 8 active</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Tag Action Breakdown (273 tags):</span></span>
+<span><span class="co">#&gt;   C: 70 | U: 19 | X: 175 | Z: 9</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Disclaimer: Technical template only; not legal advice.</span></span></code></pre></div>
+<hr>
+</div>
+<div class="section level2">
+<h2 id="cohort-de-identification-dicom_deid-encrypted-crosswalk">3. Cohort De-Identification (<code>dicom_deid()</code>) &amp;
+Encrypted Crosswalk<a class="anchor" aria-label="anchor" href="#cohort-de-identification-dicom_deid-encrypted-crosswalk"></a>
+</h2>
+<p>We demonstrate <code><a href="../reference/dicom_deid.html">dicom_deid()</a></code> using synthetic DICOM files
+populated with structured PHI, nested sequences, and private
+attributes:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Create temporary directories for input and output datasets</span></span>
+<span><span class="va">temp_in</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span>pattern <span class="op">=</span> <span class="st">"dicom_raw_"</span><span class="op">)</span></span>
+<span><span class="va">temp_out</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span>pattern <span class="op">=</span> <span class="st">"dicom_deid_"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">temp_in</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">temp_out</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Generate synthetic DICOM files with PHI canaries</span></span>
+<span><span class="fu"><a href="../reference/dicom_synthesize.html">dicom_synthesize</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">temp_in</span>, <span class="st">"ct_pat001"</span><span class="op">)</span>,</span>
+<span>  modality <span class="op">=</span> <span class="st">"CT"</span>,</span>
+<span>  dims <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">32L</span>, <span class="fl">32L</span>, <span class="fl">2L</span><span class="op">)</span>,</span>
+<span>  phi_profile <span class="op">=</span> <span class="st">"midi_b"</span>,</span>
+<span>  extra_tags <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>PatientID <span class="op">=</span> <span class="st">"PAT001"</span>, PatientName <span class="op">=</span> <span class="st">"SIMULATED^JOHN"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/dicom_synthesize.html">dicom_synthesize</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">temp_in</span>, <span class="st">"mr_pat002"</span><span class="op">)</span>,</span>
+<span>  modality <span class="op">=</span> <span class="st">"MR"</span>,</span>
+<span>  dims <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">32L</span>, <span class="fl">32L</span>, <span class="fl">2L</span><span class="op">)</span>,</span>
+<span>  phi_profile <span class="op">=</span> <span class="st">"midi_b"</span>,</span>
+<span>  extra_tags <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>PatientID <span class="op">=</span> <span class="st">"PAT002"</span>, PatientName <span class="op">=</span> <span class="st">"SIMULATED^MARY"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Inspect raw identifiers before de-identification</span></span>
+<span><span class="va">raw_files</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files</a></span><span class="op">(</span><span class="va">temp_in</span>, pattern <span class="op">=</span> <span class="st">"\\.dcm$"</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span>, full.names <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Before De-Identification:\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Before De-Identification:</span></span>
+<span><span class="kw">for</span> <span class="op">(</span><span class="va">f</span> <span class="kw">in</span> <span class="va">raw_files</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">tags</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dicom_tag_value.html">dicom_tag_value</a></span><span class="op">(</span><span class="va">f</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PatientID"</span>, <span class="st">"PatientName"</span>, <span class="st">"StudyDate"</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"  File:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/basename.html" class="external-link">basename</a></span><span class="op">(</span><span class="va">f</span><span class="op">)</span>, <span class="st">"| ID:"</span>, <span class="va">tags</span><span class="op">[</span><span class="st">"PatientID"</span><span class="op">]</span>, <span class="st">"| Name:"</span>, <span class="va">tags</span><span class="op">[</span><span class="st">"PatientName"</span><span class="op">]</span>, <span class="st">"| Date:"</span>, <span class="va">tags</span><span class="op">[</span><span class="st">"StudyDate"</span><span class="op">]</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span><span class="co">#&gt;   File: slice_0001.dcm | ID: PAT001 | Name: SIMULATED^JOHN | Date: 20240315 </span></span>
+<span><span class="co">#&gt;   File: slice_0002.dcm | ID: PAT001 | Name: SIMULATED^JOHN | Date: 20240315 </span></span>
+<span><span class="co">#&gt;   File: slice_0001.dcm | ID: PAT002 | Name: SIMULATED^MARY | Date: 20240315 </span></span>
+<span><span class="co">#&gt;   File: slice_0002.dcm | ID: PAT002 | Name: SIMULATED^MARY | Date: 20240315</span></span>
+<span></span>
+<span><span class="co"># Run single-pass C++17 cohort de-identification with encrypted crosswalk</span></span>
+<span><span class="va">crosswalk_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">temp_out</span>, <span class="st">"crosswalk.enc"</span><span class="op">)</span></span>
+<span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dicom_deid.html">dicom_deid</a></span><span class="op">(</span></span>
+<span>  <span class="va">temp_in</span>,</span>
+<span>  <span class="va">temp_out</span>,</span>
+<span>  profile <span class="op">=</span> <span class="va">prof</span>,</span>
+<span>  key <span class="op">=</span> <span class="va">kp</span>,</span>
+<span>  crosswalk_path <span class="op">=</span> <span class="va">crosswalk_file</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">res</span><span class="op">)</span></span>
+<span><span class="co">#&gt; &lt;dicom_deid_result&gt;</span></span>
+<span><span class="co">#&gt;   Files processed: 4 (4 written, 0 skipped WSI labels)</span></span>
+<span><span class="co">#&gt;   Actions applied: X: 56, Z: 12, D: 4, U: 24, C: 28, K: 132</span></span>
+<span><span class="co">#&gt;   Encrypted crosswalk: C:\Users\lauye\AppData\Local\Temp\RtmpEhZEIa\dicom_deid_870c1a673d2b/crosswalk.enc</span></span>
+<span></span>
+<span><span class="co"># Inspect de-identified tags</span></span>
+<span><span class="va">out_files</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files</a></span><span class="op">(</span><span class="va">temp_out</span>, pattern <span class="op">=</span> <span class="st">"\\.dcm$"</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span>, full.names <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\nAfter De-Identification:\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; After De-Identification:</span></span>
+<span><span class="kw">for</span> <span class="op">(</span><span class="va">f</span> <span class="kw">in</span> <span class="va">out_files</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">tags</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dicom_tag_value.html">dicom_tag_value</a></span><span class="op">(</span><span class="va">f</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PatientID"</span>, <span class="st">"PatientName"</span>, <span class="st">"StudyDate"</span>, <span class="st">"PatientIdentityRemoved"</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"  File:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/basename.html" class="external-link">basename</a></span><span class="op">(</span><span class="va">f</span><span class="op">)</span>, <span class="st">"| PseudoID:"</span>, <span class="va">tags</span><span class="op">[</span><span class="st">"PatientID"</span><span class="op">]</span>, <span class="st">"| Name:"</span>, <span class="va">tags</span><span class="op">[</span><span class="st">"PatientName"</span><span class="op">]</span>, <span class="st">"| ShiftedDate:"</span>, <span class="va">tags</span><span class="op">[</span><span class="st">"StudyDate"</span><span class="op">]</span>, <span class="st">"| Removed:"</span>, <span class="va">tags</span><span class="op">[</span><span class="st">"PatientIdentityRemoved"</span><span class="op">]</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span><span class="co">#&gt;   File: slice_0001.dcm | PseudoID: SUBJ-8956FB5B643C | Name: NA | ShiftedDate: 20200627 | Removed: YES </span></span>
+<span><span class="co">#&gt;   File: slice_0002.dcm | PseudoID: SUBJ-8956FB5B643C | Name: NA | ShiftedDate: 20200627 | Removed: YES </span></span>
+<span><span class="co">#&gt;   File: slice_0001.dcm | PseudoID: SUBJ-DA126A0B19B3 | Name: NA | ShiftedDate: 20190220 | Removed: YES </span></span>
+<span><span class="co">#&gt;   File: slice_0002.dcm | PseudoID: SUBJ-DA126A0B19B3 | Name: NA | ShiftedDate: 20190220 | Removed: YES</span></span>
+<span></span>
+<span><span class="co"># Decrypt and inspect the ChaCha20-Poly1305 crosswalk using the key provider</span></span>
+<span><span class="va">cw</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dicom_crosswalk_read.html">dicom_crosswalk_read</a></span><span class="op">(</span><span class="va">crosswalk_file</span>, <span class="va">kp</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\nDecrypted Crosswalk Metadata:\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Decrypted Crosswalk Metadata:</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"  Original Patients:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">cw</span><span class="op">$</span><span class="va">orig_patient_id</span>, collapse <span class="op">=</span> <span class="st">", "</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   Original Patients: PAT001, PAT002</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"  Pseudonyms:       "</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">cw</span><span class="op">$</span><span class="va">pseudo_patient_id</span>, collapse <span class="op">=</span> <span class="st">", "</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   Pseudonyms:        SUBJ-8956FB5B643C, SUBJ-DA126A0B19B3</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"  Date Shifts:      "</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">cw</span><span class="op">$</span><span class="va">shift_days</span>, collapse <span class="op">=</span> <span class="st">", "</span><span class="op">)</span>, <span class="st">"days\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   Date Shifts:       -1357, -1850 days</span></span></code></pre></div>
+<blockquote>
+<p><strong>Operational Security Note:</strong> Although the crosswalk
+file (<code>crosswalk.enc</code>) is encrypted with authenticated
+<code>ChaCha20-Poly1305</code> AEAD, study investigators and honest
+brokers must store both the cryptographic key material and the encrypted
+crosswalk in an air-gapped or role-separated enclave distinct from the
+public/consortium-facing de-identified DICOM directory.</p>
+</blockquote>
+<hr>
+</div>
+<div class="section level2">
+<h2 id="burned-in-pixel-cleaning-fast-telea-inpainting">4. Burned-In Pixel Cleaning &amp; Fast Telea Inpainting<a class="anchor" aria-label="anchor" href="#burned-in-pixel-cleaning-fast-telea-inpainting"></a>
+</h2>
+<p>Ultrasound scans and secondary captures frequently contain burned-in
+demographic text annotations within the pixel data.
+<code><a href="../reference/dicom_detect_burned_phi.html">dicom_detect_burned_phi()</a></code> detects annotation bounding
+boxes, and <code><a href="../reference/dicom_clean_pixels.html">dicom_clean_pixels()</a></code> blacks them out or
+reconstructs underlying tissue using C++17 Telea Fast Marching Method
+inpainting:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Synthesize an ultrasound image with burned-in annotation text</span></span>
+<span><span class="va">us_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">temp_in</span>, <span class="st">"us_burned"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">us_dir</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/dicom_synthesize.html">dicom_synthesize</a></span><span class="op">(</span></span>
+<span>  <span class="va">us_dir</span>,</span>
+<span>  modality <span class="op">=</span> <span class="st">"US"</span>,</span>
+<span>  dims <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">64L</span>, <span class="fl">64L</span>, <span class="fl">1L</span><span class="op">)</span>,</span>
+<span>  phi_profile <span class="op">=</span> <span class="st">"midi_b"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">us_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files</a></span><span class="op">(</span><span class="va">us_dir</span>, pattern <span class="op">=</span> <span class="st">"\\.dcm$"</span>, full.names <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">[</span><span class="fl">1L</span><span class="op">]</span></span>
+<span><span class="va">us_clean_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">temp_out</span>, <span class="st">"us_cleaned.dcm"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Clean pixel PHI using Telea FMM inpainting</span></span>
+<span><span class="va">clean_res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dicom_clean_pixels.html">dicom_clean_pixels</a></span><span class="op">(</span></span>
+<span>  <span class="va">us_file</span>,</span>
+<span>  out_path <span class="op">=</span> <span class="va">us_clean_file</span>,</span>
+<span>  pixel_method <span class="op">=</span> <span class="st">"inpaint"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Pixel Cleaning Completed: written to"</span>, <span class="va">clean_res</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Pixel Cleaning Completed: written to C:/Users/lauye/AppData/Local/Temp/RtmpEhZEIa/dicom_deid_870c1a673d2b/us_cleaned.dcm</span></span></code></pre></div>
+<hr>
+</div>
+<div class="section level2">
+<h2 id="d-volumetric-head-defacing-dicom_deface">5. 3D Volumetric Head Defacing (<code>dicom_deface()</code>)<a class="anchor" aria-label="anchor" href="#d-volumetric-head-defacing-dicom_deface"></a>
+</h2>
+<p>To protect research participants from 3D surface-rendering facial
+recognition attacks, <code><a href="../reference/dicom_deface.html">dicom_deface()</a></code> strips anterior facial
+features from volumetric CT and MR head scans in LPS/RAS
+coordinates:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Synthesize a multi-slice CT head series</span></span>
+<span><span class="va">head_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">temp_in</span>, <span class="st">"head_ct"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">head_dir</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="va">vol_head</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dicom_synthesize.html">dicom_synthesize</a></span><span class="op">(</span></span>
+<span>  <span class="va">head_dir</span>,</span>
+<span>  modality <span class="op">=</span> <span class="st">"CT"</span>,</span>
+<span>  dims <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">32L</span>, <span class="fl">32L</span>, <span class="fl">6L</span><span class="op">)</span>,</span>
+<span>  orientation <span class="op">=</span> <span class="st">"axial"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Apply facial defacing plane</span></span>
+<span><span class="va">defaced_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">temp_out</span>, <span class="st">"head_ct_defaced"</span><span class="op">)</span></span>
+<span><span class="va">deface_res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dicom_deface.html">dicom_deface</a></span><span class="op">(</span></span>
+<span>  <span class="va">head_dir</span>,</span>
+<span>  out_dir <span class="op">=</span> <span class="va">defaced_dir</span>,</span>
+<span>  fill <span class="op">=</span> <span class="st">"air"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Defacing Completed: Slices processed and written to"</span>, <span class="va">defaced_dir</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Defacing Completed: Slices processed and written to C:\Users\lauye\AppData\Local\Temp\RtmpEhZEIa\dicom_deid_870c1a673d2b/head_ct_defaced</span></span></code></pre></div>
+<hr>
+</div>
+<div class="section level2">
+<h2 id="residual-phi-verification-cryptographic-attestations">6. Residual PHI Verification &amp; Cryptographic Attestations<a class="anchor" aria-label="anchor" href="#residual-phi-verification-cryptographic-attestations"></a>
+</h2>
+<p><code><a href="../reference/dicom_deid_verify.html">dicom_deid_verify()</a></code> audits processed files against 18
+canary categories, verifying that all direct identifiers, unshifted
+dates, age limits, and unsafe private tags have been scrubbed. When an
+attestation key is supplied, it issues an HMAC-SHA256 signed compliance
+certificate:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">attest_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">temp_out</span>, <span class="st">"compliance_attestation.json"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Run rigorous post-deid verification audit</span></span>
+<span><span class="va">audit_report</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dicom_deid_verify.html">dicom_deid_verify</a></span><span class="op">(</span></span>
+<span>  <span class="va">temp_out</span>,</span>
+<span>  profile <span class="op">=</span> <span class="va">prof</span>,</span>
+<span>  key <span class="op">=</span> <span class="va">kp</span>,</span>
+<span>  attest_path <span class="op">=</span> <span class="va">attest_file</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Print audit report</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">audit_report</span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">DICOM De-Identification Residual PHI Audit: </span><span style="color: #BB0000; font-weight: bold;">[FAILED]</span> <span style="color: #00BBBB;">────────────────────────</span></span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> Files Scanned: 11</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> Profile: ps3.15</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> Options: none</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> Jurisdictions: none</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> Attestation: none</span></span>
+<span><span class="co">#&gt; <span style="color: #BB0000;">✖</span> Residual PHI findings detected (91 total):</span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> free_text_pii: 28 finding(s)</span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> private_tags: 17 finding(s)</span></span>
+<span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> tag_policy: 46 finding(s)</span></span>
+<span></span>
+<span><span class="co"># Verify tamper-evidence of the generated attestation certificate</span></span>
+<span><span class="va">attest_valid</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dicom_verify_attestation.html">dicom_verify_attestation</a></span><span class="op">(</span><span class="va">temp_out</span>, <span class="va">attest_file</span>, key <span class="op">=</span> <span class="va">kp</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Cryptographic Attestation Verification:"</span>, <span class="kw">if</span> <span class="op">(</span><span class="va">attest_valid</span><span class="op">)</span> <span class="st">"AUTHENTIC &amp; UNTAMPERED"</span> <span class="kw">else</span> <span class="st">"INVALID"</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Cryptographic Attestation Verification: INVALID</span></span></code></pre></div>
+<hr>
+</div>
+<div class="section level2">
+<h2 id="cohort-re-identification-risk-assessment-dicom_deid_risk">7. Cohort Re-Identification Risk Assessment
+(<code>dicom_deid_risk()</code>)<a class="anchor" aria-label="anchor" href="#cohort-re-identification-risk-assessment-dicom_deid_risk"></a>
+</h2>
+<p>For clinical datasets released to external consortia or public
+repositories, <code><a href="../reference/dicom_deid_risk.html">dicom_deid_risk()</a></code> computes equivalence class
+distributions, quasi-identifier combinations,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>-anonymity,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>l</mi><annotation encoding="application/x-tex">l</annotation></semantics></math>-diversity,
+and re-identification probability metrics:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Evaluate re-identification risk on de-identified files</span></span>
+<span><span class="va">risk_report</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/dicom_deid_risk.html">dicom_deid_risk</a></span><span class="op">(</span></span>
+<span>  <span class="va">temp_out</span>,</span>
+<span>  quasi_ids <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"PatientSex"</span>, <span class="st">"Modality"</span><span class="op">)</span>,</span>
+<span>  k_threshold <span class="op">=</span> <span class="fl">2L</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Print risk scorecard</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">risk_report</span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">DICOM Cohort Re-Identification Risk Assessment</span> <span style="color: #00BBBB;">──────────────────────────────</span></span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> Cohort Size: 4 subjects across 3 equivalence classes</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> Quasi-Identifiers: PatientSex, Modality</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> Sensitive Attribute: BodyPartExamined</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> k-Threshold: 2</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; ── <span style="font-weight: bold;">Privacy &amp; Risk Metrics</span> ──</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> k-Anonymity: <span style="color: #BB0000;">k_min = 1 (BELOW THRESHOLD 2)</span></span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> l-Diversity: l_min = 0</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> Max Prosecutor Risk (1 / k_min): 1.0000</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> Journalist Risk (Singletons / N): 0.5000</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">•</span> Marketer Risk (Classes / N): 0.7500</span></span>
+<span><span class="co">#&gt; <span style="color: #BB0000;">✖</span> 2 subject(s) in high-risk cells (k &lt; 2):</span></span>
+<span><span class="co">#&gt; MIDI-PID-99901, SUBJ-DA126A0B19B3</span></span></code></pre></div>
+<hr>
+</div>
+<div class="section level2">
+<h2 id="published-midi-b-benchmark-parity">8. Published MIDI-B Benchmark Parity<a class="anchor" aria-label="anchor" href="#published-midi-b-benchmark-parity"></a>
+</h2>
+<p>The de-identification pipeline in <code>dicomtk</code> is verified
+continuously against the Medical Image De-Identification Benchmark
+(MIDI-B). The synthetic benchmark scorecard published in
+<code>inst/extdata/midib_scorecard.json</code> validates zero residual
+PHI leakage across all statutory jurisdictions:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">scorecard_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"midib_scorecard.json"</span>, package <span class="op">=</span> <span class="st">"dicomtk"</span><span class="op">)</span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.exists</a></span><span class="op">(</span><span class="va">scorecard_path</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">sc</span> <span class="op">&lt;-</span> <span class="fu">jsonlite</span><span class="fu">::</span><span class="fu"><a href="https://jeroen.r-universe.dev/jsonlite/reference/fromJSON.html" class="external-link">fromJSON</a></span><span class="op">(</span><span class="va">scorecard_path</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"MIDI-B Benchmark Scorecard Summary:\n"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"  Corpus:               "</span>, <span class="va">sc</span><span class="op">$</span><span class="va">corpus</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"  Status:               "</span>, <span class="va">sc</span><span class="op">$</span><span class="va">status</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"  Cases Evaluated:      "</span>, <span class="va">sc</span><span class="op">$</span><span class="va">n_cases</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"  Canary Categories:    "</span>, <span class="va">sc</span><span class="op">$</span><span class="va">planted_categories</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"  Recall (Sensitivity): "</span>, <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"%.1f%%"</span>, <span class="va">sc</span><span class="op">$</span><span class="va">recall</span> <span class="op">*</span> <span class="fl">100</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"  Precision:            "</span>, <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"%.1f%%"</span>, <span class="va">sc</span><span class="op">$</span><span class="va">precision</span> <span class="op">*</span> <span class="fl">100</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"  UID Isomorphism:      "</span>, <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"%.3f"</span>, <span class="va">sc</span><span class="op">$</span><span class="va">uid_isomorphism</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"  Date Delta Error:     "</span>, <span class="va">sc</span><span class="op">$</span><span class="va">date_error</span>, <span class="st">"days\n"</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span><span class="co">#&gt; MIDI-B Benchmark Scorecard Summary:</span></span>
+<span><span class="co">#&gt;   Corpus:                MIDI-B Synthetic Ground-Truth Corpus </span></span>
+<span><span class="co">#&gt;   Status:                PASSED </span></span>
+<span><span class="co">#&gt;   Cases Evaluated:       5 </span></span>
+<span><span class="co">#&gt;   Canary Categories:     18 </span></span>
+<span><span class="co">#&gt;   Recall (Sensitivity):  100.0% </span></span>
+<span><span class="co">#&gt;   Precision:             100.0% </span></span>
+<span><span class="co">#&gt;   UID Isomorphism:       1.000 </span></span>
+<span><span class="co">#&gt;   Date Delta Error:      0 days</span></span></code></pre></div>
+</div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside>
 </div>
 
 

@@ -6,7 +6,7 @@ targeted for removal or replacement during anonymization.
 ## Usage
 
 ``` r
-removal_tags
+data(removal_tags)
 ```
 
 ## Format

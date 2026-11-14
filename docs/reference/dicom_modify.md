@@ -57,4 +57,5 @@ dicom_modify(dcm_file, tags = list(PatientName = "ANON^PATIENT"), out_path = tmp
 dicom_tag_value(tmp, "PatientName")
 #>    PatientName 
 #> "ANON^PATIENT" 
+unlink(tmp)
 ```

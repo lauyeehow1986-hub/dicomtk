@@ -5,7 +5,7 @@ Standard DICOM tags with Value Representation `DA` (Date).
 ## Usage
 
 ``` r
-date_tags
+data(date_tags)
 ```
 
 ## Format

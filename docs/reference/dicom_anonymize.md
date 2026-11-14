@@ -74,6 +74,8 @@ Invisibly returns the path to the anonymized DICOM file.
 ``` r
 dcm_file <- system.file("extdata", "example.dcm", package = "dicomtk")
 anon_file <- dicom_anonymize(dcm_file, patient_name = "STUDY^SUBJECT01")
+#> Warning: `dicom_anonymize()` was deprecated in dicomtk 0.3.0.
+#> ℹ Please use `dicom_deid()` instead.
 dicom_tag_value(anon_file, c("PatientName", "PatientIdentityRemoved"))
 #>            PatientName PatientIdentityRemoved 
 #>      "STUDY^SUBJECT01"                  "YES" 

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">dicomtk</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -18,11 +18,14 @@
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="articles/anonymization.html">DICOM Anonymization &amp; HIPAA De-identification</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="articles/anonymization.html">Research-Grade DICOM De-Identification &amp; Privacy Engine</a></li>
     <li><a class="dropdown-item" href="articles/getting-started.html">Getting Started with dicomtk</a></li>
     <li><a class="dropdown-item" href="articles/image-visualization.html">DICOM Image Visualization: ggplot2, Clinical Windows, Shiny, and 3D Volumes</a></li>
+    <li><a class="dropdown-item" href="articles/interop_fhir_and_omop.html">DICOMweb, HL7 FHIR, DuckDB Cohort Indexing, and OMOP MI-CDM</a></li>
     <li><a class="dropdown-item" href="articles/llm-integration.html">AI &amp; LLM Integration: Local Ollama, OpenAI, and Anthropic Claude</a></li>
     <li><a class="dropdown-item" href="articles/pacs-networking.html">PACS Networking &amp; DICOM Query/Retrieve</a></li>
+    <li><a class="dropdown-item" href="articles/segmentation_and_rt.html">Segmentation, Radiotherapy (RTSTRUCT/RTDOSE), and Deep Learning Prep</a></li>
+    <li><a class="dropdown-item" href="articles/volume-geometry.html">3D/4D Volume Geometry, Spatial Transforms, and NIfTI Export</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -79,13 +82,122 @@
 <li><label><input type="checkbox" checked>Implemented all R modules covering every DCMTK subsystem (<code>read.R</code>, <code>write.R</code>, <code>tags.R</code>, <code>anonymize.R</code>, <code>convert.R</code>, <code>compress.R</code>, <code>plot.R</code>, <code>viewer.R</code>, <code>volume.R</code>, <code>network.R</code>, <code>sr.R</code>, <code>rt_seg.R</code>, <code>llm-providers.R</code>, <code>llm-prompts.R</code>, <code>llm.R</code>, <code>legacy.R</code>, <code>utils.R</code>, <code>zzz.R</code>).</label></li>
 <li><label><input type="checkbox" checked>Created interactive 4-tab Shiny DICOM &amp; AI Radiology workstation (<code>inst/shiny/viewer/app.R</code>).</label></li>
 <li><label><input type="checkbox" checked>Created all 5 vignettes (<code>getting-started.Rmd</code>, <code>image-visualization.Rmd</code>, <code>pacs-networking.Rmd</code>, <code>llm-integration.Rmd</code>, <code>anonymization.Rmd</code>) and package hex logo (<code>man/figures/logo.png</code>).</label></li>
-<li><label><input type="checkbox" checked>Passed all 95 unit tests (<code>testthat</code>, including live DIMSE C-ECHO SCP/SCU TCP loopback round-trip verification) and passed <code>R CMD check</code> (<code>0 errors | 0 warnings | 0 notes</code>) on <code>dicomtk_0.1.0.tar.gz</code> across Windows, macOS, and Linux.</label></li>
+<li>
+<label><input type="checkbox" checked>95 unit tests (<code>testthat</code>), including a live DIMSE C-ECHO SCP/SCU TCP loopback test (runs only when <code>NOT_CRAN=true</code>).</label>
+<ul><li>Note: commit <code>75e2749</code> (the version submitted to CRAN) failed on <code>macos-latest</code> with <code>ignoring SIGPIPE signal</code> in <code>cpp_dicom_echo_loopback_test()</code> because the client closed the socket before draining <code>C-ECHO-RSP</code>/<code>A-RELEASE-RP</code>. Fixed in <code>94df4b2</code> (drain PDUs + <code>SO_NOSIGPIPE</code>/<code>MSG_NOSIGNAL</code>) and the test is now skipped on CRAN.</li>
+</ul></li>
 <li><label><input type="checkbox" checked>Verified live local Ollama integration (<code>http://localhost:11434</code>) with <code>llama3.2:3b</code>, <code>llava:7b</code>, and <code>amsaravi/medgemma-4b-it:q8</code>.</label></li>
 <li><label><input type="checkbox" checked>Initialized Git repository on <code>main</code> and pushed to <code>origin</code> (<code>https://github.com/lauyeehow1986-hub/dicomtk.git</code>).</label></li>
 <li><label><input type="checkbox" checked>Built and deployed <code>pkgdown</code> documentation site to GitHub Pages (<code>https://lauyeehow1986-hub.github.io/dicomtk/</code>).</label></li>
 <li><label><input type="checkbox" checked>Published GitHub Release <code>v0.1.0</code> (<code>https://github.com/lauyeehow1986-hub/dicomtk/releases/tag/v0.1.0</code>) with source (<code>dicomtk_0.1.0.tar.gz</code>) and Windows binary (<code>dicomtk_0.1.0.zip</code>) assets.</label></li>
 <li><label><input type="checkbox" checked>Configured automated weekly &amp; on-demand upstream DCMTK synchronization (<code>.github/workflows/sync-upstream-dcmtk.yaml</code> + <code><a href="reference/dicom_sync_upstream.html">dicom_sync_upstream()</a></code>).</label></li>
 <li><label><input type="checkbox" checked>Published R-Universe package registry (<code>https://github.com/lauyeehow1986-hub/lauyeehow1986-hub.r-universe.dev</code>) for <code>install.packages("dicomtk", repos = "https://lauyeehow1986-hub.r-universe.dev")</code>.</label></li>
+</ul></div>
+<div class="section level3">
+<h3 id="phase-0-v020-foundations--completed">Phase 0 (<code>v0.2.0</code> Foundations) — Completed<a class="anchor" aria-label="anchor" href="#phase-0-v020-foundations--completed"></a></h3>
+<ul class="task-list"><li>
+<label><input type="checkbox" checked><strong>Task 1: C++ Hierarchical Sequences &amp; Nested <code>SQ</code> Writer</strong>:</label>
+<ul><li>Implemented recursive sequence indexing and explicit-length nested <code>SQ</code> serialization via <code>cpp_write_dicom_multiframe()</code>, <code>cpp_modify_dicom()</code>, and <code>cpp_dcm_transcode_rle()</code> in <code>src/rcpp_read.cpp</code>, <code>src/rcpp_write.cpp</code>, and <code>src/rcpp_convert.cpp</code>.</li>
+</ul></li>
+<li>
+<label><input type="checkbox" checked><strong>Task 2: Synthetic Phantom Generator (<code><a href="reference/dicom_synthesize.html">dicom_synthesize()</a></code>)</strong>:</label>
+<ul><li>Parametric synthesis of CT, MR, and PET series in <code>R/synthesize.R</code> with known analytical ground-truth LPS/RAS affines, voxel arrays, non-orthogonal gantry tilt, and PHI injection/scrubbing.</li>
+</ul></li>
+<li>
+<label><input type="checkbox" checked><strong>Task 3: <code>dicom_volume</code> S3 Class &amp; Spatial Transforms</strong>:</label>
+<ul><li>Implemented <code><a href="reference/new_dicom_volume.html">new_dicom_volume()</a></code>, <code><a href="reference/new_dicom_volume.html">print.dicom_volume()</a></code>, <code><a href="reference/new_dicom_volume.html">dim.dicom_volume()</a></code>, <code>[.dicom_volume()</code> (with affine translation/rescaling), <code><a href="reference/new_dicom_volume.html">as.array.dicom_volume()</a></code>, <code><a href="reference/dicom_orientation.html">dicom_orientation()</a></code>, <code><a href="reference/to_ras.html">dicom_to_lps()</a></code>, and <code><a href="reference/to_ras.html">dicom_to_ras()</a></code> in <code>R/dicom-volume.R</code>.</li>
+</ul></li>
+<li>
+<label><input type="checkbox" checked><strong>Task 4: Geometry-Aware <code><a href="reference/read_dicom_volume.html">read_dicom_volume()</a></code></strong>:</label>
+<ul><li>Implemented <code><a href="reference/read_dicom_volume.html">read_dicom_volume()</a></code> in <code>R/volume-read.R</code> with enhanced multi-frame support (<code>SharedFunctionalGroupsSequence</code> / <code>PerFrameFunctionalGroupsSequence</code>), series splitting, and transparent delegation for <code><a href="reference/read_dicom_series.html">read_dicom_series()</a></code>.</li>
+</ul></li>
+<li>
+<label><input type="checkbox" checked><strong>Task 5: Modality Quantitative Transforms</strong>:</label>
+<ul><li>Implemented <code><a href="reference/dicom_pet_suv.html">dicom_pet_suv()</a></code> (bw, lbm James/Janmahasatian, bsa with decay correction), <code><a href="reference/dicom_apply_voi_lut.html">dicom_apply_voi_lut()</a></code> (linear and sigmoid windowing), and <code><a href="reference/dicom_mr_rescale.html">dicom_mr_rescale()</a></code> (Philips private attributes 2005,100D/100E) in <code>R/modality-transforms.R</code>.</li>
+</ul></li>
+<li>
+<label><input type="checkbox" checked><strong>Task 6: <code><a href="reference/write_nifti.html">write_nifti()</a></code> with <code>dcm2niix</code> Parity</strong>:</label>
+<ul><li>Implemented <code><a href="reference/write_nifti.html">write_nifti()</a></code> in <code>R/nifti.R</code> with exact RAS <code>sform</code>, polar SVD <code>qform</code> decomposition, BIDS JSON sidecar, zero-dependency pure R binary writer, <code>RNifti</code> backend fallback, gantry-tilt notification, and <code><a href="reference/dicom_to_nifti.html">dicom_to_nifti()</a></code> delegation.</li>
+</ul></li>
+<li>
+<label><input type="checkbox" checked><strong>Task 7: CI Fixture Downloader &amp; Parity Validation</strong>:</label>
+<ul><li>Implemented <code>tools/download_fixtures.R</code> syncing 11 scanner fixtures, <code>tests/testthat/helper-fixtures.R</code> Chris Rorden oracle, and <code>tests/testthat/test-p0-dcm2niix-parity.R</code>.</li>
+</ul></li>
+<li>
+<label><input type="checkbox" checked><strong>Task 8: <code>dicomtk-lab</code> Container Testbed</strong>:</label>
+<ul><li>Standalone multi-profile Docker Compose environment at <code>C:/Users/lauye/.gemini/antigravity/scratch/dicomtk-lab</code> with <code>core</code>, <code>enterprise</code>, <code>ehr</code>, <code>ohdsi</code>, <code>ttp</code>, and <code>fl</code> profiles, and <code>tests/testthat/test-p0-lab-core.R</code> smoke test.</li>
+</ul></li>
+<li>
+<label><input type="checkbox" checked><strong>Task 9: <code>v0.2.0</code> Release Documentation &amp; Vignettes</strong>:</label>
+<ul><li>Updated <code>DESCRIPTION</code> (0.2.0), <code>NEWS.md</code>, <code>_pkgdown.yml</code>, <code>vignettes/volume-geometry.Rmd</code>, and verified full test suite.</li>
+</ul></li>
+</ul></div>
+<div class="section level3">
+<h3 id="phase-1-v030-research-grade-de-identification-engine--completed">Phase 1 (<code>v0.3.0</code> Research-Grade De-Identification Engine) — Completed<a class="anchor" aria-label="anchor" href="#phase-1-v030-research-grade-de-identification-engine--completed"></a></h3>
+<ul class="task-list"><li>
+<label><input type="checkbox" checked><strong>Task 1: C++17 RFC Cryptography &amp; Pluggable Key Provider</strong>:</label>
+<ul><li>Implemented standalone C++17 implementations of RFC 6234 SHA-256, RFC 4231 HMAC-SHA256, RFC 2898 PBKDF2-HMAC-SHA256, RFC 5869 HKDF-SHA256, and RFC 8439 ChaCha20-Poly1305 AEAD (<code>src/rcpp_crypto.h</code>, <code>src/rcpp_crypto.cpp</code>).</li>
+<li>Added <code><a href="reference/dicom_key_provider.html">dicom_key_provider()</a></code> S3 class supporting <code>local</code>, <code>broker</code>, and <code>ttp</code> modes, credential redaction, deterministic <code>2.25.&lt;128-bit&gt;</code> UID pseudonymization (<code><a href="reference/deid_map_uid.html">deid_map_uid()</a></code>), and per-patient pseudo-random date shifting (<code><a href="reference/derive_patient_shift_days.html">derive_patient_shift_days()</a></code>, <code><a href="reference/deid_patient_shift.html">deid_patient_shift()</a></code>).</li>
+</ul></li>
+<li>
+<label><input type="checkbox" checked><strong>Task 2: PS3.15 Profile Compiler &amp; Composable Jurisdictions</strong>:</label>
+<ul><li>Added <code><a href="reference/dicom_deid_profile.html">dicom_deid_profile()</a></code> and <code><a href="reference/dicom_list_jurisdictions.html">dicom_list_jurisdictions()</a></code> compiling declarative YAML profiles (<code>ps3.15-basic.yml</code> + 10 PS3.15 options) with 8 composable statutory jurisdiction overlays (<code>hipaa_safe_harbor</code>, <code>hipaa_limited_dataset</code>, <code>gdpr_eu</code>, <code>sg_pdpa_hib</code>, <code>my_pdpa_2024</code>, <code>au_privacy_act</code>, <code>uk_gdpr</code>, <code>ca_pipeda</code>) and strictest-wins monotonic action lattice (<code>D &gt; Z &gt; X &gt; K</code>).</li>
+</ul></li>
+<li>
+<label><input type="checkbox" checked><strong>Task 3: Single-Pass Recursive C++17 Mutator</strong>:</label>
+<ul><li>Implemented <code>cpp_deid_file()</code> in <code>src/rcpp_deid.cpp</code> executing in-memory DICOM mutation across dataset tags and arbitrary nested Sequence of Items (<code>VR=SQ</code>) trees with Howard Hinnant date shifting, safe-private retention, orphan creator pruning, and W3C PROV audit logging.</li>
+</ul></li>
+<li>
+<label><input type="checkbox" checked><strong>Task 4: Cohort <code><a href="reference/dicom_deid.html">dicom_deid()</a></code> &amp; Encrypted Crosswalk</strong>:</label>
+<ul><li>Added <code><a href="reference/dicom_deid.html">dicom_deid()</a></code> supporting file, directory, and vector inputs with progress reporting and optional <code>mirai</code> parallelism.</li>
+<li>Implemented ChaCha20-Poly1305 AEAD-encrypted crosswalk files (<code>dicomtk_crosswalk.enc</code>) decryptable via <code><a href="reference/dicom_crosswalk_read.html">dicom_crosswalk_read()</a></code> using the original key provider.</li>
+</ul></li>
+<li>
+<label><input type="checkbox" checked><strong>Task 5: Burned-In Pixel PHI &amp; C++17 Telea Inpainting</strong>:</label>
+<ul><li>Added <code><a href="reference/dicom_detect_burned_phi.html">dicom_detect_burned_phi()</a></code> and <code><a href="reference/dicom_clean_pixels.html">dicom_clean_pixels()</a></code> for identifying and blacking out burned-in text in secondary captures and ultrasound overlays.</li>
+<li>Implemented C++17 Fast Marching Method Telea inpainting (<code>cpp_telea_inpaint()</code>) with aspect-ratio bounding-box guardrails and optional OCR verification (<code>tesseract</code>).</li>
+</ul></li>
+<li>
+<label><input type="checkbox" checked><strong>Task 6: 3D Head CT/MR Defacing &amp; WSI Safeguards</strong>:</label>
+<ul><li>Added <code><a href="reference/dicom_deface.html">dicom_deface()</a></code> performing analytical cutting-plane facial stripping on 3D volumetric CT and MR series in LPS/RAS space.</li>
+</ul></li>
+</ul></div>
+<div class="section level3">
+<h3 id="phase-2-v040-segmentation-rtstructrtdose-quantitative-sr--deep-learning-prep--completed">Phase 2 (<code>v0.4.0</code> Segmentation, RTSTRUCT/RTDOSE, Quantitative SR &amp; Deep Learning Prep) — Completed<a class="anchor" aria-label="anchor" href="#phase-2-v040-segmentation-rtstructrtdose-quantitative-sr--deep-learning-prep--completed"></a></h3>
+<ul class="task-list"><li><label><input type="checkbox" checked><strong>Task 1: C++17 Scanline Rasterizer &amp; Contour Tracer</strong>: <code><a href="reference/rasterize_polygon_2d.html">rasterize_polygon_2d()</a></code>, <code><a href="reference/rasterize_polygons_2d.html">rasterize_polygons_2d()</a></code>, <code><a href="reference/trace_contours_2d.html">trace_contours_2d()</a></code> (<code>src/rcpp_rasterize.cpp</code>, <code>R/rasterize.R</code>).</label></li>
+<li><label><input type="checkbox" checked><strong>Task 2: <code>dicom_seg</code> S3 Class &amp; DICOM SEG Writer</strong>: <code><a href="reference/dicom_seg.html">dicom_seg()</a></code>, <code><a href="reference/write_dicom_seg.html">write_dicom_seg()</a></code>, <code><a href="reference/as_labelmap.html">as_labelmap()</a></code> (<code>src/rcpp_seg.cpp</code>, <code>R/seg.R</code>).</label></li>
+<li><label><input type="checkbox" checked><strong>Task 3: RTSTRUCT &lt;-&gt; <code>dicom_seg</code> Conversion</strong>: <code><a href="reference/rtstruct_to_seg.html">rtstruct_to_seg()</a></code>, <code><a href="reference/seg_to_rtstruct.html">seg_to_rtstruct()</a></code> (<code>R/rt-struct.R</code>).</label></li>
+<li><label><input type="checkbox" checked><strong>Task 4: RTDOSE &amp; DVH Engine</strong>: <code><a href="reference/dicom_dvh.html">dicom_dvh()</a></code> (<code>R/rt-dose.R</code>).</label></li>
+<li><label><input type="checkbox" checked><strong>Task 5: Quantitative SR (TID 1500) &amp; GSPS</strong>: <code><a href="reference/dicom_sr_tid1500.html">dicom_sr_tid1500()</a></code>, <code><a href="reference/read_sr_tid1500.html">read_sr_tid1500()</a></code>, <code><a href="reference/write_dicom_gsps.html">write_dicom_gsps()</a></code>, <code><a href="reference/read_dicom_gsps.html">read_dicom_gsps()</a></code> (<code>src/rcpp_sr_rt.cpp</code>, <code>R/sr-tid1500.R</code>, <code>R/gsps.R</code>).</label></li>
+<li><label><input type="checkbox" checked><strong>Task 6: Burned-In Visual Annotations</strong>: <code><a href="reference/dicom_burn_annotations.html">dicom_burn_annotations()</a></code>, <code><a href="reference/legacy-dcmtk.html">burned_annot()</a></code> (<code>R/export-burned.R</code>).</label></li>
+<li><label><input type="checkbox" checked><strong>Task 7: Deep Learning Prep</strong>: <code><a href="reference/volume_resample.html">volume_resample()</a></code>, <code><a href="reference/volume_window.html">volume_window()</a></code>, <code><a href="reference/dicom_patient_splits.html">dicom_patient_splits()</a></code> (<code>src/rcpp_resample.cpp</code>, <code>R/dl-prep.R</code>).</label></li>
+<li><label><input type="checkbox" checked><strong>Task 8: ML &amp; FAIR Dataset Exporters</strong>: <code><a href="reference/export_nnunet.html">export_nnunet()</a></code>, <code><a href="reference/export_monai.html">export_monai()</a></code>, <code><a href="reference/export_rocrate.html">export_rocrate()</a></code>, <code><a href="reference/export_croissant.html">export_croissant()</a></code> (<code>R/export-dataset.R</code>).</label></li>
+<li>
+<label><input type="checkbox" checked><strong>Task 9a: Automated Image QC &amp; Release Prep</strong>: <code><a href="reference/dicom_image_qc.html">dicom_image_qc()</a></code> (<code>R/qc.R</code>), <code>vignettes/segmentation_and_rt.Rmd</code>, <code>DESCRIPTION</code> (<code>0.4.0</code>), <code>NEWS.md</code>, <code>_pkgdown.yml</code>.</label>
+<ul><li>Added Whole Slide Imaging (WSI) label/macro frame stripping to prevent specimen identifier leakage.</li>
+</ul></li>
+<li>
+<label><input type="checkbox" checked><strong>Task 7: Residual-PHI Verifier &amp; Risk Scorer</strong>:</label>
+<ul><li>Added <code><a href="reference/dicom_deid_verify.html">dicom_deid_verify()</a></code> scanning processed datasets for 18 statutory PHI canary categories.</li>
+<li>Added HMAC-SHA256 signed compliance certificates (<code><a href="reference/dicom_verify_attestation.html">dicom_verify_attestation()</a></code>).</li>
+<li>Added <code><a href="reference/dicom_deid_risk.html">dicom_deid_risk()</a></code> computing cohort re-identification risk metrics including equivalence class distribution, <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>-anonymity, <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>l</mi><annotation encoding="application/x-tex">l</annotation></semantics></math>-diversity, and prosecutor risk.</li>
+</ul></li>
+<li>
+<label><input type="checkbox" checked><strong>Task 8: MIDI-B Synthetic Benchmark &amp; Published Scorecard</strong>:</label>
+<ul><li>Extended <code><a href="reference/dicom_synthesize.html">dicom_synthesize()</a></code> with <code>phi_profile = c("basic", "midi_b")</code> planting 18 HIPAA, PS3.15, and international canaries across structured tags, nested sequences, and free text.</li>
+<li>Added <code>tools/run_midib_benchmark.R</code> producing validated audit scorecard (<code>inst/extdata/midib_scorecard.json</code>) demonstrating 100.0% sensitivity, 100.0% specificity, zero residual PHI leaks, and exact longitudinal UID isomorphism.</li>
+</ul></li>
+<li>
+<label><input type="checkbox" checked><strong>Task 9: <code>v0.3.0</code> Release Documentation, Vignette &amp; Six-Sigma Check</strong>:</label>
+<ul><li>Updated <code>DESCRIPTION</code> (0.3.0), <code>NEWS.md</code>, <code>_pkgdown.yml</code>, <code>vignettes/anonymization.Rmd</code>, and verified full test suite and CRAN checks.</li>
+</ul></li>
+</ul></div>
+<div class="section level3">
+<h3 id="next-phase-roadmap-validated-2026-10-24">Next Phase Roadmap (validated 2026-10-24)<a class="anchor" aria-label="anchor" href="#next-phase-roadmap-validated-2026-10-24"></a></h3>
+<ul><li>Design: <code>dev/plans/2026-10-24-roadmap-v0.2-v1.0-design.md</code> (plans live in <code>dev/</code> because <code>docs/</code> is pkgdown output).</li>
+<li>Packages: <code>dicomtk</code> (CRAN core) + <code>dicomtk.ai</code> + <code>dicomtk.server</code> + <code>dicomtk.fl</code>; test lab in separate repo <code>dicomtk-lab</code> (docker-compose profiles: core, ai, ehr, ohdsi, ttp, fl).</li>
+<li>Phases: P0 geometry/<code>dicom_volume</code> -&gt; P1 de-id engine -&gt; P2 SEG/RT/data prep -&gt; P3 AI -&gt; P4 interop -&gt; P5 server -&gt; P6 SMART/EHR -&gt; P7 WSI/radiomics -&gt; P8 federated.</li>
+<li>Key custody: local | broker (server default) | ttp. <code><a href="reference/read_dicom_series.html">read_dicom_series()</a></code> kept as soft-deprecated wrapper over <code><a href="reference/read_dicom_volume.html">read_dicom_volume()</a></code>.</li>
 </ul></div>
 </div>
 </div>

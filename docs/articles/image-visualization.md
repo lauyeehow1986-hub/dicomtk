@@ -39,7 +39,7 @@ decodes 8-bit, 16-bit, or 32-bit monochrome and RGB pixel streams
 
 ## 3D Volumetric Multi-Planar Reconstruction (MPR) & Maximum Intensity Projection (MIP)
 
-`series`` ``<-`` `[`read_dicom_series`](https://lauyeehow1986-hub.github.io/dicomtk/reference/read_dicom_series.md)`(`[`c`](https://rdrr.io/r/base/c.html)`(``dcm_file``, ``dcm_file``, ``dcm_file``)``)`` ``series`` ``#> ``ℹ`` DICOM Series: 512 x 512 x 3 slices (3 files)`` `` ``# 3-Plane Orthogonal MPR`` `[`render_volume`](https://lauyeehow1986-hub.github.io/dicomtk/reference/render_volume.md)`(``series``, method ``=`` ``"mpr"``)`
+`series`` ``<-`` `[`read_dicom_series`](https://lauyeehow1986-hub.github.io/dicomtk/reference/read_dicom_series.md)`(`[`c`](https://rdrr.io/r/base/c.html)`(``dcm_file``, ``dcm_file``, ``dcm_file``)``)`` ``` #> Warning: `read_dicom_series()` was deprecated in dicomtk 0.2.0. ``` ``#> ``ℹ```  Please use `read_dicom_volume()` instead. ``` ``#> ``This warning is displayed once per session.`` ``#> ``` Call `lifecycle::last_lifecycle_warnings()` to see where this warning was ``` ``#> ``generated.`` ``series`` ``#> ``ℹ`` DICOM Series: 512 x 512 x 3 slices (3 files)`` `` ``# 3-Plane Orthogonal MPR`` `[`render_volume`](https://lauyeehow1986-hub.github.io/dicomtk/reference/render_volume.md)`(``series``, method ``=`` ``"mpr"``)`
 
 ![](image-visualization_files/figure-html/volume-render-1.png)
 

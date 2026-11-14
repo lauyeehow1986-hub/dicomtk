@@ -34,4 +34,5 @@ dcm_file <- system.file("extdata", "example.dcm", package = "dicomtk")
 nii_file <- dicom_to_nifti(dcm_file)
 file.exists(nii_file)
 #> [1] TRUE
+unlink(nii_file)
 ```
