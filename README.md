@@ -78,39 +78,38 @@ dicom_verify_attestation(res$attestation)
 # Convert 3D mask to dicom_seg and RTSTRUCT
 mask <- array(0L, dim = dim(vol$voxels))
 mask[20:40, 20:40, 4:12] <- 1L
-seg <- as_dicom_seg(mask, reference_volume = vol, segment_label = "Lesion")
-rt <- seg_to_rtstruct(seg, reference_volume = vol)
+seg <- dicom_seg(mask, reference = vol, labels = "Lesion")
+rt <- seg_to_rtstruct(seg, reference = vol)
 
 # Compute Dose-Volume Histogram (DVH) and TID 1500 Measurement Report
 # dvh <- dicom_dvh(rtdose, seg)
-# sr <- create_dicom_sr_tid1500(seg, reference_volume = vol)
+# sr <- dicom_sr_tid1500(seg, reference = vol)
 ```
 
 ### 4. Deep Learning Dataset Export (`nnU-Net`, `MONAI`, `RO-Crate`) & QC
 ```r
-# Resample to isotropic spacing, apply clinical windowing, and check QC
-iso_vol <- resample_volume(vol, target_spacing = c(1.5, 1.5, 1.5))
-qc <- dicom_qc_volume(iso_vol)
+# Resample to isotropic spacing and check automated image QC
+iso_vol <- volume_resample(vol, spacing = c(1.5, 1.5, 1.5))
+qc <- dicom_image_qc(iso_vol)
 
 # Export patient-level train/val splits for nnU-Net v2 or MONAI
-# export_nnunet_v2(...) / export_monai_datalist(...)
+# export_nnunet(...) / export_monai(...)
 ```
 
 ### 5. Interoperability: DICOMweb, HL7 FHIR, DuckDB Index & OMOP `MI-CDM`
 ```r
 # Build a normalized DuckDB archive index & export OMOP MI-CDM tables
 idx <- dicom_index_build(out_deid)
-omop <- export_omop_micdm(idx)
-omop$image_occurrence
-omop$image_feature
+occ <- to_omop_image_occurrence(idx)
 ```
 
 ### 6. Whole-Slide Imaging (WSI) Pyramids & Supplement 222 Annotations
 ```r
-# Inspect multi-resolution WSI pyramid & stitch an out-of-core tile region
-# pyr <- read_wsi_pyramid("slide_level0.dcm")
-# region <- wsi_stitch_region(pyr, level = 1L, x = 1L, y = 1L, width = 512L, height = 512L)
-# ann <- write_wsi_annotations(points_df, out_file = "slide_ann.dcm")
+# Synthesize or read a multi-resolution WSI pyramid & stitch a region
+wsi_dir <- tempfile("wsi_")
+dicom_synthesize_wsi(out_dir = wsi_dir)
+pyr <- read_dicom_wsi_pyramid(wsi_dir)
+region <- wsi_stitch_region(pyr, level = 1L, x = 1L, y = 1L, width = 64L, height = 64L)
 ```
 
 ### 7. Documentation & Vignettes

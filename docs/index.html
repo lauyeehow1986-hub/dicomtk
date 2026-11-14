@@ -143,23 +143,23 @@
 <code class="sourceCode R"><span><span class="co"># Convert 3D mask to dicom_seg and RTSTRUCT</span></span>
 <span><span class="va">mask</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0L</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">vol</span><span class="op">$</span><span class="va">voxels</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">mask</span><span class="op">[</span><span class="fl">20</span><span class="op">:</span><span class="fl">40</span>, <span class="fl">20</span><span class="op">:</span><span class="fl">40</span>, <span class="fl">4</span><span class="op">:</span><span class="fl">12</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">1L</span></span>
-<span><span class="va">seg</span> <span class="op">&lt;-</span> <span class="fu">as_dicom_seg</span><span class="op">(</span><span class="va">mask</span>, reference_volume <span class="op">=</span> <span class="va">vol</span>, segment_label <span class="op">=</span> <span class="st">"Lesion"</span><span class="op">)</span></span>
-<span><span class="va">rt</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/seg_to_rtstruct.html">seg_to_rtstruct</a></span><span class="op">(</span><span class="va">seg</span>, reference_volume <span class="op">=</span> <span class="va">vol</span><span class="op">)</span></span>
+<span><span class="va">seg</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dicom_seg.html">dicom_seg</a></span><span class="op">(</span><span class="va">mask</span>, reference <span class="op">=</span> <span class="va">vol</span>, labels <span class="op">=</span> <span class="st">"Lesion"</span><span class="op">)</span></span>
+<span><span class="va">rt</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/seg_to_rtstruct.html">seg_to_rtstruct</a></span><span class="op">(</span><span class="va">seg</span>, reference <span class="op">=</span> <span class="va">vol</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Compute Dose-Volume Histogram (DVH) and TID 1500 Measurement Report</span></span>
 <span><span class="co"># dvh &lt;- dicom_dvh(rtdose, seg)</span></span>
-<span><span class="co"># sr &lt;- create_dicom_sr_tid1500(seg, reference_volume = vol)</span></span></code></pre></div>
+<span><span class="co"># sr &lt;- dicom_sr_tid1500(seg, reference = vol)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="id_4-deep-learning-dataset-export-nnu-net-monai-ro-crate--qc">4. Deep Learning Dataset Export (<code>nnU-Net</code>, <code>MONAI</code>, <code>RO-Crate</code>) &amp; QC<a class="anchor" aria-label="anchor" href="#id_4-deep-learning-dataset-export-nnu-net-monai-ro-crate--qc"></a>
 </h3>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Resample to isotropic spacing, apply clinical windowing, and check QC</span></span>
-<span><span class="va">iso_vol</span> <span class="op">&lt;-</span> <span class="fu">resample_volume</span><span class="op">(</span><span class="va">vol</span>, target_spacing <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.5</span>, <span class="fl">1.5</span>, <span class="fl">1.5</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">qc</span> <span class="op">&lt;-</span> <span class="fu">dicom_qc_volume</span><span class="op">(</span><span class="va">iso_vol</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co"># Resample to isotropic spacing and check automated image QC</span></span>
+<span><span class="va">iso_vol</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/volume_resample.html">volume_resample</a></span><span class="op">(</span><span class="va">vol</span>, spacing <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.5</span>, <span class="fl">1.5</span>, <span class="fl">1.5</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">qc</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dicom_image_qc.html">dicom_image_qc</a></span><span class="op">(</span><span class="va">iso_vol</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Export patient-level train/val splits for nnU-Net v2 or MONAI</span></span>
-<span><span class="co"># export_nnunet_v2(...) / export_monai_datalist(...)</span></span></code></pre></div>
+<span><span class="co"># export_nnunet(...) / export_monai(...)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="id_5-interoperability-dicomweb-hl7-fhir-duckdb-index--omop-mi-cdm">5. Interoperability: DICOMweb, HL7 FHIR, DuckDB Index &amp; OMOP <code>MI-CDM</code>
@@ -168,18 +168,17 @@
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Build a normalized DuckDB archive index &amp; export OMOP MI-CDM tables</span></span>
 <span><span class="va">idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/dicom_index_build.html">dicom_index_build</a></span><span class="op">(</span><span class="va">out_deid</span><span class="op">)</span></span>
-<span><span class="va">omop</span> <span class="op">&lt;-</span> <span class="fu">export_omop_micdm</span><span class="op">(</span><span class="va">idx</span><span class="op">)</span></span>
-<span><span class="va">omop</span><span class="op">$</span><span class="va">image_occurrence</span></span>
-<span><span class="va">omop</span><span class="op">$</span><span class="va">image_feature</span></span></code></pre></div>
+<span><span class="va">occ</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/to_omop_image_occurrence.html">to_omop_image_occurrence</a></span><span class="op">(</span><span class="va">idx</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="id_6-whole-slide-imaging-wsi-pyramids--supplement-222-annotations">6. Whole-Slide Imaging (WSI) Pyramids &amp; Supplement 222 Annotations<a class="anchor" aria-label="anchor" href="#id_6-whole-slide-imaging-wsi-pyramids--supplement-222-annotations"></a>
 </h3>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Inspect multi-resolution WSI pyramid &amp; stitch an out-of-core tile region</span></span>
-<span><span class="co"># pyr &lt;- read_wsi_pyramid("slide_level0.dcm")</span></span>
-<span><span class="co"># region &lt;- wsi_stitch_region(pyr, level = 1L, x = 1L, y = 1L, width = 512L, height = 512L)</span></span>
-<span><span class="co"># ann &lt;- write_wsi_annotations(points_df, out_file = "slide_ann.dcm")</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># Synthesize or read a multi-resolution WSI pyramid &amp; stitch a region</span></span>
+<span><span class="va">wsi_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="st">"wsi_"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/dicom_synthesize_wsi.html">dicom_synthesize_wsi</a></span><span class="op">(</span>out_dir <span class="op">=</span> <span class="va">wsi_dir</span><span class="op">)</span></span>
+<span><span class="va">pyr</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/read_dicom_wsi_pyramid.html">read_dicom_wsi_pyramid</a></span><span class="op">(</span><span class="va">wsi_dir</span><span class="op">)</span></span>
+<span><span class="va">region</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/wsi_stitch_region.html">wsi_stitch_region</a></span><span class="op">(</span><span class="va">pyr</span>, level <span class="op">=</span> <span class="fl">1L</span>, x <span class="op">=</span> <span class="fl">1L</span>, y <span class="op">=</span> <span class="fl">1L</span>, width <span class="op">=</span> <span class="fl">64L</span>, height <span class="op">=</span> <span class="fl">64L</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="id_7-documentation--vignettes">7. Documentation &amp; Vignettes<a class="anchor" aria-label="anchor" href="#id_7-documentation--vignettes"></a>
