@@ -11,7 +11,9 @@ dicom_connect(
   calling_ae = "DICOMTK",
   timeout_ms = 5000L,
   dicomweb_url = NULL,
-  local_dir = NULL
+  local_dir = NULL,
+  auth = list(type = "none"),
+  headers = character(0)
 )
 }
 \arguments{
@@ -34,6 +36,10 @@ STOW-RS) REST APIs.}
 
 \item{local_dir}{Optional local directory path to act as a local file-backed
 PACS repository for testing queries and retrievals offline.}
+
+\item{auth}{Optional authentication list: \code{list(type = "none" | "bearer" | "basic" | "oauth2_client_credentials", token = ..., username = ..., password = ..., client_id = ..., client_secret = ..., token_url = ..., scope = ...)}.}
+
+\item{headers}{Optional named character vector of custom HTTP headers.}
 }
 \value{
 An S3 object of class \code{"dicom_connection"}.
