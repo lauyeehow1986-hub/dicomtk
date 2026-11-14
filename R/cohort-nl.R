@@ -15,13 +15,15 @@ validate_readonly_sql <- function(sql) {
   }
 
   raw_sql <- trimws(sql)
-  # Disallow SQL comments outright to prevent comment-based keyword smuggling
-  if (grepl("--|/\\*|\\*/", raw_sql, perl = TRUE)) {
-    cli::cli_abort("SQL comments are disallowed in read-only cohort queries.")
+  # Disallow SQL comments and dollar-quoted strings outright
+  if (grepl("--|/\\*|\\*/|\\$[A-Za-z0-9_]*\\$", raw_sql, perl = TRUE)) {
+    cli::cli_abort("SQL comments and dollar-quoted strings are disallowed in read-only cohort queries.")
   }
 
   # Mask single-quoted string literals before structural & keyword checks
   masked <- gsub("'([^']|'')*'", "''", raw_sql, perl = TRUE)
+  # Strip double quotes around identifiers so quoted function/keyword smuggling ("read_csv"(...)) is caught
+  masked <- gsub('"', "", masked, fixed = TRUE)
   masked_no_trail <- sub(";\\s*$", "", masked, perl = TRUE)
 
   if (grepl(";", masked_no_trail, fixed = TRUE)) {
@@ -33,9 +35,9 @@ validate_readonly_sql <- function(sql) {
   }
 
   forbidden_kw <- paste0(
-    "\\b(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|REPLACE|TRUNCATE|",
+    "\\b(INSERT|INTO|UPDATE|DELETE|DROP|ALTER|CREATE|REPLACE|TRUNCATE|",
     "ATTACH|DETACH|COPY|EXPORT|IMPORT|PRAGMA|INSTALL|LOAD|SET|CALL|",
-    "MERGE|GRANT|REVOKE|VACUUM|EXECUTE|PREPARE)\\b"
+    "MERGE|GRANT|REVOKE|VACUUM|EXECUTE|PREPARE|SUMMARIZE|DESCRIBE|SHOW)\\b"
   )
   if (grepl(forbidden_kw, masked_no_trail, ignore.case = TRUE, perl = TRUE)) {
     cli::cli_abort("Forbidden DDL/DML/administrative SQL keyword detected in read-only query.")
@@ -43,8 +45,9 @@ validate_readonly_sql <- function(sql) {
 
   forbidden_fn <- paste0(
     "\\b(read_csv|read_csv_auto|read_parquet|parquet_scan|read_json|",
-    "read_json_auto|read_text|read_blob|glob|http_get|duckdb_tables|",
-    "duckdb_secrets|getenv)\\s*\\("
+    "read_json_auto|read_text|read_blob|read_xlsx|st_read|",
+    "sqlite_scan|postgres_scan|mysql_scan|iceberg_scan|delta_scan|",
+    "glob|http_get|getenv|current_setting|duckdb_[a-z0-9_]+|pragma_[a-z0-9_]+)\\s*\\("
   )
   if (grepl(forbidden_fn, masked_no_trail, ignore.case = TRUE, perl = TRUE)) {
     cli::cli_abort("Disallowed host-file or system function detected in read-only SQL query.")

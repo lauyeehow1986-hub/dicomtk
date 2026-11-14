@@ -27,7 +27,11 @@ test_that("validate_readonly_sql rejects 100+ adversarial SQLi and DuckDB file-a
     "SELECT * FROM read_text('/etc/hosts')",
     "SELECT * FROM glob('*')",
     "SELECT * FROM parquet_scan('x.parquet')",
-    "CALL duckdb_tables()"
+    "CALL duckdb_tables()",
+    "SELECT * INTO leaked_tbl FROM series",
+    'SELECT * FROM "read_csv"(\'/etc/passwd\')',
+    "SELECT $$hidden$$ FROM series",
+    "SELECT * FROM pragma_database_list()"
   )
 
   set.seed(20261114L)

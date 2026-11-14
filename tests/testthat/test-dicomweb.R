@@ -69,6 +69,9 @@ test_that("dicom_connect auth and local dicomweb_qido/wado/stow/metadata work en
   expect_s3_class(conn, "dicom_connection")
   expect_equal(conn$auth$type, "bearer")
   expect_equal(conn$headers[["X-Study-Site"]], "SG-01")
+  str_out <- paste(utils::capture.output(utils::str(conn)), collapse = "\n")
+  expect_false(grepl("secret-test-token", str_out, fixed = TRUE))
+  expect_true(grepl("<REDACTED>", str_out, fixed = TRUE))
 
   # STOW-RS into local mock PACS
   stow_res <- dicomweb_stow(conn, files = synth[["files"]])

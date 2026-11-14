@@ -68,7 +68,27 @@ print.dicom_connection <- function(x, ...) {
   if (!is.null(x$local_dir)) {
     cli::cli_alert_info("Local PACS directory: {x$local_dir}")
   }
+  if (!is.null(x$auth$type) && !identical(x$auth$type, "none")) {
+    cli::cli_alert_info("Auth mode: {x$auth$type} (credentials: <REDACTED>)")
+  }
   invisible(x)
+}
+
+#' @export
+str.dicom_connection <- function(object, ...) {
+  redacted <- object
+  if (is.list(redacted$auth)) {
+    for (s_field in c("token", "password", "client_secret")) {
+      if (!is.null(redacted$auth[[s_field]])) {
+        redacted$auth[[s_field]] <- "<REDACTED>"
+      }
+    }
+  }
+  if (length(redacted$headers) > 0L && !is.null(names(redacted$headers))) {
+    auth_idx <- tolower(names(redacted$headers)) %in% c("authorization", "x-api-key", "proxy-authorization")
+    redacted$headers[auth_idx] <- "<REDACTED>"
+  }
+  utils::str(unclass(redacted), ...)
 }
 
 #' Verify DICOM PACS Connectivity (C-ECHO SCU)
