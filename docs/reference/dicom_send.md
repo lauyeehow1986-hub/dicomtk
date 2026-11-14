@@ -36,5 +36,5 @@ dicom_send(dcm_file, conn)
 #> # A tibble: 1 × 4
 #>   file                                                destination success status
 #>   <chr>                                               <chr>       <lgl>   <chr> 
-#> 1 "C:\\Users\\lauye\\AppData\\Local\\Temp\\RtmpkHgUi… "C:\\Users… TRUE    STORE…
+#> 1 "C:\\Users\\lauye\\AppData\\Local\\Temp\\RtmpkbZ0J… "C:\\Users… TRUE    STORE…
 ```

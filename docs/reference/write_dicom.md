@@ -40,7 +40,7 @@ read_dicom(out, wide = TRUE)
 #> # A tibble: 1 × 21
 #>   file      FileMetaInformationG…¹ MediaStorageSOPClass…² MediaStorageSOPInsta…³
 #>   <chr>     <chr>                  <chr>                  <chr>                 
-#> 1 "C:\\Use… 162                    1.2.840.10008.5.1.4.1… 2.25.1038705544733911…
+#> 1 "C:\\Use… 164                    1.2.840.10008.5.1.4.1… 2.25.1129736201214808…
 #> # ℹ abbreviated names: ¹​FileMetaInformationGroupLength,
 #> #   ²​MediaStorageSOPClassUID, ³​MediaStorageSOPInstanceUID
 #> # ℹ 17 more variables: TransferSyntaxUID <chr>, ImplementationClassUID <chr>,

@@ -37,5 +37,5 @@ A `"dicom_connection"` object configured with `local_dir = output_dir`.
 scp <- dicom_receive(tempfile("scp_"))
 scp
 #> ℹ DICOM Connection: DICOMTK-SCP -> DICOMTK-SCP@127.0.0.1:11112
-#> ℹ Local PACS directory: C:\Users\lauye\AppData\Local\Temp\RtmpeMd5Zu\scp_586c28372a0
+#> ℹ Local PACS directory: C:\Users\lauye\AppData\Local\Temp\RtmpENsyff\scp_26c868b519a8
 ```

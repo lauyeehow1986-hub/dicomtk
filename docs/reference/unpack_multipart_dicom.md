@@ -36,5 +36,5 @@ if (nzchar(dcm)) {
   on.exit(unlink(out, recursive = TRUE), add = TRUE)
   unpack_multipart_dicom(mp$body, boundary = "B1", out_dir = out)
 }
-#> [1] "C:\\Users\\lauye\\AppData\\Local\\Temp\\RtmpeMd5Zu\\unpack_586c1b3a14/instance_0001.dcm"
+#> [1] "C:\\Users\\lauye\\AppData\\Local\\Temp\\RtmpENsyff\\unpack_26c8181e56a/instance_0001.dcm"
 ```

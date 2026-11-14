@@ -34,7 +34,7 @@ A named list representing a FHIR `ImagingStudy` resource.
 synth <- dicom_synthesize(modality = "CT", dims = c(8L, 8L, 2L))
 on.exit(unlink(synth$out_dir, recursive = TRUE), add = TRUE)
 vol <- read_dicom_volume(synth$out_dir)
-#> Error in resolve_dicom_paths(path, recursive = recursive): Path does not exist: C:/Users/lauye/AppData/Local/Temp/RtmpeMd5Zu/dicom_synth_586c21606ef4
+#> Error in resolve_dicom_paths(path, recursive = recursive): Path does not exist: C:/Users/lauye/AppData/Local/Temp/RtmpENsyff/dicom_synth_26c87be2540c
 as_fhir_imaging_study(vol, patient_ref = "Patient/p-001")$resourceType
 #> Error: object 'vol' not found
 ```

@@ -35,19 +35,19 @@ Or install from GitHub:
 
 ### 3. Segmentation (`DICOM-SEG`), Radiotherapy (`RTSTRUCT`/`RTDOSE`/`DVH`) & `TID 1500` SR
 
-`# Convert 3D mask to dicom_seg and RTSTRUCT`` ``mask`` ``<-`` `[`array`](https://rdrr.io/r/base/array.html)`(``0L``, dim ``=`` `[`dim`](https://rdrr.io/r/base/dim.html)`(``vol``$``voxels``)``)`` ``mask``[``20``:``40``, ``20``:``40``, ``4``:``12``]`` ``<-`` ``1L`` ``seg`` ``<-`` ``as_dicom_seg``(``mask``, reference_volume ``=`` ``vol``, segment_label ``=`` ``"Lesion"``)`` ``rt`` ``<-`` `[`seg_to_rtstruct`](https://lauyeehow1986-hub.github.io/dicomtk/reference/seg_to_rtstruct.md)`(``seg``, reference_volume ``=`` ``vol``)`` `` ``# Compute Dose-Volume Histogram (DVH) and TID 1500 Measurement Report`` ``# dvh <- dicom_dvh(rtdose, seg)`` ``# sr <- create_dicom_sr_tid1500(seg, reference_volume = vol)`
+`# Convert 3D mask to dicom_seg and RTSTRUCT`` ``mask`` ``<-`` `[`array`](https://rdrr.io/r/base/array.html)`(``0L``, dim ``=`` `[`dim`](https://rdrr.io/r/base/dim.html)`(``vol``$``voxels``)``)`` ``mask``[``20``:``40``, ``20``:``40``, ``4``:``12``]`` ``<-`` ``1L`` ``seg`` ``<-`` `[`dicom_seg`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_seg.md)`(``mask``, reference ``=`` ``vol``, labels ``=`` ``"Lesion"``)`` ``rt`` ``<-`` `[`seg_to_rtstruct`](https://lauyeehow1986-hub.github.io/dicomtk/reference/seg_to_rtstruct.md)`(``seg``, reference ``=`` ``vol``)`` `` ``# Compute Dose-Volume Histogram (DVH) and TID 1500 Measurement Report`` ``# dvh <- dicom_dvh(rtdose, seg)`` ``# sr <- dicom_sr_tid1500(seg, reference = vol)`
 
 ### 4. Deep Learning Dataset Export (`nnU-Net`, `MONAI`, `RO-Crate`) & QC
 
-`# Resample to isotropic spacing, apply clinical windowing, and check QC`` ``iso_vol`` ``<-`` ``resample_volume``(``vol``, target_spacing ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``1.5``, ``1.5``, ``1.5``)``)`` ``qc`` ``<-`` ``dicom_qc_volume``(``iso_vol``)`` `` ``# Export patient-level train/val splits for nnU-Net v2 or MONAI`` ``# export_nnunet_v2(...) / export_monai_datalist(...)`
+`# Resample to isotropic spacing and check automated image QC`` ``iso_vol`` ``<-`` `[`volume_resample`](https://lauyeehow1986-hub.github.io/dicomtk/reference/volume_resample.md)`(``vol``, spacing ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``1.5``, ``1.5``, ``1.5``)``)`` ``qc`` ``<-`` `[`dicom_image_qc`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_image_qc.md)`(``iso_vol``)`` `` ``# Export patient-level train/val splits for nnU-Net v2 or MONAI`` ``# export_nnunet(...) / export_monai(...)`
 
 ### 5. Interoperability: DICOMweb, HL7 FHIR, DuckDB Index & OMOP `MI-CDM`
 
-`# Build a normalized DuckDB archive index & export OMOP MI-CDM tables`` ``idx`` ``<-`` `[`dicom_index_build`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_index_build.md)`(``out_deid``)`` ``omop`` ``<-`` ``export_omop_micdm``(``idx``)`` ``omop``$``image_occurrence`` ``omop``$``image_feature`
+`# Build a normalized DuckDB archive index & export OMOP MI-CDM tables`` ``idx`` ``<-`` `[`dicom_index_build`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_index_build.md)`(``out_deid``)`` ``occ`` ``<-`` `[`to_omop_image_occurrence`](https://lauyeehow1986-hub.github.io/dicomtk/reference/to_omop_image_occurrence.md)`(``idx``)`
 
 ### 6. Whole-Slide Imaging (WSI) Pyramids & Supplement 222 Annotations
 
-`# Inspect multi-resolution WSI pyramid & stitch an out-of-core tile region`` ``# pyr <- read_wsi_pyramid("slide_level0.dcm")`` ``# region <- wsi_stitch_region(pyr, level = 1L, x = 1L, y = 1L, width = 512L, height = 512L)`` ``# ann <- write_wsi_annotations(points_df, out_file = "slide_ann.dcm")`
+`# Synthesize or read a multi-resolution WSI pyramid & stitch a region`` ``wsi_dir`` ``<-`` `[`tempfile`](https://rdrr.io/r/base/tempfile.html)`(``"wsi_"``)`` `[`dicom_synthesize_wsi`](https://lauyeehow1986-hub.github.io/dicomtk/reference/dicom_synthesize_wsi.md)`(``out_dir ``=`` ``wsi_dir``)`` ``pyr`` ``<-`` `[`read_dicom_wsi_pyramid`](https://lauyeehow1986-hub.github.io/dicomtk/reference/read_dicom_wsi_pyramid.md)`(``wsi_dir``)`` ``region`` ``<-`` `[`wsi_stitch_region`](https://lauyeehow1986-hub.github.io/dicomtk/reference/wsi_stitch_region.md)`(``pyr``, level ``=`` ``1L``, x ``=`` ``1L``, y ``=`` ``1L``, width ``=`` ``64L``, height ``=`` ``64L``)`
 
 ### 7. Documentation & Vignettes
 
