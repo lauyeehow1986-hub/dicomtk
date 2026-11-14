@@ -203,6 +203,16 @@ reference:
       - to_omop_image_feature
       - write_omop_micdm
 
+  - title: "Whole Slide Imaging (WSI) & Sup 222 Annotations"
+    desc: "Multi-resolution WSI pyramid reader, out-of-core tile stitching, and Microscopy Bulk Simple Annotations."
+    contents:
+      - dicom_synthesize_wsi
+      - read_dicom_wsi_pyramid
+      - wsi_extract_tile
+      - wsi_stitch_region
+      - dicom_wsi_annotations
+      - wsi_annotations_to_mask
+
   - title: "Legacy Compatibility"
     desc: "Backward-compatible wrappers for original dcmtk R package functions."
     contents:

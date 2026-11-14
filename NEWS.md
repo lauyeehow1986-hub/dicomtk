@@ -1,3 +1,11 @@
+# dicomtk 0.6.0
+
+### Whole Slide Imaging (WSI) Pyramids & Sup 222 Annotations (Phase 7)
+
+* **WSI Pyramid Reader & Tile Stitcher (`R/wsi.R`)**:
+  - Added `dicom_synthesize_wsi()`, `read_dicom_wsi_pyramid()`, `wsi_extract_tile()`, and `wsi_stitch_region()` supporting `TILED_FULL` and `TILED_SPARSE` multi-resolution WSI pyramids with out-of-core tile extraction and cross-tile region stitching.
+  - Added `dicom_wsi_annotations()` and `wsi_annotations_to_mask()` for Supplement 222 Microscopy Bulk Simple Annotations.
+
 # dicomtk 0.5.0
 
 ### Interoperability, DuckDB/Parquet Index & OHDSI OMOP MI-CDM (Phase 4)
