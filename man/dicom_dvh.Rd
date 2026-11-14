@@ -20,12 +20,12 @@ An object of class \code{"dicom_dvh"} containing:
 }
 \description{
 Evaluates cumulative and differential Dose-Volume Histograms (DVHs) and
-extracts key radiation oncology clinical metrics ($D_{95}$, $D_{90}$,
-$D_{50}$, $V_{20}$, min, max, and mean dose) across ROIs from an \code{RTDOSE}
+extracts key radiation oncology clinical metrics (\code{D95}, \code{D90},
+\code{D50}, \code{V20}, min, max, and mean dose) across ROIs from an \code{RTDOSE}
 volume and a \link{dicom_seg} mask.
 }
 \examples{
 synth <- dicom_synthesize(modality = "CT", dims = c(32L, 32L, 5L))
 vol <- read_dicom_volume(synth[["out_dir"]])
-# See vignette for full DVH analytics pipeline
+unlink(synth[["out_dir"]], recursive = TRUE)
 }

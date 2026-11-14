@@ -3,7 +3,7 @@
 #' Resamples a 3D [dicom_volume] or [dicom_seg] object to `target_spacing` (in
 #' millimeters) using high-speed C++17 trilinear interpolation (for continuous
 #' imaging intensities) or nearest-neighbor interpolation (for discrete
-#' segmentation masks and label-maps), updating the $4 \times 4$ spatial affine
+#' segmentation masks and label-maps), updating the 4x4 spatial affine
 #' matrix and spacing metadata while preserving the physical origin.
 #'
 #' @param vol A [dicom_volume] or [dicom_seg] object.
@@ -21,6 +21,7 @@
 #' vol <- read_dicom_volume(synth[["out_dir"]])
 #' vol_iso <- volume_resample(vol, target_spacing = c(1, 1, 1))
 #' dim(vol_iso)
+#' unlink(synth[["out_dir"]], recursive = TRUE)
 volume_resample <- function(vol,
                             target_spacing = c(1.0, 1.0, 1.0),
                             method = c("trilinear", "nearest")) {

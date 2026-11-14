@@ -28,7 +28,7 @@ A resampled \link{dicom_volume} (or \link{dicom_seg}) object with updated
 Resamples a 3D \link{dicom_volume} or \link{dicom_seg} object to \code{target_spacing} (in
 millimeters) using high-speed C++17 trilinear interpolation (for continuous
 imaging intensities) or nearest-neighbor interpolation (for discrete
-segmentation masks and label-maps), updating the $4 \times 4$ spatial affine
+segmentation masks and label-maps), updating the 4x4 spatial affine
 matrix and spacing metadata while preserving the physical origin.
 }
 \examples{
@@ -36,4 +36,5 @@ synth <- dicom_synthesize(modality = "CT", dims = c(16L, 16L, 4L))
 vol <- read_dicom_volume(synth[["out_dir"]])
 vol_iso <- volume_resample(vol, target_spacing = c(1, 1, 1))
 dim(vol_iso)
+unlink(synth[["out_dir"]], recursive = TRUE)
 }

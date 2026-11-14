@@ -1,3 +1,29 @@
+# dicomtk 0.4.0
+
+### Segmentation, Radiotherapy, Quantitative SR & Deep Learning Prep (Phase 2)
+
+* **C++17 Scanline Rasterizer & Contour Tracer (`src/rcpp_rasterize.cpp`)**:
+  - Added `rasterize_polygon_2d()`, `rasterize_polygons_2d()`, and `trace_contours_2d()` with exact even-odd fill rules, hole handling, and Moore-neighbor contour extraction.
+
+* **DICOM Segmentation (`dicom_seg`)**:
+  - Added `dicom_seg()`, `write_dicom_seg()`, and `as_labelmap()` supporting `BINARY` and `FRACTIONAL` DICOM SEG IODs with `SegmentSequence`, `SharedFunctionalGroupsSequence`, and `PerFrameFunctionalGroupsSequence`, inheriting directly from `dicom_volume`.
+
+* **RTSTRUCT & RTDOSE Radiotherapy Suite**:
+  - Added `rtstruct_to_seg()` and `seg_to_rtstruct()` for bidirectional conversion between 3D `dicom_seg` labelmaps and DICOM `RTSTRUCT` `ROIContourSequence` world-space polygons.
+  - Added `dicom_dvh()` computing cumulative and differential Dose-Volume Histograms (DVH) and clinical dosimetric metrics (`D98`, `D95`, `D50`, `D2`, `V20`, `mean_dose`, `max_dose`) from `RTDOSE` and `dicom_seg` masks.
+
+* **Quantitative SR (TID 1500) & Grayscale Presentation States (GSPS)**:
+  - Added `dicom_sr_tid1500()` and `read_sr_tid1500()` for DICOM TID 1500 Measurement Reports.
+  - Added `write_dicom_gsps()` and `read_dicom_gsps()` for Softcopy Presentation State (`PR`) annotations.
+
+* **Deep Learning Prep, Burned-In Annotations, QC & Dataset Exporters**:
+  - Added `volume_resample()`, `volume_window()`, and `dicom_patient_splits()` for leak-free 3D trilinear/nearest-neighbor resampling, HU/percentile normalization, and patient-level train/val/test splitting.
+  - Added `dicom_burn_annotations()` and `burned_annot()` for rendering segmentations and text overlays onto 2D PNG/DICOM Secondary Capture images.
+  - Added `dicom_image_qc()` for automated SNR, CNR, FOV border truncation, spacing/tilt anomaly, and high-frequency ringing artifact detection.
+  - Added `export_nnunet()`, `export_monai()`, `export_rocrate()`, and `export_croissant()` for ML-ready dataset and JSON-LD metadata export.
+
+---
+
 # dicomtk 0.3.0
 
 ### Research-Grade De-Identification & Privacy Engine (Phase 1)

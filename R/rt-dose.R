@@ -1,8 +1,8 @@
 #' Compute Dose-Volume Histogram (DVH) and Clinical Radiation Metrics
 #'
 #' Evaluates cumulative and differential Dose-Volume Histograms (DVHs) and
-#' extracts key radiation oncology clinical metrics ($D_{95}$, $D_{90}$,
-#' $D_{50}$, $V_{20}$, min, max, and mean dose) across ROIs from an `RTDOSE`
+#' extracts key radiation oncology clinical metrics (`D95`, `D90`,
+#' `D50`, `V20`, min, max, and mean dose) across ROIs from an `RTDOSE`
 #' volume and a [dicom_seg] mask.
 #'
 #' @param dose An `RTDOSE` [dicom_volume] or path to a DICOM `RTDOSE` file.
@@ -16,7 +16,7 @@
 #' @examples
 #' synth <- dicom_synthesize(modality = "CT", dims = c(32L, 32L, 5L))
 #' vol <- read_dicom_volume(synth[["out_dir"]])
-#' # See vignette for full DVH analytics pipeline
+#' unlink(synth[["out_dir"]], recursive = TRUE)
 dicom_dvh <- function(dose, seg, n_bins = 100L) {
   if (is.character(dose) && length(dose) == 1L && file.exists(dose)) {
     rt_info <- read_dicom_rt(dose)
