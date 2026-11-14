@@ -202,6 +202,9 @@ wsi_stitch_region <- function(pyramid,
   y <- as.integer(y)
   width <- as.integer(width)
   height <- as.integer(height)
+  if (level < 1L || level > nrow(pyramid$levels) || x < 1L || y < 1L || width < 1L || height < 1L) {
+    cli::cli_abort("Invalid region coordinates or pyramid level in {.fn wsi_stitch_region}.")
+  }
 
   lv_row <- pyramid$levels[level, , drop = FALSE]
   th <- lv_row$tile_rows
